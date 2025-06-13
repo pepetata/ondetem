@@ -1,0 +1,6 @@
+@use "./_variables.scss" as *;
+
+body {
+  background: $bg-color;
+  font-family: $body-font;
+}

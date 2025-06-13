@@ -1,0 +1,20 @@
+{
+  "name": "ondetem",
+  "version": "0.0.0",
+  "description": "New Onde Tem site using node.js - react",
+  "homepage": "https://github.com/pepetata/ondetem#readme",
+  "bugs": {
+    "url": "https://github.com/pepetata/ondetem/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pepetata/ondetem.git"
+  },
+  "license": "ISC",
+  "author": "Flavio Ferreira",
+  "type": "commonjs",
+  "main": "app.js",
+  "scripts": {
+    "test": "npm test"
+  }
+}

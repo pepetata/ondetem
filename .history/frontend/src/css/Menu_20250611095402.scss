@@ -1,0 +1,80 @@
+@use "./_variables.scss" as *;
+
+.logo-bar {
+  background: $header-color !important;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #fff;
+  z-index: 1051;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 64px;
+  // border-bottom: 1px solid #eee;
+}
+
+// .navbar {
+//   background: $header-color !important;
+// }
+.navbar-bg-logo {
+  background: rgba(255, 214, 153, 0.85) !important;
+  min-height: 80px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.navbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.navbar-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  margin: 0 24px;
+}
+
+.logo-img {
+  max-height: 48px;
+}
+
+@media (max-width: 991.98px) {
+  .navbar-content {
+    justify-content: center;
+  }
+  .navbar-center {
+    margin: 0;
+  }
+}
+
+.logo-img {
+  max-height: 48px;
+}
+
+.menu-btn {
+  width: 115px; //!important;
+  // height: 24px !important;
+  padding: 0 !important;
+  font-size: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-bottom: 5px !important;
+  margin-left: 5px !important;
+  margin-top: 5px !important;
+  // padding-top: 8px !important;
+  // padding-bottom: 8px !important;
+  // padding-left: 15px !important;
+  font-weight: bold !important;
+}
+
+.bt-add-ad {
+  background-color: #ddbf3c !important;
+  color: crimson !important;
+}
