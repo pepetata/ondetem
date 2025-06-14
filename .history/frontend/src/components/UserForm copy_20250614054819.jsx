@@ -182,9 +182,9 @@ const UserForm = () => {
           </OTButton>
           <OTButton
             className="cancelbutton"
+            onClick={handleCancel}
             imgSrc="/images/cancel.png"
             imgAlt="Cancelar"
-            onClick={handleCancel}
           >
             Cancelar
           </OTButton>

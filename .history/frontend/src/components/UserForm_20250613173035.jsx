@@ -1,48 +1,45 @@
 import { Formik, Form as FormikForm, Field } from "formik";
 import { Form, Row, Col, Image } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { userFormFields } from "../formFields/userFormFields.jsx";
+import { userFormFields } from "../formFields/userFormFields";
 import OTButton from "./OTButton";
 import FormInput from "./FormInput";
 import { buildValidationSchema } from "./validationHelper";
-import PropTypes from "prop-types";
 
 const defaultImg = "/images/nophoto.jpg";
 
 // Build initialValues from userFormFields
 const initialValues = Object.fromEntries(
-  Object.values(userFormFields).map((f) => [
-    f.name,
-    f.type === "checkbox" ? false : "",
-  ])
+  Object.values(userFormFields).map((f) => [f.name, ""])
 );
 
 // Helper to build Yup schema from userFormFields
 
 const validationSchema = buildValidationSchema(userFormFields);
 
-const UserForm = ({ onCancel, setShowUserForm }) => {
+const UserForm = () => {
   const navigate = useNavigate();
 
-  const handleCancel = () => {
-    console.log(`canceling`);
-    if (setShowUserForm) setShowUserForm(false);
+  const onCancel = () => {
     navigate("/");
   };
-
-  const handleSubmit = (values, { setSubmitting }) => {
-    console.log(`Submitting form with values:`, values);
-    setSubmitting(false);
-  };
-
   return (
     <div className="container">
       <Formik
         initialValues={initialValues}
         validationSchema={validationSchema}
-        validateOnBlur={true}
-        validateOnChange={true}
-        onSubmit={handleSubmit}
+        validateOnBlur={false}
+        validateOnChange={false}
+        onSubmit={(e) => {
+          // Mark all fields as touched
+          setTouched(
+            Object.fromEntries(
+              Object.keys(initialValues).map((key) => [key, true])
+            ),
+            true // shouldValidate
+          );
+          handleSubmit(e);
+        }}
       >
         {({
           setTouched,
@@ -53,26 +50,42 @@ const UserForm = ({ onCancel, setShowUserForm }) => {
           touched,
         }) => {
           return (
-            <FormikForm id="signup" onSubmit={handleSubmit}>
+            <FormikForm
+              id="signup"
+              onSubmit={(e) => {
+                setTouched(
+                  Object.fromEntries(
+                    Object.keys(initialValues).map((key) => [key, true])
+                  ),
+                  true // shouldValidate
+                );
+                handleSubmit(e);
+              }}
+            >
               <Row className="userData">
                 <Col md={6}>
                   <h3>Informe seus dados:</h3>
                   {Object.values(userFormFields).map((field) => (
                     <Field name={field.name} key={field.name}>
-                      {({ field: formikField, form }) => (
-                        <FormInput
-                          field={formikField}
-                          form={form}
-                          label={field.label}
-                          type={field.type}
-                          placeholder={field.placeholder}
-                          maxLength={field.maxLength}
-                          required={field.required}
-                        />
-                      )}
+                      {({ form }) => {
+                        {
+                          /* console.log(`Rendering field: ${field}`); */
+                        }
+                        return (
+                          <FormInput
+                            field={{ ...field }}
+                            form={form}
+                            label={field.label}
+                            type={field.type}
+                            placeholder={field.placeholder}
+                            maxLength={field.maxLength}
+                            required={field.required}
+                          />
+                        );
+                      }}
                     </Field>
                   ))}
-                  {/* <Form.Group>
+                  <Form.Group>
                     <Field
                       name="useragreement"
                       type="checkbox"
@@ -91,7 +104,7 @@ const UserForm = ({ onCancel, setShowUserForm }) => {
                         </>
                       }
                     />
-                  </Form.Group> */}
+                  </Form.Group>
                 </Col>
                 <Col md={6}>
                   <div id="image_preview">
@@ -123,7 +136,7 @@ const UserForm = ({ onCancel, setShowUserForm }) => {
                   className="cancelbutton"
                   imgSrc="/images/cancel.png"
                   imgAlt="Cancelar"
-                  onClick={handleCancel}
+                  onClick={onCancel}
                 >
                   Cancelar
                 </OTButton>
@@ -153,10 +166,6 @@ const UserForm = ({ onCancel, setShowUserForm }) => {
       </Formik>
     </div>
   );
-};
-UserForm.propTypes = {
-  onCancel: PropTypes.func,
-  setShowUserForm: PropTypes.func,
 };
 
 export default UserForm;

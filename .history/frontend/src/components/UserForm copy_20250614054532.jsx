@@ -49,8 +49,7 @@ const UserForm = () => {
     if (onSave) onSave(form);
   };
 
-  const handleCancel = () => {
-    console.log(`canceling`);
+  const onCancel = () => {
     if (setShowUserForm) setShowUserForm(false);
     navigate("/");
   };
@@ -182,9 +181,9 @@ const UserForm = () => {
           </OTButton>
           <OTButton
             className="cancelbutton"
+            onClick={onCancel}
             imgSrc="/images/cancel.png"
             imgAlt="Cancelar"
-            onClick={handleCancel}
           >
             Cancelar
           </OTButton>

@@ -3,7 +3,6 @@ import { Routes, Route } from "react-router-dom";
 import "./css/App.scss";
 import Menu from "./components/Menu";
 import UserForm from "./components/UserForm";
-import Home from "./components/Home";
 
 const App = () => {
   const [showUserForm, setShowUserForm] = useState(false);
@@ -21,16 +20,12 @@ const App = () => {
       <div className="main-content" style={{ marginTop: navbarHeight }}>
         {/* {showUserForm && <UserForm onCancel={() => setShowUserForm(false)} />} */}
         <Routes>
-          <Route path="/" element={<Home />} />
+          {/* <Route path="/" element={<Home />} /> */}
           <Route
             path="/signup"
             element={
               <div className="container">
-                <UserForm
-                  onCancel={() => setShowUserForm(false)}
-                  setShowUserForm={setShowUserForm}
-                />
-                <Home />
+                <UserForm onCancel={() => setShowUserForm(false)} />
               </div>
             }
           />

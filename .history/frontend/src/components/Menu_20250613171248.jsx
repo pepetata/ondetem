@@ -3,15 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import "../css/Menu.scss";
 import PropTypes from "prop-types";
 
-const Menu = ({ setShowUserForm, showUserForm }) => {
+const Menu = ({ showUserForm }) => {
   const navigate = useNavigate();
 
   const handleSignup = () => {
-    setShowUserForm(true);
     navigate("/signup");
   };
-
-  console.log(`showUserForm`, showUserForm);
 
   return (
     <Navbar
@@ -28,20 +25,18 @@ const Menu = ({ setShowUserForm, showUserForm }) => {
             to="/"
             variant="outline-primary"
             className="me-2 menu-btn"
-            onClick={() => setShowUserForm(false)}
           >
             Home
           </Button>
           <Button
             variant="outline-success"
             className="me-2 menu-btn bt-add-ad"
-            // onClick={onNewAd}
+            onClick={onNewAd}
           >
             Anuncie Grátis
           </Button>
         </Nav>
 
-        {/* Logo */}
         <div className="navbar-center">
           <Link to="/" className="d-flex align-items-center">
             <img
@@ -58,24 +53,18 @@ const Menu = ({ setShowUserForm, showUserForm }) => {
         />
 
         {/* Right side buttons */}
-        {!showUserForm && (
-          <Nav className="align-items-center d-none d-lg-flex">
-            <Button
-              variant="outline-primary"
-              className="me-2 menu-btn"
-              // onClick={onLogin}
-            >
-              Entrar
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleSignup}
-              className="menu-btn"
-            >
-              Registre-se
-            </Button>
-          </Nav>
-        )}
+        <Nav className="align-items-center d-none d-lg-flex">
+          <Button
+            variant="outline-primary"
+            className="me-2 menu-btn"
+            onClick={onLogin}
+          >
+            Entrar
+          </Button>
+          <Button variant="primary" onClick={handleSignup} className="menu-btn">
+            Registre-se
+          </Button>
+        </Nav>
 
         {/* Collapsible content for mobile */}
         <Navbar.Collapse id="main-navbar-nav" className="d-lg-none">
@@ -91,14 +80,14 @@ const Menu = ({ setShowUserForm, showUserForm }) => {
             <Button
               variant="outline-success"
               className="my-2 menu-btn bt-add-ad"
-              // onClick={onNewAd}
+              onClick={onNewAd}
             >
               Anuncie Grátis
             </Button>
             <Button
               variant="outline-primary"
               className="my-2 menu-btn"
-              // onClick={onLogin}
+              onClick={onLogin}
             >
               Entrar
             </Button>
@@ -117,7 +106,6 @@ const Menu = ({ setShowUserForm, showUserForm }) => {
 };
 Menu.propTypes = {
   showUserForm: PropTypes.any,
-  setShowUserForm: PropTypes.any,
 };
 
 export default Menu;

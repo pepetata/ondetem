@@ -42,4 +42,11 @@ export const userFormFields = {
     requiredError: "Obrigatório",
     passwordError: "Senhas não coincidem",
   },
+  useragreement: {
+    label: "Li e concordo com os termos do Acordo de Usuários",
+    type: "checkbox",
+    name: "useragreement",
+    required: true,
+    requiredError: "Obrigatório",
+  },
 };

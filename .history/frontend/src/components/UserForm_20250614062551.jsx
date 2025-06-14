@@ -40,8 +40,8 @@ const UserForm = ({ onCancel, setShowUserForm }) => {
       <Formik
         initialValues={initialValues}
         validationSchema={validationSchema}
-        validateOnBlur={true}
-        validateOnChange={true}
+        validateOnBlur={false}
+        validateOnChange={false}
         onSubmit={handleSubmit}
       >
         {({

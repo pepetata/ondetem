@@ -28,7 +28,6 @@ const Menu = ({ setShowUserForm, showUserForm }) => {
             to="/"
             variant="outline-primary"
             className="me-2 menu-btn"
-            onClick={() => setShowUserForm(false)}
           >
             Home
           </Button>

@@ -1,7 +1,7 @@
 import { Formik, Form as FormikForm, Field } from "formik";
 import { Form, Row, Col, Image } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { userFormFields } from "../formFields/userFormFields.jsx";
+import { userFormFields } from "../formFields/userFormFields";
 import OTButton from "./OTButton";
 import FormInput from "./FormInput";
 import { buildValidationSchema } from "./validationHelper";
@@ -11,10 +11,7 @@ const defaultImg = "/images/nophoto.jpg";
 
 // Build initialValues from userFormFields
 const initialValues = Object.fromEntries(
-  Object.values(userFormFields).map((f) => [
-    f.name,
-    f.type === "checkbox" ? false : "",
-  ])
+  Object.values(userFormFields).map((f) => [f.name, ""])
 );
 
 // Helper to build Yup schema from userFormFields
@@ -40,8 +37,8 @@ const UserForm = ({ onCancel, setShowUserForm }) => {
       <Formik
         initialValues={initialValues}
         validationSchema={validationSchema}
-        validateOnBlur={true}
-        validateOnChange={true}
+        validateOnBlur={false}
+        validateOnChange={false}
         onSubmit={handleSubmit}
       >
         {({
@@ -72,7 +69,7 @@ const UserForm = ({ onCancel, setShowUserForm }) => {
                       )}
                     </Field>
                   ))}
-                  {/* <Form.Group>
+                  <Form.Group>
                     <Field
                       name="useragreement"
                       type="checkbox"
@@ -91,7 +88,7 @@ const UserForm = ({ onCancel, setShowUserForm }) => {
                         </>
                       }
                     />
-                  </Form.Group> */}
+                  </Form.Group>
                 </Col>
                 <Col md={6}>
                   <div id="image_preview">

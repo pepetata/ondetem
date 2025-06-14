@@ -11,7 +11,7 @@ const Menu = ({ setShowUserForm, showUserForm }) => {
     navigate("/signup");
   };
 
-  console.log(`showUserForm`, showUserForm);
+  console.log(`setShowUserForm`, setShowUserForm);
 
   return (
     <Navbar
@@ -28,7 +28,6 @@ const Menu = ({ setShowUserForm, showUserForm }) => {
             to="/"
             variant="outline-primary"
             className="me-2 menu-btn"
-            onClick={() => setShowUserForm(false)}
           >
             Home
           </Button>
@@ -41,7 +40,6 @@ const Menu = ({ setShowUserForm, showUserForm }) => {
           </Button>
         </Nav>
 
-        {/* Logo */}
         <div className="navbar-center">
           <Link to="/" className="d-flex align-items-center">
             <img

@@ -26,10 +26,7 @@ const App = () => {
             path="/signup"
             element={
               <div className="container">
-                <UserForm
-                  onCancel={() => setShowUserForm(false)}
-                  setShowUserForm={setShowUserForm}
-                />
+                <UserForm onCancel={() => setShowUserForm(false)} />
                 <Home />
               </div>
             }

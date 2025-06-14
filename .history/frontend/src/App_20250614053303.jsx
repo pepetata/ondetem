@@ -21,15 +21,12 @@ const App = () => {
       <div className="main-content" style={{ marginTop: navbarHeight }}>
         {/* {showUserForm && <UserForm onCancel={() => setShowUserForm(false)} />} */}
         <Routes>
-          <Route path="/" element={<Home />} />
+          {/* <Route path="/" element={<Home />} /> */}
           <Route
             path="/signup"
             element={
               <div className="container">
-                <UserForm
-                  onCancel={() => setShowUserForm(false)}
-                  setShowUserForm={setShowUserForm}
-                />
+                <UserForm onCancel={() => setShowUserForm(false)} />
                 <Home />
               </div>
             }
