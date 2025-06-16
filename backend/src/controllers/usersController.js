@@ -94,8 +94,11 @@ exports.updateUser = async (req, res) => {
       photoPath,
     });
 
+    // Fetch the updated user
+    const updatedUser = await userModel.getUserById(userId);
+
     logger.info(`User updated: ${email}`);
-    res.status(200).json({ message: "Usuário atualizado com sucesso!" });
+    res.status(200).json(updatedUser);
   } catch (err) {
     logger.error(`Error updating user: ${err.message}`);
     res

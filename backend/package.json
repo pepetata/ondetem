@@ -17,7 +17,7 @@
   "scripts": {
     "start": "NODE_ENV=production node src/app.js",
     "dev": "NODE_ENV=development node --watch src/app.js",
-    "test": "NODE_ENV=test node --test --test-concurrency=1",
+    "test": "NODE_ENV=test jest",
     "testonly": "NODE_ENV=test npm test -- --test-only",
     "lint": "eslint .",
     "start:test": "NODE_ENV=test node --watch src/app.js"
@@ -31,5 +31,10 @@
     "multer": "^2.0.1",
     "pg": "^8.16.0",
     "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "jest": "^30.0.0",
+    "supertest": "^7.1.1"
   }
 }

@@ -40,28 +40,28 @@ const userFormFields = {
     minLength: 3,
     required: true,
     placeholder: "Senha",
-    requiredError: "A senha é obrigatória",
-    lengthError: "A senha deve ter entre 3 e 100 caracteres",
+    // requiredError: "A senha é obrigatória",
+    // lengthError: "A senha deve ter entre 3 e 100 caracteres",
   },
 };
 
 // Dynamically generate lengthError for each field
 Object.values(userFormFields).forEach((field) => {
   if (field.minLength && field.maxLength) {
-    field.lengthError = `O ${field.label.toLowerCase()} deve ter entre ${
+    field.lengthError = `${field.label.toLowerCase()} deve ter entre ${
       field.minLength
     } e ${field.maxLength} caracteres`;
   } else if (field.minLength) {
-    field.lengthError = `O ${field.label.toLowerCase()} deve ter no mínimo ${
+    field.lengthError = `${field.label.toLowerCase()} deve ter no mínimo ${
       field.minLength
     } caracteres`;
   } else if (field.maxLength) {
-    field.lengthError = `O ${field.label.toLowerCase()} deve ter no máximo ${
+    field.lengthError = `${field.label.toLowerCase()} deve ter no máximo ${
       field.maxLength
     } caracteres`;
   }
   if (field.required && !field.requiredError) {
-    field.requiredError = `O ${field.label.toLowerCase()} é obrigatório`;
+    field.requiredError = `${field.label.toLowerCase()} é obrigatório`;
   }
 });
 

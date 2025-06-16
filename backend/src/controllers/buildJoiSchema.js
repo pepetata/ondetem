@@ -27,6 +27,7 @@ function buildJoiSchema(fields) {
         break;
       case "email":
         rule = Joi.string().email();
+        if (field.requiredError) messages["string.empty"] = field.requiredError;
         if (field.required) {
           rule = rule.required();
           if (field.requiredError)
@@ -67,7 +68,10 @@ function buildJoiSchema(fields) {
     if (Object.keys(messages).length > 0) {
       rule = rule.messages(messages);
     }
-
+    if (field.requiredError) {
+      messages["any.required"] = field.requiredError;
+      messages["string.empty"] = field.requiredError;
+    }
     schemaShape[key] = rule;
   }
   return Joi.object(schemaShape);
