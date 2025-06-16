@@ -3,6 +3,7 @@ const logger = require("../utils/logger");
 const userModel = require("../models/userModel");
 const { buildJoiSchema } = require("./buildJoiSchema");
 const { userFormFields } = require("../formfields/userFormFields");
+const e = require("express");
 
 const userSchema = buildJoiSchema(userFormFields);
 
@@ -31,6 +32,36 @@ exports.getUserById = async (req, res) => {
   } catch (err) {
     logger.error(`Error fetching user: ${err.message}`);
     res.status(500).json({ error: "Failed to fetch user" });
+  }
+};
+
+exports.getUserByEmail = async (req, res) => {
+  try {
+    const { email } = req.params;
+    const user = await userModel.getUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    logger.info(`Fetched user by email: ${email}`);
+    res.status(200).json(user);
+  } catch (err) {
+    logger.error(`Error fetching user by email: ${err.message}`);
+    res.status(500).json({ error: "Failed to fetch user by email" });
+  }
+};
+
+exports.getCurrentUser = async (req, res) => {
+  try {
+    const userId = req.user.userId; // Assuming userId is set in the request by authentication middleware
+    const user = await userModel.getUserById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    logger.info(`Fetched current user: ${user.email}`);
+    res.status(200).json(user);
+  } catch (err) {
+    logger.error(`Error fetching current user: ${err.message}`);
+    res.status(500).json({ error: "Failed to fetch current user" });
   }
 };
 

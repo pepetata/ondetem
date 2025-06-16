@@ -30,7 +30,7 @@ exports.getUserById = async (id) => {
   };
 };
 
-exports.findUserByEmail = async (email) => {
+exports.getUserByEmail = async (email) => {
   const result = await pool.query("SELECT * FROM users WHERE email = $1", [
     email,
   ]);

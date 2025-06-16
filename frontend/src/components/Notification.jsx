@@ -29,7 +29,7 @@ const Notification = () => {
   }
 
   // console.log(`Notification - class`, className, "type =====", type);
-  return <div className={className}>{message}</div>;
+  return message ? <div className={className}>{message}</div> : null;
 };
 
 export default Notification;

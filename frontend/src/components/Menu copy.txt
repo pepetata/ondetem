@@ -1,0 +1,117 @@
+import { Navbar, Nav, Button, Container, Image } from "react-bootstrap";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import PropTypes from "prop-types";
+import { useAuth } from "../context/AuthContext";
+import "../scss/Menu.scss";
+
+const Menu = ({ setShowUserForm, showUserForm }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, logout } = useAuth();
+  const isSignup = location.pathname === "/user";
+  const isLogin = location.pathname === "/login";
+
+  const handleSignup = () => navigate("/user");
+  const handleLogin = () => navigate("/login");
+  const handleFavorites = () => navigate("/favorites");
+  const handleAds = () => navigate("/my-ads");
+  const handleProfile = () => navigate("/user");
+  const handleLogout = () => {
+    if (window.confirm("Tem certeza que deseja encerrar sua sessã?")) {
+      logout();
+      navigate("/");
+    }
+  };
+
+  // User photo logic
+  const userPhoto = user && user.photo ? user.photo : "/images/user.png";
+
+  console.log(`user====`, user);
+  return (
+    <Navbar expand="lg" fixed="top" className="py-2 navbar-bg-logo">
+      <Container className="navbar-content">
+        {/* Left side buttons */}
+        <Nav className="align-items-center d-none d-lg-flex">
+          <Button
+            as={Link}
+            to="/"
+            variant="outline-primary"
+            className="me-2 menu-btn"
+            // onClick={() => setShowUserForm(false)}
+          >
+            Home
+          </Button>
+          {!isLogin && !user && (
+            <Button
+              variant="outline-success"
+              className="me-2 menu-btn bt-add-ad"
+            >
+              Anuncie Grátis
+            </Button>
+          )}
+        </Nav>
+
+        {/* Logo */}
+        <div className="navbar-center">
+          <Link to="/" className="d-flex align-items-center">
+            <img
+              src="/images/logo.png"
+              alt="Onde tem?"
+              className="logo-img"
+              height="48"
+            />
+          </Link>
+        </div>
+        <Navbar.Toggle
+          aria-controls="main-navbar-nav"
+          className="ms-2 d-lg-none navbar-toggle-custom"
+        />
+
+        {/* Right side buttons */}
+        <Nav className="align-items-center ms-auto">
+          {!isSignup && !user && !showUserForm && (
+            <>
+              {!isLogin && (
+                <Button
+                  variant="link"
+                  className="menu-icon-btn"
+                  onClick={handleLogin}
+                  style={{ padding: 0, border: "none", background: "none" }}
+                  title="Entrar"
+                >
+                  <img
+                    src="/images/entrar.png"
+                    alt="Entrar"
+                    height="48" // Increased size
+                    style={{ marginRight: 8 }}
+                  />
+                </Button>
+              )}
+              <Button
+                variant="link"
+                className="menu-icon-btn"
+                onClick={handleSignup}
+                style={{ padding: 0, border: "none", background: "none" }}
+                title="Registre-se"
+              >
+                <img
+                  src="/images/registrar.png"
+                  alt="Registre-se"
+                  height="48" // Set desired size
+                />
+              </Button>
+            </>
+          )}
+          {/* ...rest of your code... */}
+        </Nav>
+      </Container>
+    </Navbar>
+  );
+};
+
+Menu.propTypes = {
+  showUserForm: PropTypes.any,
+  setShowUserForm: PropTypes.any,
+};
+
+export default Menu;

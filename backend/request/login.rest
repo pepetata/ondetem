@@ -1,0 +1,14 @@
+### Login
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "a@a",
+  "password": "a"
+}
+
+### Logout (if your backend supports a logout endpoint)
+POST http://localhost:3000/api/auth/logout
+Content-Type: application/json
+
+{}

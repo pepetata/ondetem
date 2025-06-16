@@ -8,5 +8,6 @@ const upload = multer({ dest: "uploads/" });
 router.get("/", usersController.getAllUsers);
 router.post("/", upload.single("photo"), usersController.createUser);
 router.put("/:id", upload.single("photo"), usersController.updateUser);
+router.get("/me", usersController.getCurrentUser);
 
 module.exports = router;

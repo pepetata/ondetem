@@ -3,8 +3,12 @@ import { Formik, Form as FormikForm, Field } from "formik";
 import { Form, Row, Col, Image } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { createUserThunk, updateUserThunk } from "../../redux/userSlice";
 import PropTypes from "prop-types";
+import {
+  createUserThunk,
+  updateUserThunk,
+  fetchUserThunk,
+} from "../../redux/userSlice";
 
 import Notification from "../../components/Notification.jsx";
 import OTButton from "../../components/OTButton.jsx";
@@ -31,19 +35,29 @@ userFormFields.useragreement.label = (
     </a>
   </>
 );
-console.log(`Initial values for user form:`, userFormFields);
+// console.log(`Initial values for user form:`, userFormFields);
 
 const validationSchema = buildValidationSchema(userFormFields);
 
-const UserForm = ({ setShowUserForm }) => {
+///////////////////////////////////////////////////////////////////////
+const UserForm = ({ user }) => {
   const { message, type } = useSelector((state) => state.notification);
   const dispatch = useDispatch();
+  const reduxUser = useSelector((state) => state.user.user); // <-- get user from Redux if not passed as prop
   const { loading, error, userId } = useSelector((state) => state.user);
   const navigate = useNavigate();
+  // const user = useSelector((state) => state.auth.user);
+
+  console.log(`User:`, user);
+  useEffect(() => {
+    if (!user && !reduxUser) {
+      dispatch(fetchUserThunk());
+    }
+  }, [user, reduxUser, dispatch]);
 
   const handleCancel = () => {
     console.log(`canceling`);
-    if (setShowUserForm) setShowUserForm(false);
+    // if (setShowUserForm) setShowUserForm(false);
     navigate("/");
   };
 
@@ -65,9 +79,32 @@ const UserForm = ({ setShowUserForm }) => {
     }
   };
 
+  // Use user prop, then reduxUser, then fallback to empty
+  const currentUser = user || reduxUser;
+
+  // Build initialValues from user data if available
+  const initialValues = currentUser
+    ? {
+        ...Object.fromEntries(
+          Object.values(userFormFields).map((f) => [
+            f.name,
+            f.type === "checkbox"
+              ? !!currentUser[f.name]
+              : currentUser[f.name] || "",
+          ])
+        ),
+      }
+    : Object.fromEntries(
+        Object.values(userFormFields).map((f) => [
+          f.name,
+          f.type === "checkbox" ? false : "",
+        ])
+      );
+
   return (
     <div className="container">
       <Formik
+        enableReinitialize
         initialValues={initialValues}
         // validationSchema={validationSchema}
         validateOnBlur={true}
@@ -200,8 +237,9 @@ const UserForm = ({ setShowUserForm }) => {
   );
 };
 UserForm.propTypes = {
+  user: PropTypes.object,
   onCancel: PropTypes.func,
-  setShowUserForm: PropTypes.func,
+  // setShowUserForm: PropTypes.func,
 };
 
 export default UserForm;

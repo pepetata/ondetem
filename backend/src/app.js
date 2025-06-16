@@ -8,10 +8,13 @@ require("dotenv").config({ path: envFile });
 const cors = require("cors");
 const express = require("express");
 const usersRouter = require("./routes/users");
+const authRouter = require("./routes/auth");
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use("/api/users", usersRouter);
+app.use("/api/auth", authRouter);
 
 if (process.env.NODE_ENV !== "test") {
   app.listen(process.env.PORT || 3000, () => {

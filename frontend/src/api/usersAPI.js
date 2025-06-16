@@ -17,3 +17,12 @@ export const updateUser = async (userId, formData) => {
   );
   return response.data;
 };
+
+export const fetchCurrentUser = async (token) => {
+  const response = await axios.get("http://localhost:3000/api/users/me", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};

@@ -1,0 +1,1 @@
+menu must show in the right side after login: Lista de meus favoritos (twohearts35.png), Lista de meu anuncios (portfolio.png), Alterar meus dados (user photo or user.png) and Encerrar sessao (logout)

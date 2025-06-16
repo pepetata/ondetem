@@ -15,7 +15,7 @@ export const createUserThunk = createAsyncThunk(
       );
       return result;
     } catch (err) {
-      console.log(`userSlice err=`, err);
+      // console.log(`userSlice err=`, err);
       dispatch(
         showNotification({
           type: "error",
@@ -55,12 +55,43 @@ export const updateUserThunk = createAsyncThunk(
   }
 );
 
+export const fetchUserThunk = createAsyncThunk(
+  "user/fetch",
+  async (_, { dispatch, rejectWithValue, getState }) => {
+    try {
+      // Get token from auth state or storage
+      const state = getState();
+      const token =
+        state.auth?.token ||
+        localStorage.getItem("authToken") ||
+        sessionStorage.getItem("authToken");
+      if (!token) throw new Error("Usuário não autenticado");
+
+      const user = await fetchCurrentUser(token);
+      return user;
+    } catch (err) {
+      dispatch(
+        showNotification({
+          type: "error",
+          message:
+            err.response?.data?.error ||
+            err.message ||
+            "Erro ao buscar usuário",
+        })
+      );
+      return rejectWithValue(
+        err.response?.data?.error || err.message || "Erro ao buscar usuário"
+      );
+    }
+  }
+);
+
 const userSlice = createSlice({
   name: "user",
   initialState: {
     loading: false,
     error: null,
-    userId: null,
+    // userId: null,
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -71,9 +102,22 @@ const userSlice = createSlice({
       })
       .addCase(createUserThunk.fulfilled, (state, action) => {
         state.loading = false;
-        state.userId = action.payload.userId;
+        // state.userId = action.payload.userId;
       })
       .addCase(createUserThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(fetchUserThunk.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        // state.user = action.payload;
+      })
+      .addCase(fetchUserThunk.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchUserThunk.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
