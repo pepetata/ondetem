@@ -1,0 +1,24 @@
+POST http://localhost:3000/api/users
+Content-Type: multipart/form-data
+
+--boundary
+Content-Disposition: form-data; name="fullName"
+
+Test User
+--boundary
+Content-Disposition: form-data; name="nickname"
+
+tester
+--boundary
+Content-Disposition: form-data; name="email"
+
+test@example.com
+--boundary
+Content-Disposition: form-data; name="password"
+
+123456
+--boundary
+Content-Disposition: form-data; name="photo"; filename="photo.jpg"
+
+< ./path/to/photo.jpg
+--boundary--

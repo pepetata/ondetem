@@ -1,0 +1,8 @@
+POST http://localhost:3000/api/users
+
+# Use form fields as key-value pairs
+fullName: Test User
+nickname: tester
+email: test@example.com
+password: 123456
+photo: < ./path/to/photo.jpg
