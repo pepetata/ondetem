@@ -63,16 +63,18 @@ const LoginForm = () => {
               <div className="col-12 col-sm-8 col-md-6 col-lg-4">
                 <p>Informe suas credenciais para entrar no sistema:</p>
                 <div className="mb-3">
-                  <label>Email</label>
+                  <label htmlFor="email">Email</label>
                   <Field
+                    id="email"
                     name="email"
                     type="email"
                     className="form-control form-control-sm"
                   />
                 </div>
                 <div className="mb-3">
-                  <label>Senha</label>
+                  <label htmlFor="password">Senha</label>
                   <Field
+                    id="password"
                     name="password"
                     type="password"
                     className="form-control form-control-sm"

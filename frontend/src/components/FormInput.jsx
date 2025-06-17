@@ -19,6 +19,7 @@ const FormInput = ({
     return (
       <Form.Group>
         <Form.Check
+          id={name}
           name={name}
           checked={!!value}
           onChange={onChange}
@@ -34,8 +35,9 @@ const FormInput = ({
 
   return (
     <Form.Group>
-      {label && <Form.Label>{label}</Form.Label>}
+      {label && <Form.Label htmlFor={field.name}>{label}</Form.Label>}
       <Form.Control
+        id={name}
         name={name}
         value={value}
         onChange={onChange}

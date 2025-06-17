@@ -57,7 +57,7 @@ Object.values(userFormFields).forEach((field) => {
   if (field.required && !field.requiredError) {
     field.requiredError = `${field.label} é obrigatório!`;
   }
-  console.log(`file=`, field.name, `, field=`, field);
+  // console.log(`file=`, field.name, `, field=`, field);
 });
 
 module.exports = { userFormFields };

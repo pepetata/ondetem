@@ -1,7 +1,7 @@
 const request = require("supertest");
 const app = require("../../src/app");
 const { Pool } = require("pg");
-const { userFormFields } = require("../../src/formfields/userFormFields");
+const { userFormFields } = require("../../src/formfields/userFieldsValidation");
 require("dotenv").config({ path: ".env.test" });
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });

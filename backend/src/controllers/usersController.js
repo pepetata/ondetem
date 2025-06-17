@@ -2,7 +2,7 @@ const bcrypt = require("bcrypt");
 const logger = require("../utils/logger");
 const userModel = require("../models/userModel");
 const { buildJoiSchema } = require("./buildJoiSchema");
-const { userFormFields } = require("../formfields/userFormFields");
+const { userFormFields } = require("../formfields/userFieldsValidation");
 const e = require("express");
 
 exports.getAllUsers = async (req, res) => {

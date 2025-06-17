@@ -206,8 +206,9 @@ const UserForm = ({ user }) => {
                     />
                   </div>
                   <div id="selectImage" className="mt-3">
-                    <Form.Label>Selecione sua foto</Form.Label>
+                    <Form.Label htmlFor="photo">Selecione sua foto</Form.Label>
                     <Form.Control
+                      id="photo"
                       type="file"
                       name="photo"
                       accept="image/*"
