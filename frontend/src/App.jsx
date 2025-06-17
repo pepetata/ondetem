@@ -21,12 +21,7 @@ const App = () => {
         {/* {showUserForm && <UserForm onCancel={() => setShowUserForm(false)} />} */}
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route
-            path="/signup"
-            element={
-              user ? <Navigate to="/login" replace /> : <UserForm user={user} />
-            }
-          />
+          <Route path="/signup" element={<UserForm user={user} />} />
           <Route
             path="/user"
             element={

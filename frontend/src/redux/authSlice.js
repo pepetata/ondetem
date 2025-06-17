@@ -43,25 +43,25 @@ export const loginThunk = createAsyncThunk(
   }
 );
 
-export const fetchProfileThunk = createAsyncThunk(
-  "auth/fetchProfile",
-  async (_, { getState, rejectWithValue }) => {
-    try {
-      const state = getState();
-      const token =
-        state.auth?.token ||
-        localStorage.getItem("authToken") ||
-        sessionStorage.getItem("authToken");
-      if (!token) throw new Error("Usuário não autenticado");
-      const user = await fetchCurrentUser(token);
-      return user;
-    } catch (err) {
-      return rejectWithValue(
-        err.response?.data?.error || err.message || "Erro ao buscar usuário"
-      );
-    }
-  }
-);
+// export const fetchProfileThunk = createAsyncThunk(
+//   "auth/fetchProfile",
+//   async (_, { getState, rejectWithValue }) => {
+//     try {
+//       const state = getState();
+//       const token =
+//         state.auth?.token ||
+//         localStorage.getItem("authToken") ||
+//         sessionStorage.getItem("authToken");
+//       if (!token) throw new Error("Usuário não autenticado");
+//       const user = await fetchCurrentUser(token);
+//       return user;
+//     } catch (err) {
+//       return rejectWithValue(
+//         err.response?.data?.error || err.message || "Erro ao buscar usuário"
+//       );
+//     }
+//   }
+// );
 
 const authSlice = createSlice({
   name: "auth",
@@ -93,15 +93,15 @@ const authSlice = createSlice({
       .addCase(loginThunk.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      })
-      .addCase(fetchProfileThunk.fulfilled, (state, action) => {
-        // Normalize photo_path to photoPath
-        const user = action.payload;
-        if (user && user.photo_path && !user.photoPath) {
-          user.photoPath = user.photo_path;
-        }
-        state.user = user;
       });
+    // .addCase(fetchProfileThunk.fulfilled, (state, action) => {
+    //   // Normalize photo_path to photoPath
+    //   const user = action.payload;
+    //   if (user && user.photo_path && !user.photoPath) {
+    //     user.photoPath = user.photo_path;
+    //   }
+    //   state.user = user;
+    // });
   },
 });
 

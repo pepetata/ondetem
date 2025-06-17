@@ -59,11 +59,11 @@ const UserForm = ({ user }) => {
       );
   const validationSchema = buildValidationSchema(filteredFields, isNewUser);
 
-  useEffect(() => {
-    if (!user) {
-      dispatch(fetchUserThunk());
-    }
-  }, [user, dispatch]);
+  // useEffect(() => {
+  //   if (!user) {
+  //     dispatch(fetchUserThunk());
+  //   }
+  // }, [user, dispatch]);
 
   const handleCancel = () => {
     console.log(`canceling`);
