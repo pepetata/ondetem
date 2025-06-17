@@ -37,8 +37,8 @@ userFormFields.useragreement.label = (
 );
 // console.log(`Initial values for user form:`, userFormFields);
 
-const isNewUser = false; //!currentUser;
-const validationSchema = buildValidationSchema(userFormFields, isNewUser);
+// const isNewUser = false; //!currentUser;
+// const validationSchema = buildValidationSchema(userFormFields, isNewUser);
 
 ///////////////////////////////////////////////////////////////////////
 const UserForm = ({ user }) => {
@@ -48,6 +48,16 @@ const UserForm = ({ user }) => {
   const { loading, error, userId } = useSelector((state) => state.user);
   const navigate = useNavigate();
   console.log(`UserForm mounted with user:`, user);
+
+  const isNewUser = !user;
+  const filteredFields = isNewUser
+    ? userFormFields
+    : Object.fromEntries(
+        Object.entries(userFormFields).filter(
+          ([k, v]) => v.name !== "useragreement"
+        )
+      );
+  const validationSchema = buildValidationSchema(filteredFields, isNewUser);
 
   useEffect(() => {
     if (!user) {

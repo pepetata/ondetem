@@ -28,7 +28,7 @@ router.post("/login", async (req, res) => {
     fullName: user.full_name,
     nickname: user.nickname,
     email: user.email,
-    photo: user.photo_path,
+    photoPath: user.photo_path,
   };
 
   const token = jwt.sign(

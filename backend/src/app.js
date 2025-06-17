@@ -9,10 +9,15 @@ const cors = require("cors");
 const express = require("express");
 const usersRouter = require("./routes/users");
 const authRouter = require("./routes/auth");
+const path = require("path");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Serve uploads as static files
+app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
+
 app.use("/api/users", usersRouter);
 app.use("/api/auth", authRouter);
 

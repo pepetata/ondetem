@@ -4,12 +4,17 @@ import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../redux/authSlice";
 import "../scss/Menu.scss";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 const Menu = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
-  const userPhoto = user && user.photo ? user.photo : "/images/user.png";
+  const userPhoto =
+    user && user.photoPath
+      ? `${API_BASE_URL}/${user.photoPath.replace(/\\/g, "/").replace(/^\/+/, "")}`
+      : "/images/user.png";
 
   const handleLogout = () => {
     if (window.confirm("Tem certeza que deseja encerrar sua sessão?")) {
@@ -18,6 +23,7 @@ const Menu = () => {
     }
   };
 
+  console.log(`User logged in:`, user);
   return (
     <Navbar expand="lg" fixed="top" className="py-2 navbar-bg-logo">
       <Container>
