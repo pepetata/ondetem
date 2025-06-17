@@ -18,7 +18,7 @@ const Menu = (props) => {
   const handleLogin = () => navigate("/login");
   const handleFavorites = () => navigate("/favorites");
   const handleAds = () => navigate("/my-ads");
-  const handleProfile = () => navigate("/profile");
+  const handleProfile = () => navigate("/user");
   const handleLogout = () => {
     if (window.confirm("Tem certeza que deseja encerrar sua sessã?")) {
       dispatch(logout()); // <-- Correct: dispatch the action!

@@ -9,7 +9,7 @@ import {
   updateUserThunk,
   fetchUserThunk,
 } from "../../redux/userSlice";
-
+import { setUser } from "../../redux/authSlice";
 import Notification from "../../components/Notification.jsx";
 import OTButton from "../../components/OTButton.jsx";
 import FormInput from "../../components/FormInput.jsx";
@@ -37,7 +37,8 @@ userFormFields.useragreement.label = (
 );
 // console.log(`Initial values for user form:`, userFormFields);
 
-const validationSchema = buildValidationSchema(userFormFields);
+const isNewUser = false; //!currentUser;
+const validationSchema = buildValidationSchema(userFormFields, isNewUser);
 
 ///////////////////////////////////////////////////////////////////////
 const UserForm = ({ user }) => {
@@ -46,14 +47,13 @@ const UserForm = ({ user }) => {
   const reduxUser = useSelector((state) => state.user.user); // <-- get user from Redux if not passed as prop
   const { loading, error, userId } = useSelector((state) => state.user);
   const navigate = useNavigate();
-  // const user = useSelector((state) => state.auth.user);
+  console.log(`UserForm mounted with user:`, user);
 
-  console.log(`User:`, user);
   useEffect(() => {
-    if (!user && !reduxUser) {
+    if (!user) {
       dispatch(fetchUserThunk());
     }
-  }, [user, reduxUser, dispatch]);
+  }, [user, dispatch]);
 
   const handleCancel = () => {
     console.log(`canceling`);
@@ -65,22 +65,35 @@ const UserForm = ({ user }) => {
     console.log(`Submitting form with values:`, values);
     const formData = new FormData();
     Object.entries(values).forEach(([key, value]) => {
-      if (key !== "confirmpassword" && key !== "useragreement") {
-        // Exclude confirmpassword and useragreement
+      if (
+        key !== "confirmpassword" &&
+        key !== "useragreement" &&
+        !(key === "password" && !value)
+      ) {
         formData.append(key, value);
       }
     });
-    if (userId) {
+
+    if (user) {
       // Update existing user
-      await dispatch(updateUserThunk({ userId, formData }));
+      const updatedUser = await dispatch(
+        updateUserThunk({ userId: user.id, formData })
+      );
+      if (updateUserThunk.fulfilled.match(updatedUser)) {
+        console.log(`User updated:`, updatedUser.payload);
+        // Update auth.user in Redux
+        dispatch(setUser(updatedUser.payload));
+        // Update storage for persistence
+        localStorage.setItem("user", JSON.stringify(updatedUser.payload));
+        sessionStorage.setItem("user", JSON.stringify(updatedUser.payload));
+      }
     } else {
       // Create new user
       await dispatch(createUserThunk(formData));
     }
   };
 
-  // Use user prop, then reduxUser, then fallback to empty
-  const currentUser = user || reduxUser;
+  const currentUser = user;
 
   // Build initialValues from user data if available
   const initialValues = currentUser
@@ -106,7 +119,7 @@ const UserForm = ({ user }) => {
       <Formik
         enableReinitialize
         initialValues={initialValues}
-        // validationSchema={validationSchema}
+        validationSchema={validationSchema}
         validateOnBlur={true}
         validateOnChange={true}
         onSubmit={handleSubmit}
@@ -124,22 +137,28 @@ const UserForm = ({ user }) => {
               <Row className="userData">
                 <Col md={6}>
                   <h3>Informe seus dados:</h3>
-                  {Object.values(userFormFields).map((field) => (
-                    <Field name={field.name} key={field.name}>
-                      {({ field: formikField, form }) => (
-                        <FormInput
-                          field={formikField}
-                          form={form}
-                          label={field.label}
-                          type={field.type}
-                          placeholder={field.placeholder}
-                          maxLength={field.maxLength}
-                          minLength={field.minLength}
-                          required={field.required}
-                        />
-                      )}
-                    </Field>
-                  ))}
+                  {Object.values(userFormFields)
+                    .filter(
+                      (field) =>
+                        // Hide useragreement if editing an existing user
+                        !(field.name === "useragreement" && currentUser)
+                    )
+                    .map((field) => (
+                      <Field name={field.name} key={field.name}>
+                        {({ field: formikField, form }) => (
+                          <FormInput
+                            field={formikField}
+                            form={form}
+                            label={field.label}
+                            type={field.type}
+                            placeholder={field.placeholder}
+                            maxLength={field.maxLength}
+                            minLength={field.minLength}
+                            required={field.required}
+                          />
+                        )}
+                      </Field>
+                    ))}
                   {/* <Form.Group>
                     <Field
                       name="useragreement"

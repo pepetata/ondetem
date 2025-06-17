@@ -22,6 +22,12 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route
+            path="/signup"
+            element={
+              user ? <Navigate to="/login" replace /> : <UserForm user={user} />
+            }
+          />
+          <Route
             path="/user"
             element={
               user ? <UserForm user={user} /> : <Navigate to="/login" replace />

@@ -48,21 +48,16 @@ const userFormFields = {
 // Dynamically generate lengthError for each field
 Object.values(userFormFields).forEach((field) => {
   if (field.minLength && field.maxLength) {
-    field.lengthError = `${field.label.toLowerCase()} deve ter entre ${
-      field.minLength
-    } e ${field.maxLength} caracteres`;
+    field.lengthError = `${field.label} deve ter entre ${field.minLength} e ${field.maxLength} caracteres!`;
   } else if (field.minLength) {
-    field.lengthError = `${field.label.toLowerCase()} deve ter no mínimo ${
-      field.minLength
-    } caracteres`;
+    field.lengthError = `${field.label} deve ter no mínimo ${field.minLength} caracteres!`;
   } else if (field.maxLength) {
-    field.lengthError = `${field.label.toLowerCase()} deve ter no máximo ${
-      field.maxLength
-    } caracteres`;
+    field.lengthError = `${field.label} deve ter no máximo ${field.maxLength} caracteres!`;
   }
   if (field.required && !field.requiredError) {
-    field.requiredError = `${field.label.toLowerCase()} é obrigatório`;
+    field.requiredError = `${field.label} é obrigatório!`;
   }
+  console.log(`file=`, field.name, `, field=`, field);
 });
 
 module.exports = { userFormFields };

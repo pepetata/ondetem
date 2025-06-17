@@ -5,8 +5,6 @@ const { buildJoiSchema } = require("./buildJoiSchema");
 const { userFormFields } = require("../formfields/userFormFields");
 const e = require("express");
 
-const userSchema = buildJoiSchema(userFormFields);
-
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await userModel.getAllUsers();
@@ -66,6 +64,7 @@ exports.getCurrentUser = async (req, res) => {
 };
 
 exports.createUser = async (req, res) => {
+  const userSchema = buildJoiSchema(userFormFields);
   const { error } = userSchema.validate(req.body);
   if (error) {
     return res.status(400).json({ error: error.details[0].message });
@@ -81,7 +80,10 @@ exports.createUser = async (req, res) => {
       return res.status(409).json({ error: "E-mail já cadastrado." });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    let passwordHash;
+    if (password) {
+      passwordHash = await bcrypt.hash(password, 10);
+    }
 
     const userId = await userModel.createUser({
       fullName,
@@ -100,7 +102,16 @@ exports.createUser = async (req, res) => {
 };
 
 exports.updateUser = async (req, res) => {
-  const { error } = userSchema.validate(req.body);
+  // pw can be empty if updating other fields
+  // Clone userFormFields and set password.required = false
+  console.log(`updateUser`);
+  const updateFields = {
+    ...userFormFields,
+    password: { ...userFormFields.password, required: false },
+  };
+  const updateSchema = buildJoiSchema(updateFields);
+
+  const { error } = updateSchema.validate(req.body);
   if (error) {
     return res.status(400).json({ error: error.details[0].message });
   }
@@ -127,7 +138,12 @@ exports.updateUser = async (req, res) => {
 
     // Fetch the updated user
     const updatedUser = await userModel.getUserById(userId);
+    if (!updatedUser) {
+      logger.warn(`User not found for update: ${userId}`);
+      return res.status(404).json({ error: "User not found" });
+    }
 
+    console.log(`User updated:`, updatedUser);
     logger.info(`User updated: ${email}`);
     res.status(200).json(updatedUser);
   } catch (err) {

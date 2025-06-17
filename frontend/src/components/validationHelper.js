@@ -1,6 +1,6 @@
 import * as Yup from "yup";
 
-export const buildValidationSchema = (fields) => {
+export const buildValidationSchema = (fields, isNewUser) => {
   const shape = {};
 
   Object.values(fields).forEach((field) => {
@@ -19,16 +19,27 @@ export const buildValidationSchema = (fields) => {
       if (field.required) {
         validator = validator.required(field.requiredError || "Obrigatório");
       }
+    } else if (field.name === "password") {
+      validator = Yup.string();
+      if (isNewUser) {
+        validator = validator.required(field.requiredError || "Obrigatório");
+      }
+    } else if (field.name === "confirmpassword") {
+      validator = Yup.string().when("password", {
+        is: (val) => !!val,
+        then: (schema) =>
+          schema
+            .required(field.requiredError || "Obrigatório")
+            .oneOf(
+              [Yup.ref("password"), null],
+              field.passwordError || "Senhas não coincidem"
+            ),
+        otherwise: (schema) => schema.notRequired(),
+      });
     } else {
       validator = Yup.string();
       if (field.required) {
         validator = validator.required(field.requiredError || "Obrigatório");
-      }
-      if (field.name === "confirmpassword") {
-        validator = validator.oneOf(
-          [Yup.ref("password"), null],
-          field.passwordError || "Senhas não coincidem"
-        );
       }
     }
 

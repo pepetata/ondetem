@@ -26,7 +26,7 @@ const initialState = {
 
 export const loginThunk = createAsyncThunk(
   "auth/login",
-  async ({ email, password }, { rejectWithValue }) => {
+  async ({ email, password }, { dispatch, rejectWithValue }) => {
     try {
       const data = await loginAPI(email, password);
       return data;

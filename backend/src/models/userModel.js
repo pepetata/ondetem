@@ -88,5 +88,11 @@ exports.updateUser = async ({
   values.push(userId);
 
   const setClause = fields.join(", ");
+  console.log(
+    `Updating user ${userId} with values: ${values} and clause: ${setClause} idx=${idx}`
+  );
+  console.log(
+    `Updating user ==> UPDATE users SET ${setClause} WHERE id = ${userId}`
+  );
   await pool.query(`UPDATE users SET ${setClause} WHERE id = $${idx}`, values);
 };
