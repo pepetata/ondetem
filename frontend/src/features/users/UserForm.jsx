@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useMemo } from "react";
 import { Formik, Form as FormikForm, Field } from "formik";
 import { Form, Row, Col, Image } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
@@ -47,6 +47,8 @@ const UserForm = ({ user }) => {
   const reduxUser = useSelector((state) => state.user.user); // <-- get user from Redux if not passed as prop
   const { loading, error, userId } = useSelector((state) => state.user);
   const navigate = useNavigate();
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
   console.log(`UserForm mounted with user:`, user);
 
   const isNewUser = !user;
@@ -57,6 +59,7 @@ const UserForm = ({ user }) => {
           ([k, v]) => v.name !== "useragreement"
         )
       );
+
   const validationSchema = buildValidationSchema(filteredFields, isNewUser);
 
   // useEffect(() => {
@@ -142,6 +145,16 @@ const UserForm = ({ user }) => {
           errors,
           touched,
         }) => {
+          const photoUrl = useMemo(() => {
+            if (values.photo) {
+              if (typeof values.photo === "string") return values.photo;
+              return URL.createObjectURL(values.photo);
+            }
+            if (user && user.photoPath) {
+              return `${API_BASE_URL}/${user.photoPath.replace(/\\/g, "/").replace(/^\/+/, "")}`;
+            }
+            return defaultImg;
+          }, [values.photo, user]);
           return (
             <FormikForm id="signup" onSubmit={handleSubmit}>
               <Row className="userData">
@@ -192,18 +205,7 @@ const UserForm = ({ user }) => {
                 </Col>
                 <Col md={6}>
                   <div id="image_preview">
-                    <Image
-                      id="previewing"
-                      src={
-                        values.photo
-                          ? typeof values.photo === "string"
-                            ? values.photo
-                            : URL.createObjectURL(values.photo)
-                          : defaultImg
-                      }
-                      rounded
-                      fluid
-                    />
+                    <Image id="previewing" src={photoUrl} rounded fluid />
                   </div>
                   <div id="selectImage" className="mt-3">
                     <Form.Label htmlFor="photo">Selecione sua foto</Form.Label>

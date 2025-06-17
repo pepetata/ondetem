@@ -4,21 +4,12 @@ import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../redux/authSlice";
 import "../scss/Menu.scss";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-
 const Menu = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
-  const isSignup = location.pathname === "/signup";
-  const isLogin = location.pathname === "/login";
-  console.log(`isSignup:`, isSignup);
-  console.log(`isLogin:`, isLogin);
-
-  const userPhoto =
-    user && user.photoPath
-      ? `${API_BASE_URL}/${user.photoPath.replace(/\\/g, "/").replace(/^\/+/, "")}`
-      : "/images/user.png";
+  const userPhoto = user && user.photo ? user.photo : "/images/user.png";
 
   const handleLogout = () => {
     if (window.confirm("Tem certeza que deseja encerrar sua sessão?")) {
@@ -27,13 +18,12 @@ const Menu = () => {
     }
   };
 
-  console.log(`User logged in:`, user);
   return (
     <Navbar expand="lg" fixed="top" className="py-2 navbar-bg-logo">
       <Container>
         {/* Logo always visible at the top */}
         <Navbar.Brand as={Link} to="/" className="mx-auto d-lg-none">
-          <img src="/images/logo.png" alt="Onde tem?" className="logo-img" />
+          <img src="/images/logo.png" alt="Onde tem?" height="48" />
         </Navbar.Brand>
 
         <Navbar.Toggle aria-controls="main-navbar-nav" />
@@ -67,16 +57,12 @@ const Menu = () => {
               to="/"
               className="mx-auto d-none d-lg-block"
             >
-              <img
-                src="/images/logo.png"
-                alt="Onde tem?"
-                className="logo-img"
-              />
+              <img src="/images/logo.png" alt="Onde tem?" height="48" />
             </Navbar.Brand>
 
             {/* Right: Icons or menu items */}
             <div className="d-flex flex-column flex-lg-row align-items-center">
-              {user && (
+              {user ? (
                 <>
                   {/* Small screens: icon + text */}
                   <Nav.Link
@@ -96,7 +82,7 @@ const Menu = () => {
                       src={userPhoto}
                       alt=""
                       height="24"
-                      className="menu-user-photo"
+                      style={{ borderRadius: "50%" }}
                     />{" "}
                     Meu Perfil
                   </Nav.Link>
@@ -110,11 +96,13 @@ const Menu = () => {
                     className="menu-icon-btn d-none d-lg-inline"
                     onClick={() => navigate("/favorites")}
                     title="Lista de meus favoritos"
+                    style={{ padding: 0, border: "none", background: "none" }}
                   >
                     <img
                       src="/images/twohearts35.png"
                       alt="Meus Favoritos"
                       height="40"
+                      style={{ marginRight: 8 }}
                     />
                   </Button>
                   <Button
@@ -122,11 +110,13 @@ const Menu = () => {
                     className="menu-icon-btn d-none d-lg-inline"
                     onClick={() => navigate("/my-ads")}
                     title="Lista de meus anúncios"
+                    style={{ padding: 0, border: "none", background: "none" }}
                   >
                     <img
                       src="/images/portfolio.png"
                       alt="Meus Anúncios"
                       height="40"
+                      style={{ marginRight: 8 }}
                     />
                   </Button>
                   <Button
@@ -134,12 +124,18 @@ const Menu = () => {
                     className="menu-icon-btn d-none d-lg-inline"
                     onClick={() => navigate("/user")}
                     title="Alterar meus dados"
+                    style={{ padding: 0, border: "none", background: "none" }}
                   >
                     <img
                       src={userPhoto}
                       alt="Alterar meus dados"
                       height="40"
-                      className="menu-user-photo"
+                      style={{
+                        marginRight: 8,
+                        borderRadius: "50%",
+                        border: "2px solid #ccc",
+                        objectFit: "cover",
+                      }}
                     />
                   </Button>
                   <Button
@@ -147,6 +143,7 @@ const Menu = () => {
                     className="menu-icon-btn d-none d-lg-inline"
                     onClick={handleLogout}
                     title="Encerrar sessão"
+                    style={{ padding: 0, border: "none", background: "none" }}
                   >
                     <img
                       src="/images/logout.png"
@@ -155,23 +152,39 @@ const Menu = () => {
                     />
                   </Button>
                 </>
-              )}
-              {!user && !isSignup && (
+              ) : (
                 <>
-                  {!isLogin && (
-                    <Button
-                      variant="link"
-                      className="menu-icon-btn mb-2"
-                      onClick={() => navigate("/login")}
-                      title="Entrar"
-                    >
-                      <img src="/images/entrar.png" alt="Entrar" height="48" />
-                    </Button>
-                  )}
+                  <Nav.Link
+                    onClick={() => navigate("/login")}
+                    className="d-lg-none mb-2"
+                  >
+                    Entrar
+                  </Nav.Link>
+                  <Nav.Link
+                    onClick={() => navigate("/signup")}
+                    className="d-lg-none mb-2"
+                  >
+                    Registre-se
+                  </Nav.Link>
                   <Button
                     variant="link"
-                    className="menu-icon-btn mb-2"
+                    className="menu-icon-btn d-none d-lg-inline"
+                    onClick={() => navigate("/login")}
+                    style={{ padding: 0, border: "none", background: "none" }}
+                    title="Entrar"
+                  >
+                    <img
+                      src="/images/entrar.png"
+                      alt="Entrar"
+                      height="48"
+                      style={{ marginRight: 8 }}
+                    />
+                  </Button>
+                  <Button
+                    variant="link"
+                    className="menu-icon-btn d-none d-lg-inline"
                     onClick={() => navigate("/signup")}
+                    style={{ padding: 0, border: "none", background: "none" }}
                     title="Registre-se"
                   >
                     <img
