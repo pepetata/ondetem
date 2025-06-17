@@ -1,237 +1,243 @@
 import { Navbar, Nav, Button, Container } from "react-bootstrap";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import PropTypes from "prop-types";
-// import { useAuth } from "../context/AuthContext";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../redux/authSlice";
 import "../scss/Menu.scss";
 
-const Menu = (props) => {
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
+const Menu = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
+  const location = useLocation();
   const isSignup = location.pathname === "/signup";
   const isLogin = location.pathname === "/login";
 
-  const handleSignup = () => navigate("/signup");
-  const handleLogin = () => navigate("/login");
-  const handleFavorites = () => navigate("/favorites");
-  const handleAds = () => navigate("/my-ads");
-  const handleProfile = () => navigate("/user");
+  const userPhoto =
+    user && user.photoPath
+      ? `${API_BASE_URL}/${user.photoPath.replace(/\\/g, "/").replace(/^\/+/, "")}`
+      : "/images/user.png";
+
   const handleLogout = () => {
-    if (window.confirm("Tem certeza que deseja encerrar sua sessã?")) {
-      dispatch(logout()); // <-- Correct: dispatch the action!
+    if (window.confirm("Tem certeza que deseja encerrar sua sessão?")) {
+      dispatch(logout());
       navigate("/");
     }
   };
+  const handleFavorites = () => {
+    if (user) {
+      navigate("/favorites");
+    }
+  };
+  const handleMyAds = () => {
+    if (user) {
+      navigate("/my-ads");
+    }
+  };
+  const handleProfile = () => {
+    if (user) {
+      navigate("/user");
+    }
+  };
+  const handleLogin = () => {
+    if (!user) {
+      navigate("/login");
+    }
+  };
+  const handleSignup = () => {
+    if (!user) {
+      navigate("/signup");
+    }
+  };
 
-  // User photo logic
-  const userPhoto = user && user.photo ? user.photo : "/images/user.png";
-
-  console.log("User:", user);
-  console.log(`isSignup: ${isSignup}, isLogin: ${isLogin}`);
   return (
-    <Navbar
-      expand="lg"
-      fixed="top"
-      className="py-2 navbar-bg-logo"
-      // style={{ top: 64 }}
-    >
-      <Container className="navbar-content">
-        {/* Left side buttons */}
-        <Nav className="align-items-center d-none d-lg-flex">
-          <Button
-            as={Link}
-            to="/"
-            variant="outline-primary"
-            className="me-2 menu-btn"
-            onClick={() => setShowUserForm(false)}
-          >
-            Home
-          </Button>
-          {!isLogin && (
-            <Button
-              variant="outline-success"
-              className="me-2 menu-btn bt-add-ad"
-              // onClick={onNewAd}
-            >
-              Anuncie Grátis
-            </Button>
-          )}
-        </Nav>
+    <Navbar expand="lg" fixed="top" className="py-2 navbar-bg-logo">
+      <Container>
+        {/* Logo always visible at the top */}
+        <Navbar.Brand as={Link} to="/" className="mx-auto d-lg-none">
+          <img
+            src="/images/logo.png"
+            alt="Onde tem?"
+            className="logo-img"
+            aria-hidden="true"
+          />
+        </Navbar.Brand>
 
-        {/* Logo */}
-        <div className="navbar-center">
-          <Link to="/" className="d-flex align-items-center">
-            <img
-              src="/images/logo.png"
-              alt="Onde tem?"
-              className="logo-img"
-              height="48"
-            />
-          </Link>
-        </div>
+        <Navbar.Toggle aria-controls="main-navbar-nav" />
 
-        <Navbar.Toggle
-          aria-controls="main-navbar-nav"
-          className="ms-2 d-lg-none navbar-toggle-custom"
-        />
-
-        {/* Right side buttons */}
-        <Nav className="align-items-center ms-auto">
-          {!isSignup && !user && (
-            <>
-              {!isLogin && (
-                <Button
-                  variant="link"
-                  className="menu-icon-btn"
-                  onClick={handleLogin}
-                  style={{ padding: 0, border: "none", background: "none" }}
-                  title="Entrar"
-                >
-                  <img
-                    src="/images/entrar.png"
-                    alt="Entrar"
-                    height="48"
-                    style={{ marginRight: 8 }}
-                  />
-                </Button>
-              )}
+        <Navbar.Collapse id="main-navbar-nav">
+          {/* Left: Home & Anuncie Grátis, Center: Logo, Right: Icons or menu items */}
+          <div className="w-100 d-flex flex-column flex-lg-row align-items-center justify-content-between">
+            {/* Left: Home & Anuncie Grátis */}
+            <div className="d-flex flex-column flex-lg-row align-items-center">
               <Button
-                variant="link"
-                className="menu-icon-btn"
-                onClick={handleSignup}
-                style={{ padding: 0, border: "none", background: "none" }}
-                title="Registre-se"
+                as={Link}
+                to="/"
+                variant="outline-primary"
+                className="me-0 me-lg-2 mb-2 mb-lg-0 menu-btn"
               >
-                <img
-                  src="/images/registrar.png"
-                  alt="Registre-se"
-                  height="48"
-                />
-              </Button>
-            </>
-          )}
-
-          {/* Show these if user is logged in */}
-          {user && (
-            <>
-              <Button
-                variant="link"
-                className="menu-icon-btn"
-                onClick={handleFavorites}
-                style={{ padding: 0, border: "none", background: "none" }}
-                title="Lista de meus favoritos"
-              >
-                <img
-                  src="/images/twohearts35.png"
-                  alt="Meus Favoritos"
-                  height="40"
-                  style={{ marginRight: 8 }}
-                />
+                Home
               </Button>
               <Button
-                variant="link"
-                className="menu-icon-btn"
-                onClick={handleAds}
-                style={{ padding: 0, border: "none", background: "none" }}
-                title="Lista de meus anúncios"
-              >
-                <img
-                  src="/images/portfolio.png"
-                  alt="Meus Anúncios"
-                  height="40"
-                  style={{ marginRight: 8 }}
-                />
-              </Button>
-              <Button
-                variant="link"
-                className="menu-icon-btn"
-                onClick={handleProfile}
-                style={{ padding: 0, border: "none", background: "none" }}
-                title="Alterar meus dados"
-              >
-                <img
-                  src={userPhoto}
-                  alt="Alterar meus dados"
-                  height="40"
-                  style={{
-                    marginRight: 8,
-                    borderRadius: "50%",
-                    border: "2px solid #ccc",
-                    objectFit: "cover",
-                  }}
-                />
-              </Button>
-              <Button
-                variant="link"
-                className="menu-icon-btn"
-                onClick={handleLogout}
-                style={{ padding: 0, border: "none", background: "none" }}
-                title="Encerrar sessão"
-              >
-                <img
-                  src="/images/logout.png"
-                  alt="Encerrar sessão"
-                  height="40"
-                />
-              </Button>
-            </>
-          )}
-        </Nav>
-
-        {/* Collapsible content for mobile */}
-        <Navbar.Collapse id="main-navbar-nav" className="d-lg-none">
-          <Nav className="flex-column align-items-center w-100">
-            <Button
-              as={Link}
-              to="/"
-              variant="outline-primary"
-              className="my-2 menu-btn"
-            >
-              Home
-            </Button>
-            {!isLogin && (
-              <Button
+                as={Link}
+                to="/anuncie"
                 variant="outline-success"
-                className="me-2 menu-btn bt-add-ad"
-                // onClick={onNewAd}
+                className="mb-2 mb-lg-0 menu-btn bt-add-ad"
               >
                 Anuncie Grátis
               </Button>
-            )}
-            {!isSignup && (
-              <>
-                {!isLogin && !user && (
-                  <Button
-                    variant="outline-primary"
-                    className="my-2 menu-btn"
-                    onClick={handleLogin}
+            </div>
+
+            {/* Center: Logo (only on large screens) */}
+            <Navbar.Brand
+              as={Link}
+              to="/"
+              className="mx-auto d-none d-lg-block"
+            >
+              <img
+                src="/images/logo.png"
+                alt="Onde tem?"
+                className="logo-img"
+                aria-hidden="true"
+              />
+            </Navbar.Brand>
+
+            {/* Right: Icons or menu items */}
+            <div className="d-flex flex-column flex-lg-row align-items-center">
+              {user && (
+                <>
+                  {/* Small screens: icon + text */}
+                  <Nav.Link
+                    as={Link}
+                    to="/favorites"
+                    className="d-lg-none mb-2"
                   >
-                    Entrar
-                  </Button>
-                )}
-                {!user && (
+                    <img
+                      src="/images/twohearts35.png"
+                      alt="Meus Favoritos"
+                      height="24"
+                      aria-hidden="true"
+                    />{" "}
+                    Meus Favoritos
+                  </Nav.Link>
+                  <Nav.Link as={Link} to="/my-ads" className="d-lg-none mb-2">
+                    <img
+                      src="/images/portfolio.png"
+                      alt="Meus Anúncios"
+                      height="24"
+                      aria-hidden="true"
+                    />{" "}
+                    Meus Anúncios
+                  </Nav.Link>
+                  <Nav.Link as={Link} to="/user" className="d-lg-none mb-2">
+                    <img
+                      src={userPhoto}
+                      alt="Meu Perfil"
+                      height="24"
+                      className="menu-user-photo"
+                      aria-hidden="true"
+                    />{" "}
+                    Meu Perfil
+                  </Nav.Link>
+                  <Nav.Link onClick={handleLogout} className="d-lg-none mb-2">
+                    <img
+                      src="/images/logout.png"
+                      alt="Encerrar Sessão"
+                      height="24"
+                      aria-hidden="true"
+                    />{" "}
+                    Encerrar Sessão
+                  </Nav.Link>
+                  {/* Large screens: icons only */}
                   <Button
-                    variant="primary"
+                    variant="link"
+                    className="menu-icon-btn d-none d-lg-inline"
+                    onClick={handleFavorites}
+                    title="Lista de meus favoritos"
+                  >
+                    <img
+                      src="/images/twohearts35.png"
+                      alt="Meus Favoritos"
+                      height="40"
+                      aria-hidden="true"
+                    />
+                  </Button>
+                  <Button
+                    variant="link"
+                    className="menu-icon-btn d-none d-lg-inline"
+                    onClick={handleMyAds}
+                    title="Lista de meus anúncios"
+                  >
+                    <img
+                      src="/images/portfolio.png"
+                      alt="Meus Anúncios"
+                      height="40"
+                      aria-hidden="true"
+                    />
+                  </Button>
+                  <Button
+                    variant="link"
+                    className="menu-icon-btn d-none d-lg-inline"
+                    onClick={handleProfile}
+                    title="Alterar meus dados"
+                  >
+                    <img
+                      src={userPhoto}
+                      alt="Alterar meus dados"
+                      height="40"
+                      className="menu-user-photo"
+                      aria-hidden="true"
+                    />
+                  </Button>
+                  <Button
+                    variant="link"
+                    className="menu-icon-btn d-none d-lg-inline"
+                    onClick={handleLogout}
+                    title="Encerrar sessão"
+                  >
+                    <img
+                      src="/images/logout.png"
+                      alt="Encerrar sessão"
+                      height="40"
+                      aria-hidden="true"
+                    />
+                  </Button>
+                </>
+              )}
+              {!user && !isSignup && (
+                <>
+                  {!isLogin && (
+                    <Button
+                      variant="link"
+                      className="menu-icon-btn mb-2"
+                      onClick={handleLogin}
+                      title="Entrar"
+                    >
+                      <img src="/images/entrar.png" alt="Entrar" height="48" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="link"
+                    className="menu-icon-btn mb-2"
                     onClick={handleSignup}
-                    className="my-2 menu-btn"
+                    title="Registre-se"
                   >
-                    Registre-se
+                    <img
+                      src="/images/registrar.png"
+                      alt="Registre-se"
+                      height="48"
+                      aria-hidden="true"
+                    />
                   </Button>
-                )}
-              </>
-            )}
-          </Nav>
+                </>
+              )}
+            </div>
+          </div>
         </Navbar.Collapse>
       </Container>
     </Navbar>
   );
-};
-Menu.propTypes = {
-  showUserForm: PropTypes.any,
-  setShowUserForm: PropTypes.any,
 };
 
 export default Menu;

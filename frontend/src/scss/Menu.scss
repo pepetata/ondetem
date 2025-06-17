@@ -84,6 +84,40 @@
   object-fit: cover;
 }
 
+.home-btn {
+  min-width: 140px;
+  padding: 10px 24px !important;
+  font-size: 1.1rem !important;
+  font-weight: bold !important;
+  line-height: 0.75 !important;
+  color: #0d6efd !important;
+  background-color: transparent !important; // transparent background
+  border: 2px solid #0d6efd !important;
+  border-radius: 0.5rem !important;
+  text-align: center;
+  text-decoration: none !important;
+  transition:
+    color 0.15s,
+    background-color 0.15s,
+    border-color 0.15s;
+
+  &:hover,
+  &:focus {
+    color: #fff !important;
+    background-color: #c3bf5e !important;
+    border-color: #0d6efd !important;
+    text-decoration: none !important;
+  }
+}
+
+.home-btn:hover,
+.home-btn:focus {
+  color: #fff !important;
+  background-color: rgba(246, 179, 80, 0.85) !important;
+  border-color: #0d6efd !important;
+  text-decoration: none !important;
+}
+
 @media (max-width: 991.98px) {
   .navbar-toggle-custom {
     position: absolute;
