@@ -154,9 +154,21 @@ const Menu = () => {
                 </>
               ) : (
                 <>
+                  <Nav.Link
+                    onClick={() => navigate("/login")}
+                    className="d-lg-none mb-2"
+                  >
+                    Entrar
+                  </Nav.Link>
+                  <Nav.Link
+                    onClick={() => navigate("/signup")}
+                    className="d-lg-none mb-2"
+                  >
+                    Registre-se
+                  </Nav.Link>
                   <Button
                     variant="link"
-                    className="menu-icon-btn mb-2"
+                    className="menu-icon-btn d-none d-lg-inline"
                     onClick={() => navigate("/login")}
                     style={{ padding: 0, border: "none", background: "none" }}
                     title="Entrar"
@@ -170,7 +182,7 @@ const Menu = () => {
                   </Button>
                   <Button
                     variant="link"
-                    className="menu-icon-btn mb-2"
+                    className="menu-icon-btn d-none d-lg-inline"
                     onClick={() => navigate("/signup")}
                     style={{ padding: 0, border: "none", background: "none" }}
                     title="Registre-se"
