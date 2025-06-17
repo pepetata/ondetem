@@ -4,15 +4,73 @@ import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
 import Menu from "../src/components/Menu";
 import { store } from "../src/redux/store";
+import { configureStore } from "@reduxjs/toolkit";
+import authReducer from "../src/redux/authSlice";
 
-// Helper to render with providers
-function renderWithProviders(ui) {
+// Helper to render with custom store
+function renderWithProviders(ui, { preloadedState } = {}) {
+  const store = configureStore({
+    reducer: { auth: authReducer },
+    preloadedState,
+  });
   return render(
     <Provider store={store}>
       <BrowserRouter>{ui}</BrowserRouter>
     </Provider>
   );
 }
+
+describe("Menu component (logged in)", () => {
+  const user = {
+    id: 1,
+    fullName: "Test User",
+    nickname: "Test",
+    email: "test@example.com",
+    photoPath: "uploads/testphoto.jpg",
+  };
+
+  test("shows logged-in user buttons/icons", () => {
+    renderWithProviders(<Menu />, {
+      preloadedState: { auth: { user, token: "fake-token" } },
+    });
+
+    // Small screen: should show text+icon links
+    // Large screen: should show icon buttons with titles
+
+    // Test large screen icons (by title)
+    expect(screen.getByTitle(/Lista de meus favoritos/i)).toBeInTheDocument();
+    expect(screen.getByTitle(/Lista de meus anúncios/i)).toBeInTheDocument();
+    expect(screen.getByTitle(/Alterar meus dados/i)).toBeInTheDocument();
+    expect(screen.getByTitle(/Encerrar sessão/i)).toBeInTheDocument();
+
+    // Test click on logout button (simulate user action)
+    const logoutBtn = screen.getByTitle(/Encerrar sessão/i);
+    // Mock window.confirm to always return true
+    window.confirm = vi.fn(() => true);
+    fireEvent.click(logoutBtn);
+    expect(window.confirm).toHaveBeenCalled();
+  });
+
+  test("shows mobile menu items when expanded", () => {
+    // Simulate mobile viewport
+    window.innerWidth = 375;
+    window.dispatchEvent(new Event("resize"));
+
+    renderWithProviders(<Menu />, {
+      preloadedState: { auth: { user, token: "fake-token" } },
+    });
+
+    // Open the collapsed menu
+    const toggle = screen.getByLabelText(/toggle navigation/i);
+    fireEvent.click(toggle);
+
+    // Now check for the mobile menu items (with text)
+    expect(screen.getByText(/Meus Favoritos/i)).toBeInTheDocument();
+    expect(screen.getByText(/Meus Anúncios/i)).toBeInTheDocument();
+    expect(screen.getByText(/Meu Perfil/i)).toBeInTheDocument();
+    expect(screen.getByText(/Encerrar Sessão/i)).toBeInTheDocument();
+  });
+});
 
 describe("Menu component (not logged in)", () => {
   test("renders Home and Anuncie Grátis buttons", () => {

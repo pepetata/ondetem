@@ -12,12 +12,8 @@
   top: 0;
   left: 0;
   height: 64px;
-  // border-bottom: 1px solid #eee;
 }
 
-// .navbar {
-//   background: $header-color !important;
-// }
 .navbar-bg-logo {
   background: rgba(255, 214, 153, 0.85) !important;
   min-height: 80px;
@@ -46,10 +42,6 @@
   max-height: 48px;
 }
 
-.logo-img {
-  max-height: 48px;
-}
-
 .menu-btn {
   min-width: 110px;
   padding: 6px 16px !important;
@@ -67,29 +59,51 @@
   color: crimson !important;
 }
 
+.menu-icon-btn {
+  padding: 0 !important;
+  border: none !important;
+  background: none !important;
+  margin-right: 8px !important;
+  margin-bottom: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.menu-icon-btn img {
+  margin-right: 8px;
+}
+
+.menu-icon-btn:last-child img {
+  margin-right: 0;
+}
+
+.menu-user-photo {
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  object-fit: cover;
+}
+
 @media (max-width: 991.98px) {
   .navbar-toggle-custom {
     position: absolute;
     right: 24px;
     top: 50%;
     transform: translateY(-50%);
-    z-index: 1052; // above the menu
+    z-index: 1052;
   }
   .navbar-center {
     position: relative;
     width: 100%;
     justify-content: flex-start;
   }
+  .logo-img {
+    max-height: 36px;
+  }
 }
 
 @media (min-width: 992px) {
   .navbar .navbar-collapse.d-lg-none {
     display: none !important;
-  }
-}
-
-@media (max-width: 991.98px) {
-  .logo-img {
-    max-height: 36px;
   }
 }

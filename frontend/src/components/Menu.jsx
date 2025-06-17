@@ -29,7 +29,7 @@ const Menu = () => {
       <Container>
         {/* Logo always visible at the top */}
         <Navbar.Brand as={Link} to="/" className="mx-auto d-lg-none">
-          <img src="/images/logo.png" alt="Onde tem?" height="48" />
+          <img src="/images/logo.png" alt="Onde tem?" className="logo-img" />
         </Navbar.Brand>
 
         <Navbar.Toggle aria-controls="main-navbar-nav" />
@@ -63,7 +63,11 @@ const Menu = () => {
               to="/"
               className="mx-auto d-none d-lg-block"
             >
-              <img src="/images/logo.png" alt="Onde tem?" height="48" />
+              <img
+                src="/images/logo.png"
+                alt="Onde tem?"
+                className="logo-img"
+              />
             </Navbar.Brand>
 
             {/* Right: Icons or menu items */}
@@ -88,7 +92,7 @@ const Menu = () => {
                       src={userPhoto}
                       alt=""
                       height="24"
-                      style={{ borderRadius: "50%" }}
+                      className="menu-user-photo"
                     />{" "}
                     Meu Perfil
                   </Nav.Link>
@@ -102,13 +106,11 @@ const Menu = () => {
                     className="menu-icon-btn d-none d-lg-inline"
                     onClick={() => navigate("/favorites")}
                     title="Lista de meus favoritos"
-                    style={{ padding: 0, border: "none", background: "none" }}
                   >
                     <img
                       src="/images/twohearts35.png"
                       alt="Meus Favoritos"
                       height="40"
-                      style={{ marginRight: 8 }}
                     />
                   </Button>
                   <Button
@@ -116,13 +118,11 @@ const Menu = () => {
                     className="menu-icon-btn d-none d-lg-inline"
                     onClick={() => navigate("/my-ads")}
                     title="Lista de meus anúncios"
-                    style={{ padding: 0, border: "none", background: "none" }}
                   >
                     <img
                       src="/images/portfolio.png"
                       alt="Meus Anúncios"
                       height="40"
-                      style={{ marginRight: 8 }}
                     />
                   </Button>
                   <Button
@@ -130,18 +130,12 @@ const Menu = () => {
                     className="menu-icon-btn d-none d-lg-inline"
                     onClick={() => navigate("/user")}
                     title="Alterar meus dados"
-                    style={{ padding: 0, border: "none", background: "none" }}
                   >
                     <img
                       src={userPhoto}
                       alt="Alterar meus dados"
                       height="40"
-                      style={{
-                        marginRight: 8,
-                        borderRadius: "50%",
-                        border: "2px solid #ccc",
-                        objectFit: "cover",
-                      }}
+                      className="menu-user-photo"
                     />
                   </Button>
                   <Button
@@ -149,7 +143,6 @@ const Menu = () => {
                     className="menu-icon-btn d-none d-lg-inline"
                     onClick={handleLogout}
                     title="Encerrar sessão"
-                    style={{ padding: 0, border: "none", background: "none" }}
                   >
                     <img
                       src="/images/logout.png"
@@ -164,21 +157,14 @@ const Menu = () => {
                     variant="link"
                     className="menu-icon-btn mb-2"
                     onClick={() => navigate("/login")}
-                    style={{ padding: 0, border: "none", background: "none" }}
                     title="Entrar"
                   >
-                    <img
-                      src="/images/entrar.png"
-                      alt="Entrar"
-                      height="48"
-                      style={{ marginRight: 8 }}
-                    />
+                    <img src="/images/entrar.png" alt="Entrar" height="48" />
                   </Button>
                   <Button
                     variant="link"
                     className="menu-icon-btn mb-2"
                     onClick={() => navigate("/signup")}
-                    style={{ padding: 0, border: "none", background: "none" }}
                     title="Registre-se"
                   >
                     <img
