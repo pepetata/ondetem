@@ -1,0 +1,79 @@
+import "@testing-library/jest-dom";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { Provider } from "react-redux";
+import { BrowserRouter } from "react-router-dom";
+import UserForm from "../src/features/users/UserForm";
+import { store } from "../src/redux/store";
+import * as userSlice from "../src/redux/userSlice";
+
+// Helper to render with providers
+function renderWithProviders(ui) {
+  return render(
+    <Provider store={store}>
+      <BrowserRouter>{ui}</BrowserRouter>
+    </Provider>
+  );
+}
+
+// vi.mock("../src/redux/userSlice", () => ({
+//   __esModule: true,
+//   default: () => ({}), // mock reducer
+//   createUserThunk: vi.fn(),
+//   updateUserThunk: vi.fn(),
+// }));
+
+describe("UserForm", () => {
+  beforeEach(() => {
+    vi.spyOn(userSlice, "createUserThunk").mockReturnValue({
+      type: "user/create/fulfilled",
+    });
+    vi.spyOn(userSlice, "updateUserThunk").mockReturnValue({
+      type: "user/update/fulfilled",
+    });
+  });
+
+  test("can create a new user", async () => {
+    renderWithProviders(<UserForm />);
+    fireEvent.change(screen.getByLabelText(/Nome Completo/i), {
+      target: { value: "Novo Usuário" },
+    });
+    fireEvent.change(screen.getByLabelText(/Primeiro nome ou apelido/i), {
+      target: { value: "Novo" },
+    });
+    fireEvent.change(screen.getByLabelText(/Email/i), {
+      target: { value: "novo@teste.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/Senha/i), {
+      target: { value: "123456" },
+    });
+
+    // Simulate file upload
+    const file = new File(["dummy"], "photo.jpg", { type: "image/jpeg" });
+    fireEvent.change(screen.getByLabelText(/Selecione sua foto/i), {
+      target: { files: [file] },
+    });
+
+    fireEvent.click(screen.getByText(/Gravar/i));
+    await waitFor(() => {
+      expect(userSlice.createUserThunk).toHaveBeenCalled();
+    });
+  });
+
+  test("can update user fields", async () => {
+    const user = {
+      id: 1,
+      fullName: "Usuário Atual",
+      nickname: "Atual",
+      email: "atual@teste.com",
+      photoPath: "uploads/atual.jpg",
+    };
+    renderWithProviders(<UserForm user={user} />);
+    fireEvent.change(screen.getByLabelText(/Nome Completo/i), {
+      target: { value: "Usuário Editado" },
+    });
+    fireEvent.click(screen.getByText(/Gravar/i));
+    await waitFor(() => {
+      expect(userSlice.updateUserThunk).toHaveBeenCalled();
+    });
+  });
+});

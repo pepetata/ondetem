@@ -1,0 +1,50 @@
+import "@testing-library/jest-dom";
+import { render, screen } from "@testing-library/react";
+import { Provider } from "react-redux";
+import { BrowserRouter } from "react-router-dom";
+import Menu from "../src/components/Menu";
+import { store } from "../src/redux/store";
+import { setUser } from "../src/redux/authSlice";
+
+// Helper to render with providers
+function renderWithProviders(ui) {
+  return render(
+    <Provider store={store}>
+      <BrowserRouter>{ui}</BrowserRouter>
+    </Provider>
+  );
+}
+
+describe("Menu component", () => {
+  afterEach(() => {
+    store.dispatch(setUser(null));
+  });
+
+  test("renders correctly when user is NOT logged in", () => {
+    renderWithProviders(<Menu />);
+    expect(screen.getAllByAltText(/Onde tem\?/i).length).toBeGreaterThan(0);
+    expect(screen.getByAltText(/Entrar/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/Registre-se/i)).toBeInTheDocument();
+    expect(screen.getByText(/Home/i)).toBeInTheDocument();
+    expect(screen.getByText(/Anuncie Grátis/i)).toBeInTheDocument();
+  });
+
+  test("renders correctly when user IS logged in", () => {
+    store.dispatch(
+      setUser({
+        id: 1,
+        fullName: "Test User",
+        nickname: "Test",
+        email: "test@example.com",
+        photoPath: "uploads/testphoto.jpg",
+      })
+    );
+    renderWithProviders(<Menu />);
+    expect(screen.getAllByAltText(/Onde tem\?/i).length).toBeGreaterThan(0);
+    // vi.mock("../src/redux/authSlice");
+    expect(screen.getByAltText(/Meus Favoritos/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/Meus Anúncios/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/Alterar meus dados/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/Encerrar sessão/i)).toBeInTheDocument();
+  });
+});
