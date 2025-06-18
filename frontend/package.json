@@ -25,6 +25,7 @@
     "test:pw:ui": "playwright test tests-e2e --ui"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.7.2",
     "@reduxjs/toolkit": "^2.8.2",
     "axios": "^1.9.0",
     "bootstrap": "^5.3.6",

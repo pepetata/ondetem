@@ -1,0 +1,20 @@
+.center-tabs {
+  width: 100%;
+}
+
+.center-tabs.nav-tabs {
+  display: flex !important;
+  justify-content: center !important;
+  width: 100%;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  list-style: none !important;
+}
+
+::placeholder {
+  font-style: italic;
+  color: #d4d4d4 !important;
+  opacity: 1;
+}

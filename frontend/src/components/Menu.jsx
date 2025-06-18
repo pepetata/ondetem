@@ -56,7 +56,7 @@ const Menu = () => {
               </Nav.Link>
               <Nav.Link
                 as={Link}
-                to="/anuncie"
+                to="/ad"
                 className="mb-2 mb-lg-0 menu-btn bt-add-ad"
                 variant="outline-success"
               >

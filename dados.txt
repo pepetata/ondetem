@@ -1,1 +1,19 @@
 menu must show in the right side after login: Lista de meus favoritos (twohearts35.png), Lista de meu anuncios (portfolio.png), Alterar meus dados (user photo or user.png) and Encerrar sessao (logout)
+
+Notes:
+
+This is a scaffold. You’ll need to implement logic for categories, photo uploads, modals, and API calls.
+For Froala, install react-froala-wysiwyg and required CSS.
+For star ratings, use a React star rating library.
+For tooltips, use <OverlayTrigger> and <Tooltip> from React Bootstrap.
+Move navbar and footer to their own components if needed.
+
+
+1. General Strategy
+Break the page into logical React components (Header, Navbar, Modals, Tabs, Forms, Footer, etc).
+Use React Bootstrap components for layout, navigation, forms, and modals.
+Replace jQuery and imperative DOM manipulation with React state and event handlers.
+For tooltips, tabs, and modals, use React Bootstrap’s built-in components.
+For the Froala editor, use react-froala-wysiwyg.
+For star ratings, use a React star rating component (e.g., react-star-ratings).
+

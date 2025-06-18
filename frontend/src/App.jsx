@@ -5,6 +5,7 @@ import Menu from "./components/Menu";
 import Home from "./components/Home";
 import UserForm from "./features/users/UserForm";
 import LoginForm from "./features/auth/LoginForm";
+import AdForm from "./features/ads/AdForm";
 import { useSelector } from "react-redux";
 
 const App = () => {
@@ -29,6 +30,12 @@ const App = () => {
             }
           />
           <Route path="/login" element={<LoginForm />} />
+          <Route
+            path="/ad"
+            element={
+              user ? <AdForm user={user} /> : <Navigate to="/login" replace />
+            }
+          />
         </Routes>
       </div>
     </>
