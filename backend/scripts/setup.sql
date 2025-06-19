@@ -6,12 +6,21 @@
 --    CREATE DATABASE ondetemdb;
 --    GRANT ALL PRIVILEGES ON DATABASE ondetemdb TO admin;
 --    \q
--- run this script from backend directory as:
+-- then to create the tables, run this script from backend directory as:
 --   node scripts/init_db.js 
 -- or
 --   psql -U <username> -d <database_name> -f setup.sql
-CREATE TABLE IF NOT EXISTS users (
-  id SERIAL PRIMARY KEY,
+
+
+-- Enable the pgcrypto extension for UUID generation
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Drop the existing table
+DROP TABLE IF EXISTS users;
+
+-- Create the new table with a UUID primary key
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   full_name VARCHAR(100) NOT NULL,
   nickname VARCHAR(50),
   email VARCHAR(100) UNIQUE NOT NULL,
