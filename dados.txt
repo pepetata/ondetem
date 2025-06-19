@@ -17,3 +17,76 @@ For tooltips, tabs, and modals, use React Bootstrap’s built-in components.
 For the Froala editor, use react-froala-wysiwyg.
 For star ratings, use a React star rating component (e.g., react-star-ratings).
 
+
+
+
+  const handleZipBlur = async (
+    e,
+    setFieldValue,
+    setFieldError,
+    setTouched,
+    dispatch,
+    setCepLoading
+  ) => {
+    const cep = e.target.value.replace(/\D/g, "");
+    if (cep.length === 8) {
+      setCepLoading(true);
+      dispatch(
+        showNotification({
+          type: "warning",
+          message: "Buscando CEP...",
+        })
+      );
+
+      let timeoutId;
+      try {
+        // Timeout after 5 seconds
+        const timeoutPromise = new Promise(
+          (_, reject) =>
+            (timeoutId = setTimeout(
+              () => reject(new Error("Tempo de resposta excedido")),
+              5000
+            ))
+        );
+        const fetchPromise = fetch(
+          `https://viacep.com.br/ws/${cep}/json/`
+        ).then((res) => res.json());
+
+        const data = await Promise.race([fetchPromise, timeoutPromise]);
+
+        if (!data.erro) {
+          setFieldValue("address1", data.logradouro || "");
+          setFieldValue("city", data.localidade || "");
+          setFieldValue("state", data.uf || "");
+          setFieldError("zipcode", undefined);
+          dispatch(clearNotification());
+        } else {
+          setFieldError("zipcode", "CEP não encontrado");
+          setFieldValue("address1", "");
+          setFieldValue("city", "");
+          setFieldValue("state", "");
+          setTouched({ zipcode: true }, false);
+          dispatch(
+            showNotification({
+              type: "error",
+              message: "CEP não encontrado",
+            })
+          );
+          setTimeout(() => e.target.focus(), 0);
+        }
+      } catch (err) {
+        setFieldError("zipcode", "Erro ao buscar CEP");
+        setTouched({ zipcode: true }, false);
+        dispatch(
+          showNotification({
+            type: "error",
+            message: err.message || "Erro ao buscar CEP",
+          })
+        );
+        setTimeout(() => e.target.focus(), 0);
+      } finally {
+        clearTimeout(timeoutId);
+        setCepLoading(false);
+      }
+    }
+  };

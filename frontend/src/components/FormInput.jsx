@@ -9,7 +9,9 @@ const FormInput = ({
   placeholder,
   maxLength,
   minLength,
-  required,
+  readOnly,
+  tabIndex,
+  rows,
 }) => {
   const { name, value, onChange, onBlur } = field;
   const { touched, errors } = form;
@@ -33,6 +35,32 @@ const FormInput = ({
     );
   }
 
+  if (type === "textarea") {
+    return (
+      <Form.Group>
+        {label && <Form.Label htmlFor={name}>{label}</Form.Label>}
+        <Form.Control
+          as="textarea"
+          id={name}
+          name={name}
+          value={value}
+          onChange={onChange}
+          onBlur={onBlur}
+          placeholder={placeholder}
+          maxLength={maxLength}
+          minLength={minLength}
+          isInvalid={!!metaError}
+          readOnly={readOnly}
+          tabIndex={tabIndex}
+          rows={rows || 4}
+        />
+        <Form.Control.Feedback type="invalid">
+          {metaError}
+        </Form.Control.Feedback>
+      </Form.Group>
+    );
+  }
+
   return (
     <Form.Group>
       {label && <Form.Label htmlFor={field.name}>{label}</Form.Label>}
@@ -47,6 +75,9 @@ const FormInput = ({
         maxLength={maxLength}
         minLength={minLength}
         isInvalid={!!metaError}
+        readOnly={readOnly}
+        tabIndex={tabIndex}
+        rows={rows}
       />
       <Form.Control.Feedback type="invalid">{metaError}</Form.Control.Feedback>
     </Form.Group>
@@ -62,6 +93,9 @@ FormInput.propTypes = {
   maxLength: PropTypes.number,
   minLength: PropTypes.number,
   required: PropTypes.bool,
+  readOnly: PropTypes.bool,
+  tabIndex: PropTypes.number,
+  rows: PropTypes.number,
 };
 
 export default FormInput;

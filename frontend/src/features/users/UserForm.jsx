@@ -13,7 +13,7 @@ import { setUser } from "../../redux/authSlice";
 import Notification from "../../components/Notification.jsx";
 import OTButton from "../../components/OTButton.jsx";
 import FormInput from "../../components/FormInput.jsx";
-import { userFormFields } from "../../formfields/userFormFields.js";
+import { userFormFields } from "../../formFields/userFormFields.js";
 import { buildValidationSchema } from "../../components/validationHelper.js";
 
 const defaultImg = "/images/nophoto.jpg";
