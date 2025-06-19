@@ -2,14 +2,14 @@ require("dotenv").config();
 const { Pool } = require("pg");
 const fs = require("fs");
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool({ connectionString: process.env.DATABASE_TEST_URL });
 
 const sql = fs.readFileSync("./scripts/setup_test.sql", "utf8");
 
 pool
   .query(sql)
   .then(() => {
-    console.log("Database initialized!");
+    console.log("TEST database initialized!");
     pool.end();
   })
   .catch((err) => {

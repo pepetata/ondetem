@@ -1,0 +1,24 @@
+POST http://localhost:3000/api/ads
+Content-Type: application/json
+
+{
+  "title": "Anúncio de Teste",
+  "short": "Descrição curta do anúncio",
+  "description": "Descrição detalhada do anúncio para teste.",
+  "tags": "teste,anuncio",
+  "zipcode": "12345678",
+  "city": "São Paulo",
+  "state": "SP",
+  "address1": "Rua Exemplo",
+  "streetnumber": "100",
+  "address2": "Apto 10",
+  "radius": 10,
+  "phone1": "(11)99999-9999",
+  "phone2": "(11)98888-8888",
+  "whatsapp": "(11)97777-7777",
+  "email": "anuncio@teste.com",
+  "website": "https://www.exemplo.com",
+  "startdate": "2024-07-01",
+  "finishdate": "2024-07-31",
+  "timetext": "Seg a Sex das 8h às 18h"
+}

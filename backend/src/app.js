@@ -9,6 +9,7 @@ const cors = require("cors");
 const express = require("express");
 const usersRouter = require("./routes/users");
 const authRouter = require("./routes/auth");
+const adsRouter = require("./routes/ads");
 const path = require("path");
 
 const app = express();
@@ -20,6 +21,7 @@ app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
 app.use("/api/users", usersRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/ads", adsRouter);
 
 if (process.env.NODE_ENV !== "test") {
   app.listen(process.env.PORT || 3000, () => {
