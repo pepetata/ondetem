@@ -2,6 +2,15 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { createUser, updateUser, fetchCurrentUser } from "../api/usersApi";
 import { showNotification } from "../components/helper";
 
+const getToken = (getState) => {
+  const state = getState();
+  return (
+    state.auth?.token ||
+    localStorage.getItem("authToken") ||
+    sessionStorage.getItem("authToken")
+  );
+};
+
 export const createUserThunk = createAsyncThunk(
   "user/create",
   async (formData, { dispatch, rejectWithValue }) => {
@@ -32,8 +41,16 @@ export const createUserThunk = createAsyncThunk(
 
 export const updateUserThunk = createAsyncThunk(
   "user/update",
-  async ({ userId, formData }, { dispatch, rejectWithValue }) => {
+  async ({ userId, formData }, { dispatch, rejectWithValue, getState }) => {
     try {
+      // Get token from auth state or storage
+      const token = getToken(getState);
+      if (!token) throw new Error("Usuário não autenticado");
+
+      console.log(
+        `Updating user ${userId} with formData:`,
+        Array.from(formData.entries())
+      );
       const result = await updateUser(userId, formData);
       dispatch(
         showNotification({

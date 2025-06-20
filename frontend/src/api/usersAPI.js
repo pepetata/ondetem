@@ -11,10 +11,13 @@ export const createUser = async (formData) => {
   return response.data;
 };
 
-export const updateUser = async (userId, formData) => {
+export const updateUser = async (userId, formData, token) => {
   console.log(`usersAPI updateUser`, { userId, formData });
   const response = await axios.put(`${baseUrl}/${userId}`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
+    headers: {
+      "Content-Type": "multipart/form-data",
+      Authorization: `Bearer ${token}`,
+    },
   });
   return response.data;
 };

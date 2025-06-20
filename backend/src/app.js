@@ -30,7 +30,7 @@ app.use("/api/users", usersRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/ads", adsRouter);
 
-if (process.env.NODE_ENV !== "test") {
+if (process.env.NODE_ENV !== "test" || process.env.E2E === "true") {
   app.listen(process.env.PORT || 3000, () => {
     console.log(
       "Backend running on http://localhost:" + (process.env.PORT || 3000)
