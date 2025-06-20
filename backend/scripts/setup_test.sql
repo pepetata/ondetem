@@ -16,7 +16,7 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Drop the existing table
--- DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS users;
 
 -- Create the new table with a UUID primary key
 CREATE TABLE IF NOT EXISTS users (
@@ -31,11 +31,12 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- --------------------------------------------------------------------
 -- Drop the ads table if it exists
--- DROP TABLE IF EXISTS ads;
+DROP TABLE IF EXISTS ads;
 
 -- Create the ads table with columns matching AdForm fields
 CREATE TABLE IF NOT EXISTS ads (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title VARCHAR(100) NOT NULL,
     short VARCHAR(255),
     description TEXT,

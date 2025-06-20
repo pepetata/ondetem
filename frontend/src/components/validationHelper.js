@@ -93,7 +93,7 @@ export const buildValidationSchema = (fields, isNewUser) => {
 
     // Min/max length for string fields
     if (
-      ["string", "email", "url"].includes(field.type) ||
+      ["string", "text", "email", "url"].includes(field.type) ||
       field.type === undefined
     ) {
       if (field.minLength) {

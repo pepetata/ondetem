@@ -33,11 +33,29 @@ exports.getAdById = async (req, res) => {
 // Create a new ad
 exports.createAd = async (req, res) => {
   try {
-    const adData = req.body;
+    const adData = Object.assign({}, req.body);
+    console.log(`Creating ad with data:`, adData);
+    console.log(`User from token:`, req.user);
+    // get user from token
+    if (!req.user || !req.user.id) {
+      logger.error("User not authenticated");
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    adData.user_id = req.user.id;
+    adData.radius = +adData.radius || 0;
+    adData.created_at = new Date();
+    // Convert empty strings to null for date fields
+    if (adData.startdate === "") adData.startdate = null;
+    if (adData.finishdate === "") adData.finishdate = null;
+    console.log(`Creating ad with data:`, adData);
+    console.log("adData:", adData, "prototype:", Object.getPrototypeOf(adData));
+
     const adId = await adsModel.createAd(adData);
     logger.info(`Ad created: ${adId}`);
     res.status(201).json({ adId });
   } catch (err) {
+    console.log(`Error creating ad: ${err}`);
     logger.error(`Error creating ad: ${err.message}`);
     res.status(500).json({ error: "Failed to create ad" });
   }
@@ -74,5 +92,18 @@ exports.deleteAd = async (req, res) => {
   } catch (err) {
     logger.error(`Error deleting ad: ${err.message}`);
     res.status(500).json({ error: "Failed to delete ad" });
+  }
+};
+
+// Get ads created by the authenticated user
+exports.getUserAds = async (req, res) => {
+  try {
+    const userId = req.user.id; // Assuming user ID is stored in req.user
+    const ads = await adsModel.getUserAds(userId);
+    logger.info(`Fetched ${ads.length} ads for user: ${userId}`);
+    res.status(200).json(ads);
+  } catch (err) {
+    logger.error(`Error fetching user ads: ${err.message}`);
+    res.status(500).json({ error: "Failed to fetch user ads" });
   }
 };

@@ -7,6 +7,7 @@ import OTButton from "../../components/OTButton";
 import FormInput from "../../components/FormInput";
 import { adFormFields } from "../../formfields/adFormFiels.js";
 import { buildValidationSchema } from "../../components/validationHelper.js";
+import { createAdThunk, updateAdThunk } from "../../redux/adSlice";
 import { showNotification } from "../../components/helper";
 import "../../scss/AdForm.scss";
 
@@ -17,7 +18,7 @@ const initialValues = Object.fromEntries(
   ])
 );
 
-export default function AdForm() {
+export default function AdForm({ user, ad }) {
   const dispatch = useDispatch();
   const cepAsyncError = useRef("");
   const [activeTab, setActiveTab] = useState("description");
@@ -26,34 +27,28 @@ export default function AdForm() {
 
   const handleSubmit = async (values, { setSubmitting }) => {
     console.log(`Submitting form with values:`, values);
-    const formData = new FormData();
-    Object.entries(values).forEach(([key, value]) => {
-      if (
-        key !== "confirmpassword" &&
-        key !== "useragreement" &&
-        !(key === "password" && !value)
-      ) {
-        formData.append(key, value);
-      }
-    });
+    const formData = Object.fromEntries(
+      Object.entries(values).map(([key, value]) => [key, value])
+    );
+    console.log(`Form data to submit:`, formData);
+    console.log(`Ad: `, ad);
 
-    // if (user) {
-    //   // Update existing user
-    //   const updatedUser = await dispatch(
-    //     updateUserThunk({ userId: user.id, formData })
-    //   );
-    //   if (updateUserThunk.fulfilled.match(updatedUser)) {
-    //     console.log(`User updated:`, updatedUser.payload);
-    //     // Update auth.user in Redux
-    //     dispatch(setUser(updatedUser.payload));
-    //     // Update storage for persistence
-    //     localStorage.setItem("user", JSON.stringify(updatedUser.payload));
-    //     sessionStorage.setItem("user", JSON.stringify(updatedUser.payload));
-    //   }
-    // } else {
-    //   // Create new user
-    //   await dispatch(createUserThunk(formData));
-    // }
+    if (ad) {
+      // Update existing user
+      const updatedAd = await dispatch(
+        updateAdThunk({ adId: ad.id, formData })
+      );
+      if (updateAdThunk.fulfilled.match(updatedAd)) {
+        console.log(`Ad updated:`, updatedAd.payload);
+        ad = updatedAd.payload;
+        // Update ad in Redux
+        // dispatch(setAd(updatedAd.payload));
+        // Update storage for persistence
+      }
+    } else {
+      // Create new ad
+      await dispatch(createAdThunk(formData));
+    }
   };
 
   const handleTabSelect = (k) => setActiveTab(k);
@@ -142,15 +137,11 @@ export default function AdForm() {
           <FormikForm>
             <Row className="justify-content-center m-4">
               <Col md={6}>
-                <Field name={adFormFields.title.name}>
-                  {({ field, form }) => (
-                    <FormInput
-                      field={field}
-                      form={form}
-                      {...adFormFields.title}
-                    />
-                  )}
-                </Field>
+                <Field
+                  name={adFormFields.title.name}
+                  component={FormInput}
+                  {...adFormFields.title}
+                />
               </Col>
             </Row>
             <Row className="px-2 px-lg-5 py-3 adform-container">

@@ -1,8 +1,8 @@
-require("dotenv").config();
+require("dotenv").config({ path: ".env.test" });
 const { Pool } = require("pg");
 const fs = require("fs");
 
-const pool = new Pool({ connectionString: process.env.DATABASE_TEST_URL });
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 const sql = fs.readFileSync("./scripts/setup_test.sql", "utf8");
 

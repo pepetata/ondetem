@@ -32,15 +32,16 @@ exports.createAd = async (adData) => {
     startdate,
     finishdate,
     timetext,
+    user_id,
   } = adData;
 
   const result = await pool.query(
     `INSERT INTO ads (
       title, short, description, tags, zipcode, city, state, address1, streetnumber, address2,
-      radius, phone1, phone2, whatsapp, email, website, startdate, finishdate, timetext
+      radius, phone1, phone2, whatsapp, email, website, startdate, finishdate, timetext, user_id
     ) VALUES (
       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-      $11, $12, $13, $14, $15, $16, $17, $18, $19
+      $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
     ) RETURNING id`,
     [
       title,
@@ -62,6 +63,7 @@ exports.createAd = async (adData) => {
       startdate,
       finishdate,
       timetext,
+      user_id,
     ]
   );
   return result.rows[0].id;
