@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { login as loginAPI } from "../api/authAPI";
-import { fetchCurrentUser } from "../api/usersAPI";
 import { showNotification } from "../components/helper";
 
 // Helper to load from storage

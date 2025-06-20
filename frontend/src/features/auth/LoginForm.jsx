@@ -24,17 +24,17 @@ const LoginForm = () => {
         sessionStorage.setItem("authToken", token);
         sessionStorage.setItem("user", JSON.stringify(user));
       }
-      // Fetch full user profile and update Redux
-      const profileResult = await dispatch(fetchUserThunk());
-      if (fetchUserThunk.fulfilled.match(profileResult)) {
-        dispatch(setUser(profileResult.payload));
-        // Optionally update storage with full user:
-        if (rememberMe) {
-          localStorage.setItem("user", JSON.stringify(profileResult.payload));
-        } else {
-          sessionStorage.setItem("user", JSON.stringify(profileResult.payload));
-        }
-      }
+      // // Fetch full user profile and update Redux
+      // const profileResult = await dispatch(fetchUserThunk());
+      // if (fetchUserThunk.fulfilled.match(profileResult)) {
+      //   dispatch(setUser(profileResult.payload));
+      //   // Optionally update storage with full user:
+      //   if (rememberMe) {
+      //     localStorage.setItem("user", JSON.stringify(profileResult.payload));
+      //   } else {
+      //     sessionStorage.setItem("user", JSON.stringify(profileResult.payload));
+      //   }
+      // }
       navigate("/");
     }
     setSubmitting(false);

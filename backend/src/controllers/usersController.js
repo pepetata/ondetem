@@ -29,6 +29,7 @@ exports.getUserById = async (req, res) => {
     logger.info(`Fetched user: ${user.email}`);
     res.status(200).json(user);
   } catch (err) {
+    console.log(`Error fetching user: ${err}`);
     logger.error(`Error fetching user: ${err.message}`);
     res.status(500).json({ error: "Failed to fetch user" });
   }
