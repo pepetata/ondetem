@@ -1,6 +1,6 @@
 import axios from "axios";
 let server = import.meta.env.VITE_API_URL;
-server ||= process.env.BASEURL;
+server = server || process.env.BASEURL;
 const baseUrl = server + "/api/users";
 
 export const createUser = async (formData) => {

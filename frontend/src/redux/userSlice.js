@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { createUser, updateUser } from "../api/usersApi";
+import { createUser, updateUser, fetchCurrentUser } from "../api/usersApi";
 import { showNotification } from "../components/helper";
 
 export const createUserThunk = createAsyncThunk(
@@ -16,7 +16,7 @@ export const createUserThunk = createAsyncThunk(
       );
       return result;
     } catch (err) {
-      // console.log(`userSlice err=`, err);
+      console.log(`userSlice err=`, err);
       dispatch(
         showNotification({
           type: "error",
@@ -43,6 +43,7 @@ export const updateUserThunk = createAsyncThunk(
       );
       return result;
     } catch (err) {
+      console.log(`userSlice updateUser err=`, err);
       dispatch(
         showNotification({
           type: "error",
@@ -71,6 +72,7 @@ export const fetchUserThunk = createAsyncThunk(
       const user = await fetchCurrentUser(token);
       return user;
     } catch (err) {
+      console.log(`userSlice fetchUser err=`, err);
       dispatch(
         showNotification({
           type: "error",

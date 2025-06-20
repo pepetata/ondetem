@@ -27,7 +27,7 @@ const LoginForm = () => {
       // Fetch full user profile and update Redux
       const profileResult = await dispatch(fetchUserThunk());
       if (fetchUserThunk.fulfilled.match(profileResult)) {
-        dispatch(setUser(profileResult.payload)); // <-- This updates auth.user!
+        dispatch(setUser(profileResult.payload));
         // Optionally update storage with full user:
         if (rememberMe) {
           localStorage.setItem("user", JSON.stringify(profileResult.payload));
@@ -36,9 +36,6 @@ const LoginForm = () => {
         }
       }
       navigate("/");
-    } else {
-      setFieldError("email", result.payload);
-      setFieldError("password", result.payload);
     }
     setSubmitting(false);
   };
