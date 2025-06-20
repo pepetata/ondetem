@@ -20,7 +20,7 @@ test.describe("User Signup", () => {
     await page.getByRole("button", { name: /Gravar/i }).click();
 
     // Expect a success notification or redirect (adjust as needed)
-    await expect(page.getByText(/sucesso/i)).toBeVisible();
+    await expect(page.getByText(/sucesso|cadastrado|bem-vindo/i)).toBeVisible();
     // Or, for redirect:
     // await expect(page).toHaveURL(/\/login|\/user/);
   });

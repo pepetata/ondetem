@@ -4,6 +4,7 @@ const userModel = require("../models/userModel");
 const { buildJoiSchema } = require("./buildJoiSchema");
 const { userFormFields } = require("../formfields/userFieldsValidation");
 const e = require("express");
+const { token } = require("morgan");
 
 exports.getAllUsers = async (req, res) => {
   try {
@@ -18,7 +19,7 @@ exports.getAllUsers = async (req, res) => {
 
 exports.getUserById = async (req, res) => {
   try {
-    const userId = parseInt(req.params.id, 10);
+    const userId = req.params.id;
     const user = await userModel.getUserById(userId);
 
     if (!user) {
@@ -64,11 +65,17 @@ exports.getCurrentUser = async (req, res) => {
 };
 
 exports.createUser = async (req, res) => {
+  if (!req.body) {
+    logger.error("No body received in request");
+    return res.status(400).json({ error: "No data received" });
+  }
+
   const userSchema = buildJoiSchema(userFormFields);
   const { error } = userSchema.validate(req.body);
   if (error) {
     return res.status(400).json({ error: error.details[0].message });
   }
+
   try {
     const { fullName, nickname, email, password } = req.body;
     const photoPath = req.file ? req.file.path : null;
@@ -105,18 +112,29 @@ exports.updateUser = async (req, res) => {
   // pw can be empty if updating other fields
   // Clone userFormFields and set password.required = false
   console.log(`updateUser`);
-  const updateFields = {
-    ...userFormFields,
-    password: { ...userFormFields.password, required: false },
-  };
+  const token = req.token;
+  if (!token) {
+    logger.warn("Unauthorized access attempt to update user");
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  if (!req.params.id) {
+    logger.warn("User ID not provided for update");
+    return res.status(400).json({ error: "User ID is required" });
+  }
+  const updateFields = {};
+  for (const key in userFormFields) {
+    updateFields[key] = { ...userFormFields[key], required: false };
+  }
+  updateFields.password = { ...userFormFields.password, required: false };
   const updateSchema = buildJoiSchema(updateFields);
 
   const { error } = updateSchema.validate(req.body);
   if (error) {
+    logger.warn(`Validation error on user update: ${error.details[0].message}`);
     return res.status(400).json({ error: error.details[0].message });
   }
   try {
-    const userId = parseInt(req.params.id, 10);
+    const userId = req.params.id;
     const { fullName, nickname, email, password } = req.body;
     const photoPath = req.file ? req.file.path : null;
 
@@ -147,9 +165,35 @@ exports.updateUser = async (req, res) => {
     logger.info(`User updated: ${email}`);
     res.status(200).json(updatedUser);
   } catch (err) {
+    console.log(`Error updating user:`, err);
     logger.error(`Error updating user: ${err.message}`);
     res
       .status(500)
       .json({ error: `Erro ao atualizar usuário: ${err.message}` });
+  }
+};
+
+exports.deleteUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    if (!userId) {
+      logger.warn("User ID not provided for deletion");
+      return res.status(400).json({ error: "User ID is required" });
+    }
+    const token = req.token;
+    if (!token) {
+      logger.warn("Unauthorized access attempt to delete user");
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const deleted = await userModel.deleteUser(userId);
+    if (!deleted) {
+      logger.warn(`User not found for deletion: ${userId}`);
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.status(200).json({ message: "User deleted" });
+  } catch (err) {
+    logger.error(`Error deleting user: ${err.message}`);
+    res.status(500).json({ error: "Failed to delete user" });
   }
 };

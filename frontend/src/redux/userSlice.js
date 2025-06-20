@@ -5,6 +5,7 @@ import { showNotification } from "../components/helper";
 export const createUserThunk = createAsyncThunk(
   "user/create",
   async (formData, { dispatch, rejectWithValue }) => {
+    console.log(`Creating user with formData:`, Array.from(formData.entries()));
     try {
       const result = await createUser(formData);
       dispatch(

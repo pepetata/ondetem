@@ -35,7 +35,7 @@ export const loginThunk = createAsyncThunk(
       dispatch(
         showNotification({
           type: "error",
-          message: err.response?.data?.error || "Erro ao criar usuário",
+          message: err.response?.data?.error || "Erro durante login!",
         })
       );
       return rejectWithValue(err.response?.data?.error || "Erro ao logar");

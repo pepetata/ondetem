@@ -1,18 +1,17 @@
 const express = require("express");
 const adsController = require("../controllers/adsController");
+const middleware = require("../utils/middleware");
 
 const router = express.Router();
 
-// Gets
+// Public: Get all ads and get ad by ID
 router.get("/", adsController.getAllAds);
 router.get("/:id", adsController.getAdById);
-// Creates a new ad
+
 router.post("/", adsController.createAd);
 
-// Updates an ad by ID
-router.put("/:id", adsController.updateAd);
+router.put("/:id", middleware.tokenExtractor, adsController.updateAd);
 
-// Deletes an ad by ID
-router.delete("/:id", adsController.deleteAd);
+router.delete("/:id", middleware.tokenExtractor, adsController.deleteAd);
 
 module.exports = router;

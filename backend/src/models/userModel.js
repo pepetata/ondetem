@@ -87,10 +87,12 @@ exports.updateUser = async ({
   }
   values.push(userId);
 
+  if (fields.length === 0) {
+    logger.warn("No fields to update");
+    throw new Error("No fields to update");
+  }
+
   const setClause = fields.join(", ");
-  console.log(
-    `Updating user ${userId} with values: ${values} and clause: ${setClause} idx=${idx}`
-  );
   console.log(
     `Updating user ==> UPDATE users SET ${setClause} WHERE id = ${userId}`
   );
@@ -102,4 +104,12 @@ exports.findUserByEmail = async (email) => {
     email,
   ]);
   return result.rows[0];
+};
+
+exports.deleteUser = async (id) => {
+  const result = await pool.query(
+    "DELETE FROM users WHERE id = $1 RETURNING id",
+    [id]
+  );
+  return result.rowCount > 0;
 };

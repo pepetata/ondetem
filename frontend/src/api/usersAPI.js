@@ -1,27 +1,26 @@
 import axios from "axios";
+let server = import.meta.env.VITE_API_URL;
+server ||= process.env.BASEURL;
+const baseUrl = server + "/api/users";
 
 export const createUser = async (formData) => {
-  console.log(`usersAPI createUser`, { formData });
-  const response = await axios.post(
-    "http://localhost:3000/api/users",
-    formData,
-    { headers: { "Content-Type": "multipart/form-data" } }
-  );
+  console.log(`usersAPI createUser`, Array.from(formData.entries()));
+  const response = await axios.post(`${baseUrl}/`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return response.data;
 };
 
 export const updateUser = async (userId, formData) => {
   console.log(`usersAPI updateUser`, { userId, formData });
-  const response = await axios.put(
-    `http://localhost:3000/api/users/${userId}`,
-    formData,
-    { headers: { "Content-Type": "multipart/form-data" } }
-  );
+  const response = await axios.put(`${baseUrl}/${userId}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return response.data;
 };
 
 export const fetchCurrentUser = async (token) => {
-  const response = await axios.get("http://localhost:3000/api/users/me", {
+  const response = await axios.get(`${baseUrl}/me`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

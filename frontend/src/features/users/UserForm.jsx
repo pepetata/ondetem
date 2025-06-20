@@ -102,6 +102,10 @@ const UserForm = ({ user }) => {
       }
     } else {
       // Create new user
+      console.log(
+        `Creating new user with formData:`,
+        Array.from(formData.entries())
+      );
       await dispatch(createUserThunk(formData));
     }
   };
@@ -268,6 +272,7 @@ const UserForm = ({ user }) => {
     </div>
   );
 };
+
 UserForm.propTypes = {
   user: PropTypes.object,
   onCancel: PropTypes.func,
