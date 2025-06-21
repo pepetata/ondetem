@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Container, Row, Col, Form, Tabs, Tab, Modal } from "react-bootstrap";
 import { Formik, Form as FormikForm, Field } from "formik";
 import Notification from "../../components/Notification";
@@ -7,7 +7,13 @@ import OTButton from "../../components/OTButton";
 import FormInput from "../../components/FormInput";
 import { adFormFields } from "../../formfields/adFormFiels.js";
 import { buildValidationSchema } from "../../components/validationHelper.js";
-import { createAdThunk, updateAdThunk } from "../../redux/adSlice";
+import {
+  createAdThunk,
+  updateAdThunk,
+  deleteAdThunk,
+  setCurrentAd,
+  clearCurrentAd,
+} from "../../redux/adSlice";
 import { showNotification } from "../../components/helper";
 import "../../scss/AdForm.scss";
 
@@ -18,12 +24,14 @@ const initialValues = Object.fromEntries(
   ])
 );
 
-export default function AdForm({ user, ad }) {
+export default function AdForm() {
   const dispatch = useDispatch();
   const cepAsyncError = useRef("");
+  const currentAd = useSelector((state) => state.ads.currentAd);
   const [activeTab, setActiveTab] = useState("description");
-  const [showLogout, setShowLogout] = useState(false);
-  const [cepLoading, setCepLoading] = useState(false);
+  const [showRemoveModal, setShowRemoveModal] = useState(false);
+
+  console.log(`Current Ad:`, currentAd);
 
   const handleSubmit = async (values, { setSubmitting }) => {
     console.log(`Submitting form with values:`, values);
@@ -31,34 +39,46 @@ export default function AdForm({ user, ad }) {
       Object.entries(values).map(([key, value]) => [key, value])
     );
     console.log(`Form data to submit:`, formData);
-    console.log(`Ad: `, ad);
+    console.log(`Ad: `, currentAd);
 
-    if (ad) {
-      // Update existing user
-      const updatedAd = await dispatch(
-        updateAdThunk({ adId: ad.id, formData })
-      );
+    if (currentAd) {
+      if (currentAd && currentAd.id) {
+        // Update existing ad
+        const updatedAd = await dispatch(
+          updateAdThunk({ adId: currentAd.id, formData })
+        );
+      } else {
+        // Handle error: ad or ad.id is missing
+        dispatch(
+          showNotification({
+            type: "error",
+            message: "ID do anúncio não encontrado.",
+          })
+        );
+      }
       if (updateAdThunk.fulfilled.match(updatedAd)) {
-        console.log(`Ad updated:`, updatedAd.payload);
-        ad = updatedAd.payload;
+        dispatch(setCurrentAd(updatedAd.payload));
+        console.log(`Ad updated:`, currentAd);
         // Update ad in Redux
         // dispatch(setAd(updatedAd.payload));
         // Update storage for persistence
       }
     } else {
       // Create new ad
-      await dispatch(createAdThunk(formData));
+      const createdAd = await dispatch(createAdThunk(formData));
+      console.log(`Created ad (createdAd):`, createdAd);
+      if (createAdThunk.fulfilled.match(createdAd)) {
+        dispatch(setCurrentAd(createdAd.payload));
+        console.log(`Ad created (currentAd):`, currentAd);
+      }
     }
   };
 
   const handleTabSelect = (k) => setActiveTab(k);
 
-  const handleShowLogout = () => setShowLogout(true);
   const handleCloseLogout = () => setShowLogout(false);
 
-  const handleCancel = () => {
-    // Logic to handle cancel action, e.g., navigate back or reset form
-  };
+  const handleCancel = () => {};
 
   const handleZipBlur = async (
     e,
@@ -114,6 +134,34 @@ export default function AdForm({ user, ad }) {
     }
   };
 
+  const handleRemoveAd = async (resetForm) => {
+    if (currentAd && currentAd.id) {
+      const result = await dispatch(deleteAdThunk(currentAd.id));
+      if (deleteAdThunk.fulfilled.match(result)) {
+        dispatch(
+          showNotification({ type: "success", message: "Anúncio removido!" })
+        );
+        dispatch(clearCurrentAd());
+        resetForm();
+        setShowRemoveModal(false);
+        return;
+      }
+    } else {
+      dispatch(
+        showNotification({
+          type: "error",
+          message: "Anúncio não encontrado.",
+        })
+      );
+      dispatch(clearCurrentAd());
+      resetForm();
+    }
+    setShowRemoveModal(false);
+  };
+
+  const handleShowRemoveModal = () => setShowRemoveModal(true);
+  const handleCloseRemoveModal = () => setShowRemoveModal(false);
+
   const validationSchema = buildValidationSchema(adFormFields, false);
 
   return (
@@ -133,7 +181,7 @@ export default function AdForm({ user, ad }) {
         validateOnChange={true}
         onSubmit={handleSubmit}
       >
-        {({ setFieldValue }) => (
+        {({ setFieldValue, resetForm }) => (
           <FormikForm>
             <Row className="justify-content-center m-4">
               <Col md={6}>
@@ -478,6 +526,7 @@ export default function AdForm({ user, ad }) {
                 variant="success"
                 imgSrc="/images/plus.png"
                 imgAlt="Novo Anúncio"
+                disabled={!currentAd}
               >
                 Novo Anúncio
               </OTButton>
@@ -485,24 +534,36 @@ export default function AdForm({ user, ad }) {
                 className="btn-danger"
                 imgSrc="/images/delete.png"
                 imgAlt="Remover Anúncio"
+                onClick={handleShowRemoveModal}
+                disabled={!currentAd}
               >
                 Remover Anúncio
               </OTButton>
             </div>
             {/* Modals */}
-            <Modal show={showLogout} onHide={handleCloseLogout}>
+            <Modal show={showRemoveModal} onHide={handleCloseRemoveModal}>
               <Modal.Header closeButton>
-                <Modal.Title>Logout</Modal.Title>
+                <Modal.Title>Remover Anúncio</Modal.Title>
               </Modal.Header>
               <Modal.Body>
-                Você realmente deseja desconectar seu usuário?
+                Tem certeza que deseja remover este anúncio?
               </Modal.Body>
               <Modal.Footer>
-                <OTButton variant="primary" onClick={handleCloseLogout}>
-                  Sim
+                <OTButton
+                  className="cancelbutton"
+                  imgSrc="/images/cancel.png"
+                  imgAlt="Cancelar"
+                  onClick={handleCloseRemoveModal}
+                >
+                  Cancelar
                 </OTButton>
-                <OTButton variant="warning" onClick={handleCloseLogout}>
-                  Não
+                <OTButton
+                  className="btn-danger"
+                  imgSrc="/images/delete.png"
+                  imgAlt="Confirmar"
+                  onClick={() => handleRemoveAd(resetForm)}
+                >
+                  Confirmar
                 </OTButton>
               </Modal.Footer>
             </Modal>

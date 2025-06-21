@@ -34,8 +34,8 @@ exports.getAdById = async (req, res) => {
 exports.createAd = async (req, res) => {
   try {
     const adData = Object.assign({}, req.body);
-    console.log(`Creating ad with data:`, adData);
-    console.log(`User from token:`, req.user);
+    // console.log(`Creating ad with data:`, adData);
+    // console.log(`User from token:`, req.user);
     // get user from token
     if (!req.user || !req.user.id) {
       logger.error("User not authenticated");
@@ -48,12 +48,12 @@ exports.createAd = async (req, res) => {
     // Convert empty strings to null for date fields
     if (adData.startdate === "") adData.startdate = null;
     if (adData.finishdate === "") adData.finishdate = null;
-    console.log(`Creating ad with data:`, adData);
-    console.log("adData:", adData, "prototype:", Object.getPrototypeOf(adData));
+    // console.log(`Creating ad with data:`, adData);
 
-    const adId = await adsModel.createAd(adData);
-    logger.info(`Ad created: ${adId}`);
-    res.status(201).json({ adId });
+    adData.id = await adsModel.createAd(adData);
+    // console.log(`Created ad with data:`, adData);
+    logger.info(`Ad created: ${adData.id}`);
+    res.status(201).json(adData);
   } catch (err) {
     console.log(`Error creating ad: ${err}`);
     logger.error(`Error creating ad: ${err.message}`);
@@ -65,7 +65,20 @@ exports.createAd = async (req, res) => {
 exports.updateAd = async (req, res) => {
   try {
     const adId = req.params.id;
+    console.log(`Updating ad: ${adId}`);
+    if (!adId) {
+      logger.error("No ad ID provided for update");
+      return res.status(400).json({ error: "Ad ID is required" });
+    }
     const adData = req.body;
+    adData.user_id = req.user.id;
+    adData.radius = +adData.radius || 0;
+    adData.created_at = new Date();
+    // Convert empty strings to null for date fields
+    if (adData.startdate === "") adData.startdate = null;
+    if (adData.finishdate === "") adData.finishdate = null;
+    // console.log(`Updating ad with data:`, adData);
+
     const updated = await adsModel.updateAd(adId, adData);
     if (!updated) {
       logger.warn(`Ad not found for update: ${adId}`);

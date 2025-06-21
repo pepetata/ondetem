@@ -123,7 +123,15 @@ const adSlice = createSlice({
     loading: false,
     error: null,
   },
-  reducers: {},
+  reducers: {
+    setCurrentAd(state, action) {
+      console.log(`Setting current ad:`, action.payload);
+      state.currentAd = action.payload;
+    },
+    clearCurrentAd(state) {
+      state.currentAd = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(createAdThunk.fulfilled, (state, action) => {
@@ -149,3 +157,4 @@ const adSlice = createSlice({
 });
 
 export default adSlice.reducer;
+export const { setCurrentAd, clearCurrentAd } = adSlice.actions;

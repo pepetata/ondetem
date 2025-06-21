@@ -10,12 +10,15 @@ const OTButton = ({
   imgAlt,
   type,
   children,
+  disabled = false,
 }) => (
   <Button
     variant={variant}
     className={`otbutton ${className || ""}`}
     onClick={onClick}
     type={type || "button"}
+    disabled={disabled}
+    aria-label={imgAlt || "Button"}
   >
     {imgSrc && (
       <img

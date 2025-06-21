@@ -23,14 +23,14 @@ const tokenExtractor = (request, response, next) => {
 };
 
 const userExtractor = async (request, response, next) => {
-  console.log(`---- middleware userExtractor`, request.token);
+  // console.log(`---- middleware userExtractor`, request.token);
   try {
     if (request.token) {
       const decodedToken = jwt.verify(request.token, process.env.JWT_SECRET);
-      console.log(`---- middleware userExtractor decodedToken`, decodedToken);
+      // console.log(`---- middleware userExtractor decodedToken`, decodedToken);
       if (decodedToken.userId) {
         const user = await User.getUserById(decodedToken.userId);
-        console.log(`---- middleware userExtractor user`, user);
+        // console.log(`---- middleware userExtractor user`, user);
 
         request.user = user;
       }

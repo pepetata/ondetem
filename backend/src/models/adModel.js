@@ -85,6 +85,7 @@ exports.updateAd = async (id, adData) => {
   values.push(id);
 
   const setClause = fields.join(", ");
+  console.log(`adModel = Updating ad: ${id}`, adData);
   const result = await pool.query(
     `UPDATE ads SET ${setClause} WHERE id = $${idx}`,
     values
