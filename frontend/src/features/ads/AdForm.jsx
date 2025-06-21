@@ -25,6 +25,8 @@ export default function AdForm() {
   const currentAd = useSelector((state) => state.ads.currentAd);
   const [activeTab, setActiveTab] = useState("description");
   const [showRemoveModal, setShowRemoveModal] = useState(false);
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null); // "voltar" or "novo"
 
   const initialValues = currentAd
     ? {
@@ -91,11 +93,42 @@ export default function AdForm() {
 
   const handleCloseLogout = () => setShowLogout(false);
 
-  const handleCancel = () => {
+  const handleCancel = (dirty) => {
+    if (dirty) {
+      setPendingAction("back");
+      setShowUnsavedModal(true);
+      return;
+    }
     dispatch(clearNotification());
     navigate("/");
   };
 
+  const handleNewAd = (dirty, resetForm) => {
+    if (dirty) {
+      setPendingAction("newAd");
+      setShowUnsavedModal(true);
+      return;
+    }
+    dispatch(clearCurrentAd());
+    resetForm();
+  };
+
+  const handleUnsavedConfirm = (resetForm) => {
+    setShowUnsavedModal(false);
+    if (pendingAction === "back") {
+      dispatch(clearNotification());
+      navigate("/");
+    } else if (pendingAction === "newAd") {
+      dispatch(clearCurrentAd());
+      resetForm();
+    }
+    setPendingAction(null);
+  };
+
+  const handleUnsavedCancel = () => {
+    setShowUnsavedModal(false);
+    setPendingAction(null);
+  };
   const handleZipBlur = async (
     e,
     setFieldValue,
@@ -198,7 +231,7 @@ export default function AdForm() {
         validateOnChange={true}
         onSubmit={handleSubmit}
       >
-        {({ setFieldValue, resetForm }) => (
+        {({ setFieldValue, resetForm, dirty }) => (
           <FormikForm>
             <Row className="justify-content-center m-4">
               <Col md={6}>
@@ -535,7 +568,7 @@ export default function AdForm() {
                 className="cancelbutton"
                 imgSrc="/images/return.png"
                 imgAlt="Voltar"
-                onClick={handleCancel}
+                onClick={() => handleCancel(dirty)}
               >
                 Voltar
               </OTButton>
@@ -544,6 +577,7 @@ export default function AdForm() {
                 imgSrc="/images/plus.png"
                 imgAlt="Novo Anúncio"
                 disabled={!currentAd}
+                onClick={() => handleNewAd(dirty, resetForm)}
               >
                 Novo Anúncio
               </OTButton>
@@ -579,6 +613,32 @@ export default function AdForm() {
                   imgSrc="/images/delete.png"
                   imgAlt="Confirmar"
                   onClick={() => handleRemoveAd(resetForm)}
+                >
+                  Confirmar
+                </OTButton>
+              </Modal.Footer>
+            </Modal>
+            <Modal show={showUnsavedModal} onHide={handleUnsavedCancel}>
+              <Modal.Header closeButton>
+                <Modal.Title>Atenção</Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
+                Você tem alterações não salvas. Deseja continuar mesmo assim?
+              </Modal.Body>
+              <Modal.Footer>
+                <OTButton
+                  className="cancelbutton"
+                  imgSrc="/images/cancel.png"
+                  imgAlt="Cancelar"
+                  onClick={handleUnsavedCancel}
+                >
+                  Cancelar
+                </OTButton>
+                <OTButton
+                  className="btn-danger"
+                  imgSrc="/images/return.png"
+                  imgAlt="Confirmar"
+                  onClick={() => handleUnsavedConfirm(resetForm)}
                 >
                   Confirmar
                 </OTButton>
