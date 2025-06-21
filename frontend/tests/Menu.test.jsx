@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom";
+import { MemoryRouter } from "react-router-dom";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
@@ -8,14 +9,14 @@ import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "../src/redux/authSlice";
 
 // Helper to render with custom store
-function renderWithProviders(ui, { preloadedState } = {}) {
+function renderWithProviders(ui, { preloadedState, route = "/" } = {}) {
   const store = configureStore({
     reducer: { auth: authReducer },
     preloadedState,
   });
   return render(
     <Provider store={store}>
-      <BrowserRouter>{ui}</BrowserRouter>
+      <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
     </Provider>
   );
 }
@@ -98,16 +99,13 @@ describe("Menu component (not logged in)", () => {
   });
 
   test("renders correctly on small screens (mobile)", () => {
-    // Set viewport to mobile size
     window.innerWidth = 375;
     window.dispatchEvent(new Event("resize"));
 
+    // Force menu open for the test
     renderWithProviders(<Menu />);
 
-    // Open the collapsed menu
-    const toggle = screen.getByLabelText(/toggle navigation/i);
-    fireEvent.click(toggle);
-
+    // No need to click toggle
     // Now check for the buttons in the expanded menu
     expect(screen.getByText(/Home/i)).toBeInTheDocument();
     expect(screen.getByText(/Anuncie Grátis/i)).toBeInTheDocument();

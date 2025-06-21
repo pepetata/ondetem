@@ -2,21 +2,32 @@ import "@testing-library/jest-dom";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
+import { MemoryRouter } from "react-router-dom";
 import AdForm from "../src/features/ads/AdForm";
 import userReducer from "../src/redux/userSlice";
 import authReducer from "../src/redux/authSlice";
 import notificationReducer from "../src/redux/notificationSlice";
+import adReducer, { setCurrentAd } from "../src/redux/adSlice";
 
 // Helper to render with providers
-function renderWithProviders(ui) {
+function renderWithProviders(ui, { preloadedState } = {}) {
   const store = configureStore({
     reducer: {
       user: userReducer,
       auth: authReducer,
       notification: notificationReducer,
+      ads: adReducer,
     },
+    preloadedState,
   });
-  return render(<Provider store={store}>{ui}</Provider>);
+  return {
+    ...render(
+      <Provider store={store}>
+        <MemoryRouter>{ui}</MemoryRouter>
+      </Provider>
+    ),
+    store,
+  };
 }
 
 describe("AdForm", () => {
@@ -80,5 +91,102 @@ describe("AdForm", () => {
     expect(
       screen.getByRole("button", { name: /Remover Anúncio/i })
     ).toBeInTheDocument();
+  });
+
+  // NEW TESTS
+
+  test("Novo Anúncio and Remover Anúncio buttons are disabled when currentAd is null", () => {
+    renderWithProviders(<AdForm />);
+    expect(
+      screen.getByRole("button", { name: /Novo Anúncio/i })
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: /Remover Anúncio/i })
+    ).toBeDisabled();
+  });
+
+  test("Novo Anúncio and Remover Anúncio buttons are enabled when currentAd is set", () => {
+    const preloadedState = {
+      ads: {
+        ads: [],
+        userAds: [],
+        currentAd: { id: "ad123", title: "Meu anúncio" },
+        loading: false,
+        error: null,
+      },
+    };
+    renderWithProviders(<AdForm />, { preloadedState });
+    expect(
+      screen.getByRole("button", { name: /Novo Anúncio/i })
+    ).not.toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: /Remover Anúncio/i })
+    ).not.toBeDisabled();
+  });
+
+  test("shows unsaved changes modal when trying to go back with dirty form", async () => {
+    renderWithProviders(<AdForm />);
+    const titleInput = screen.getByLabelText(/Título/i);
+    fireEvent.change(titleInput, { target: { value: "Novo título" } });
+    fireEvent.click(screen.getByRole("button", { name: /Voltar/i }));
+    expect(
+      await screen.findByText(/Você tem alterações não salvas/i)
+    ).toBeInTheDocument();
+  });
+
+  test("shows unsaved changes modal when trying to create new ad with dirty form", async () => {
+    const preloadedState = {
+      ads: {
+        ads: [],
+        userAds: [],
+        currentAd: { id: "ad123", title: "Meu anúncio" },
+        loading: false,
+        error: null,
+      },
+    };
+    renderWithProviders(<AdForm />, { preloadedState });
+    const titleInput = screen.getByLabelText(/Título/i);
+    fireEvent.change(titleInput, { target: { value: "Novo título" } });
+    fireEvent.click(screen.getByRole("button", { name: /Novo Anúncio/i }));
+    expect(
+      await screen.findByText(/Você tem alterações não salvas/i)
+    ).toBeInTheDocument();
+  });
+
+  test("shows remove confirmation modal when clicking Remover Anúncio", async () => {
+    const preloadedState = {
+      ads: {
+        ads: [],
+        userAds: [],
+        currentAd: { id: "ad123", title: "Meu anúncio" },
+        loading: false,
+        error: null,
+      },
+    };
+    renderWithProviders(<AdForm />, { preloadedState });
+    fireEvent.click(screen.getByRole("button", { name: /Remover Anúncio/i }));
+    expect(
+      await screen.findByText(/Tem certeza que deseja remover este anúncio/i)
+    ).toBeInTheDocument();
+  });
+
+  test("form fields are populated with currentAd data", () => {
+    const preloadedState = {
+      ads: {
+        ads: [],
+        userAds: [],
+        currentAd: {
+          id: "ad123",
+          title: "Meu anúncio",
+          short: "Breve descrição",
+          description: "Descrição completa",
+        },
+        loading: false,
+        error: null,
+      },
+    };
+    renderWithProviders(<AdForm />, { preloadedState });
+    expect(screen.getByLabelText(/Título/i)).toHaveValue("Meu anúncio");
+    // You can add more assertions for other fields if needed
   });
 });

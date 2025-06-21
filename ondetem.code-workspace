@@ -13,6 +13,8 @@
       "Encerrar",
       "Entrar",
       "favoritos",
+      "finishdate",
+      "fontawesome",
       "formfields",
       "inválido",
       "Lista",
@@ -22,6 +24,8 @@
       "ondetemdb",
       "Senha",
       "sessão",
+      "startdate",
+      "streetnumber",
       "testonly",
       "testphoto"
     ]

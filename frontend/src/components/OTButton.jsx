@@ -18,7 +18,6 @@ const OTButton = ({
     onClick={onClick}
     type={type || "button"}
     disabled={disabled}
-    aria-label={imgAlt || "Button"}
   >
     {imgSrc && (
       <img
