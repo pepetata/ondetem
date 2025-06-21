@@ -3,14 +3,13 @@ const path = require("path");
 
 module.exports = defineConfig({
   webServer: {
-    command: "npm run start:test",
-    port: 3000,
-    cwd: path.resolve(__dirname, "../backend"),
+    command: "npm run dev",
+    port: 5173,
+    cwd: __dirname,
     timeout: 120 * 1000,
     reuseExistingServer: !process.env.CI,
-    env: {
-      NODE_ENV: "test",
-      E2E: "true",
-    },
+  },
+  use: {
+    baseURL: "http://localhost:5173",
   },
 });

@@ -1,3 +1,4 @@
+// cSpell:ignore Alterar Anúncio anúncios atualizado Cancelar confirmpassword Editado Encerrar Entrar favoritos finishdate fontawesome formfields inválido Lista meus Nenhuma obrigatório Onde ondetem ondetemdb Senha sessão startdate streetnumber testonly testphoto
 {
   "folders": [
     {
@@ -7,9 +8,12 @@
   "settings": {
     "cSpell.words": [
       "Alterar",
+      "Anúncio",
       "anúncios",
+      "atualizado",
       "Cancelar",
       "confirmpassword",
+      "Editado",
       "Encerrar",
       "Entrar",
       "favoritos",
@@ -19,13 +23,17 @@
       "inválido",
       "Lista",
       "meus",
+      "Nenhuma",
+      "obrigatório",
       "Onde",
       "ondetem",
       "ondetemdb",
+      "psql",
       "Senha",
       "sessão",
       "startdate",
       "streetnumber",
+      "teste",
       "testonly",
       "testphoto"
     ]
