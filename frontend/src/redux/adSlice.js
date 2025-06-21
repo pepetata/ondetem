@@ -10,6 +10,12 @@ import {
 } from "../api/adAPI";
 import { showNotification } from "../components/helper";
 
+function handleThunkError(dispatch, err, rejectWithValue) {
+  const message = err.response?.data?.error || err.message;
+  dispatch(showNotification({ type: "error", message }));
+  return rejectWithValue(message);
+}
+
 export const createAdThunk = createAsyncThunk(
   "ads/create",
   async (formData, { dispatch, getState, rejectWithValue }) => {
@@ -18,17 +24,14 @@ export const createAdThunk = createAsyncThunk(
       if (!token) throw new Error("Usuário não autenticado");
       const ad = await createAd(formData, token);
       dispatch(
-        showNotification({ type: "success", message: "Anúncio criado!" })
+        showNotification({
+          type: "success",
+          message: "Anúncio criado com sucesso!",
+        })
       );
       return ad;
     } catch (err) {
-      dispatch(
-        showNotification({
-          type: "error",
-          message: err.response?.data?.error || err.message,
-        })
-      );
-      return rejectWithValue(err.response?.data?.error || err.message);
+      return handleThunkError(dispatch, err, rejectWithValue);
     }
   }
 );
@@ -45,13 +48,7 @@ export const updateAdThunk = createAsyncThunk(
       );
       return ad;
     } catch (err) {
-      dispatch(
-        showNotification({
-          type: "error",
-          message: err.response?.data?.error || err.message,
-        })
-      );
-      return rejectWithValue(err.response?.data?.error || err.message);
+      return handleThunkError(dispatch, err, rejectWithValue);
     }
   }
 );
@@ -68,13 +65,7 @@ export const deleteAdThunk = createAsyncThunk(
       );
       return adId;
     } catch (err) {
-      dispatch(
-        showNotification({
-          type: "error",
-          message: err.response?.data?.error || err.message,
-        })
-      );
-      return rejectWithValue(err.response?.data?.error || err.message);
+      return handleThunkError(dispatch, err, rejectWithValue);
     }
   }
 );
@@ -85,7 +76,7 @@ export const getAdThunk = createAsyncThunk(
     try {
       return await getAd(adId);
     } catch (err) {
-      return rejectWithValue(err.response?.data?.error || err.message);
+      return handleThunkError(dispatch, err, rejectWithValue);
     }
   }
 );
@@ -96,7 +87,7 @@ export const getAllAdsThunk = createAsyncThunk(
     try {
       return await getAllAds();
     } catch (err) {
-      return rejectWithValue(err.response?.data?.error || err.message);
+      return handleThunkError(dispatch, err, rejectWithValue);
     }
   }
 );
@@ -109,7 +100,7 @@ export const getUserAdsThunk = createAsyncThunk(
       if (!token) throw new Error("Usuário não autenticado");
       return await getUserAds(token);
     } catch (err) {
-      return rejectWithValue(err.response?.data?.error || err.message);
+      return handleThunkError(dispatch, err, rejectWithValue);
     }
   }
 );

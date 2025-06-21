@@ -1,5 +1,5 @@
 // import { useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import "./scss/App.scss";
 import Menu from "./components/Menu";
 import Home from "./components/Home";
@@ -7,9 +7,12 @@ import UserForm from "./features/users/UserForm";
 import LoginForm from "./features/auth/LoginForm";
 import AdForm from "./features/ads/AdForm";
 import { useSelector } from "react-redux";
+import MyAdsList from "./features/ads/MyAdsList";
 
 const App = () => {
   const user = useSelector((state) => state.auth.user);
+  const location = useLocation();
+  const isHome = location.pathname === "/";
   // const [showUserForm, setShowUserForm] = useState(false);
 
   // Adjust this value to match your navbar height
@@ -19,25 +22,24 @@ const App = () => {
     <>
       <Menu user={user} />
       <div className="main-content" style={{ marginTop: navbarHeight }}>
-        {/* {showUserForm && <UserForm onCancel={() => setShowUserForm(false)} />} */}
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/signup" element={<UserForm user={user} />} />
-          <Route
-            path="/user"
-            element={
-              user ? <UserForm user={user} /> : <Navigate to="/login" replace />
-            }
-          />
-          <Route path="/login" element={<LoginForm />} />
-          <Route
-            path="/ad"
-            element={
-              user ? <AdForm user={user} /> : <Navigate to="/login" replace />
-            }
-          />
-        </Routes>
+        {isHome && <MyAdsList />}
       </div>
+      {/* Main Routes ------------------------------------------------------*/}
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/signup" element={<UserForm user={user} />} />
+        <Route
+          path="/user"
+          element={
+            user ? <UserForm user={user} /> : <Navigate to="/login" replace />
+          }
+        />
+        <Route path="/login" element={<LoginForm />} />
+        <Route
+          path="/ad"
+          element={user ? <AdForm /> : <Navigate to="/login" replace />}
+        />
+      </Routes>
     </>
   );
 };

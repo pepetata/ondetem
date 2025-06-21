@@ -11,6 +11,14 @@ exports.getAdById = async (id) => {
   return result.rows[0] || null;
 };
 
+exports.getUserAds = async (userId) => {
+  const result = await pool.query(
+    `SELECT * FROM ads WHERE user_id = $1 ORDER BY title`,
+    [userId]
+  );
+  return result.rows;
+};
+
 exports.createAd = async (adData) => {
   const {
     title,

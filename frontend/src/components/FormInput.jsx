@@ -67,7 +67,7 @@ const FormInput = ({
       <Form.Control
         id={name}
         name={name}
-        value={value}
+        value={field.value == null ? "" : field.value}
         onChange={onChange}
         onBlur={onBlur}
         type={type}

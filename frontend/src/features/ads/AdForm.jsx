@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { Container, Row, Col, Form, Tabs, Tab, Modal } from "react-bootstrap";
 import { Formik, Form as FormikForm, Field } from "formik";
 import Notification from "../../components/Notification";
@@ -14,26 +15,38 @@ import {
   setCurrentAd,
   clearCurrentAd,
 } from "../../redux/adSlice";
-import { showNotification } from "../../components/helper";
+import { showNotification, clearNotification } from "../../components/helper";
 import "../../scss/AdForm.scss";
-
-const initialValues = Object.fromEntries(
-  Object.values(adFormFields).map((f) => [
-    f.name,
-    f.type === "checkbox" ? false : "",
-  ])
-);
 
 export default function AdForm() {
   const dispatch = useDispatch();
   const cepAsyncError = useRef("");
+  const navigate = useNavigate();
   const currentAd = useSelector((state) => state.ads.currentAd);
   const [activeTab, setActiveTab] = useState("description");
   const [showRemoveModal, setShowRemoveModal] = useState(false);
 
+  const initialValues = currentAd
+    ? {
+        ...Object.fromEntries(
+          Object.values(adFormFields).map((f) => [
+            f.name,
+            f.type === "checkbox" ? false : "",
+          ])
+        ),
+        ...currentAd,
+      }
+    : Object.fromEntries(
+        Object.values(adFormFields).map((f) => [
+          f.name,
+          f.type === "checkbox" ? false : "",
+        ])
+      );
+
   console.log(`Current Ad:`, currentAd);
 
   const handleSubmit = async (values, { setSubmitting }) => {
+    dispatch(clearNotification());
     console.log(`Submitting form with values:`, values);
     const formData = Object.fromEntries(
       Object.entries(values).map(([key, value]) => [key, value])
@@ -78,7 +91,10 @@ export default function AdForm() {
 
   const handleCloseLogout = () => setShowLogout(false);
 
-  const handleCancel = () => {};
+  const handleCancel = () => {
+    dispatch(clearNotification());
+    navigate("/");
+  };
 
   const handleZipBlur = async (
     e,
@@ -135,6 +151,7 @@ export default function AdForm() {
   };
 
   const handleRemoveAd = async (resetForm) => {
+    dispatch(clearNotification());
     if (currentAd && currentAd.id) {
       const result = await dispatch(deleteAdThunk(currentAd.id));
       if (deleteAdThunk.fulfilled.match(result)) {

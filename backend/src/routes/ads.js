@@ -8,8 +8,13 @@ const router = express.Router();
 
 // Public: Get all ads and get ad by ID
 router.get("/", adsController.getAllAds);
+router.get(
+  "/my",
+  middleware.tokenExtractor,
+  middleware.userExtractor,
+  adsController.getUserAds
+);
 router.get("/:id", adsController.getAdById);
-router.get("/my", middleware.tokenExtractor, adsController.getUserAds);
 
 router.post(
   "/",

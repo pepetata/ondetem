@@ -110,8 +110,10 @@ exports.deleteAd = async (req, res) => {
 
 // Get ads created by the authenticated user
 exports.getUserAds = async (req, res) => {
+  console.log(`Fetching user ads for: ${req.user.id}`);
   try {
-    const userId = req.user.id; // Assuming user ID is stored in req.user
+    const userId = req.user.id;
+    console.log(`Fetching ads for user: ${userId}`);
     const ads = await adsModel.getUserAds(userId);
     logger.info(`Fetched ${ads.length} ads for user: ${userId}`);
     res.status(200).json(ads);
