@@ -1,3 +1,5 @@
+const path = require("path");
+const fs = require("fs");
 const adsModel = require("../models/adModel");
 const logger = require("../utils/logger");
 
@@ -120,5 +122,62 @@ exports.getUserAds = async (req, res) => {
   } catch (err) {
     logger.error(`Error fetching user ads: ${err.message}`);
     res.status(500).json({ error: "Failed to fetch user ads" });
+  }
+};
+
+// Upload photo
+exports.uploadPhoto = async (req, res) => {
+  try {
+    const adId = req.params.id;
+    console.log("uploadPhoto: adId", adId);
+    console.log("uploadPhoto: req.file", req.file);
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+    // Limit to 5 photos per ad
+    const photos = await adsModel.getAdPhotos(adId);
+    if (photos.length >= 5) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ error: "Maximum 5 photos per ad" });
+    }
+
+    await adsModel.addAdPhoto(adId, req.file.filename);
+    res.status(201).json({ filename: req.file.filename });
+  } catch (err) {
+    console.error("uploadPhoto error:", err);
+    res.status(500).json({ error: "Failed to upload photo" });
+  }
+};
+
+// Get ad photos
+exports.getPhotos = async (req, res) => {
+  try {
+    const adId = req.params.id;
+    const photos = await adsModel.getAdPhotos(adId);
+    res.json(photos);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch photos" });
+  }
+};
+
+// Delete photo
+exports.deletePhoto = async (req, res) => {
+  try {
+    const adId = req.params.id;
+    const filename = req.params.filename;
+    const deleted = await adsModel.deleteAdPhoto(adId, filename);
+    if (deleted) {
+      // Remove file from disk
+      const filePath = path.join(
+        __dirname,
+        "../../uploads/ad_images",
+        filename
+      );
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      res.json({ message: "Photo deleted" });
+    } else {
+      res.status(404).json({ error: "Photo not found" });
+    }
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete photo" });
   }
 };

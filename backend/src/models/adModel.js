@@ -105,3 +105,27 @@ exports.deleteAd = async (id) => {
   const result = await pool.query(`DELETE FROM ads WHERE id = $1`, [id]);
   return result.rowCount > 0;
 };
+
+exports.addAdPhoto = async (adId, filename) => {
+  const result = await pool.query(
+    `INSERT INTO ad_photos (ad_id, filename) VALUES ($1, $2) RETURNING id`,
+    [adId, filename]
+  );
+  return result.rows[0].id;
+};
+
+exports.getAdPhotos = async (adId) => {
+  const result = await pool.query(
+    `SELECT filename FROM ad_photos WHERE ad_id = $1`,
+    [adId]
+  );
+  return result.rows.map((row) => row.filename);
+};
+
+exports.deleteAdPhoto = async (adId, filename) => {
+  const result = await pool.query(
+    `DELETE FROM ad_photos WHERE ad_id = $1 AND filename = $2`,
+    [adId, filename]
+  );
+  return result.rowCount > 0;
+};

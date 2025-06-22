@@ -61,3 +61,27 @@ export const getUserAds = async (token) => {
   });
   return response.data;
 };
+
+export const uploadAdPhoto = async (adId, file, token) => {
+  const formData = new FormData();
+  formData.append("photo", file);
+  const response = await axios.post(`${baseUrl}/${adId}/photos`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+export const getAdPhotos = async (adId) => {
+  const response = await axios.get(`${baseUrl}/${adId}/photos`);
+  return response.data;
+};
+
+export const deleteAdPhoto = async (adId, filename, token) => {
+  const response = await axios.delete(`${baseUrl}/${adId}/photos/${filename}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};

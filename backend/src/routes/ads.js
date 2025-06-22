@@ -1,8 +1,28 @@
 const express = require("express");
+const fs = require("fs");
+const multer = require("multer");
 const adsController = require("../controllers/adsController");
 const middleware = require("../utils/middleware");
-const multer = require("multer");
-const upload = multer({ dest: "uploads/" });
+
+///////////////////////////////////////////////////////////////////
+// Ensure the directory exists
+const uploadDir = "uploads/ad_images";
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // Use unique filename
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + "-" + file.originalname);
+  },
+});
+const upload = multer({ storage });
+/////////////////////////////////////////////////////////////////////
 
 const router = express.Router();
 
@@ -37,6 +57,24 @@ router.delete(
   middleware.tokenExtractor,
   middleware.userExtractor,
   adsController.deleteAd
+);
+
+// Photos
+router.post(
+  "/:id/photos",
+  upload.single("photo"),
+  middleware.tokenExtractor,
+  middleware.userExtractor,
+  adsController.uploadPhoto
+);
+
+router.get("/:id/photos", adsController.getPhotos);
+
+router.delete(
+  "/:id/photos/:filename",
+  middleware.tokenExtractor,
+  middleware.userExtractor,
+  adsController.deletePhoto
 );
 
 module.exports = router;

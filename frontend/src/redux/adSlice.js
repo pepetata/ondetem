@@ -126,6 +126,7 @@ const adSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(createAdThunk.fulfilled, (state, action) => {
+        state.currentAd = action.payload; // <-- add this
         state.ads.push(action.payload);
       })
       .addCase(updateAdThunk.fulfilled, (state, action) => {

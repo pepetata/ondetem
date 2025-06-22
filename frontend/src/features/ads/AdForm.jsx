@@ -6,6 +6,7 @@ import { Formik, Form as FormikForm, Field } from "formik";
 import Notification from "../../components/Notification";
 import OTButton from "../../components/OTButton";
 import FormInput from "../../components/FormInput";
+import AdImageManager from "./AdImageManager";
 import { adFormFields } from "../../formfields/adFormFiels.js";
 import { buildValidationSchema } from "../../components/validationHelper.js";
 import {
@@ -15,6 +16,7 @@ import {
   setCurrentAd,
   clearCurrentAd,
 } from "../../redux/adSlice";
+import { uploadAdImage } from "../../redux/adImagesSlice";
 import { showNotification, clearNotification } from "../../components/helper";
 import "../../scss/AdForm.scss";
 
@@ -26,7 +28,8 @@ export default function AdForm() {
   const [activeTab, setActiveTab] = useState("description");
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState(null); // "voltar" or "novo"
+  const [pendingAction, setPendingAction] = useState(null);
+  const [stagedImages, setStagedImages] = useState([]);
 
   const initialValues = currentAd
     ? {
@@ -46,6 +49,10 @@ export default function AdForm() {
       );
 
   console.log(`Current Ad:`, currentAd);
+
+  const handleImagesReady = (files) => {
+    setStagedImages(files);
+  };
 
   const handleSubmit = async (values, { setSubmitting }) => {
     dispatch(clearNotification());
@@ -81,10 +88,17 @@ export default function AdForm() {
     } else {
       // Create new ad
       const createdAd = await dispatch(createAdThunk(formData));
-      console.log(`Created ad (createdAd):`, createdAd);
       if (createAdThunk.fulfilled.match(createdAd)) {
-        dispatch(setCurrentAd(createdAd.payload));
-        console.log(`Ad created (currentAd):`, currentAd);
+        const ad = createdAd.payload;
+        dispatch(setCurrentAd(ad));
+        // Now upload images using the slice
+        if (ad.id && stagedImages.length) {
+          console.log("stagedImages to upload:", stagedImages);
+          for (const file of stagedImages) {
+            await dispatch(uploadAdImage({ adId: ad.id, file }));
+          }
+          setStagedImages([]);
+        }
       }
     }
   };
@@ -490,14 +504,16 @@ export default function AdForm() {
                   {/* Fotos Tab */}
                   <Tab eventKey="photo" title="Fotos">
                     <Row>
-                      <Col md={6}>
+                      <Col>
                         <div style={{ textAlign: "center" }}>
-                          Você poderá cadastrar até 3 fotos de seu anúncio (10
-                          fotos se tiver contrato de publicidade)!
+                          Você poderá cadastrar até 5 fotos de seu anúncio!
                           <br />
                           Use apenas imagens do tipo JPEG, PNG ou JPG.
                         </div>
-                        {/* Implement photo upload logic here */}
+                        <AdImageManager
+                          adId={currentAd && currentAd.id}
+                          onImagesReady={handleImagesReady}
+                        />
                       </Col>
                     </Row>
                   </Tab>

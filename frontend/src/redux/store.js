@@ -3,6 +3,7 @@ import userReducer from "./userSlice";
 import authReducer from "./authSlice";
 import notificationReducer from "./notificationSlice";
 import adReducer from "./adSlice";
+import adImagesReducer from "./adImagesSlice";
 
 export const store = configureStore({
   reducer: {
@@ -10,5 +11,6 @@ export const store = configureStore({
     notification: notificationReducer,
     auth: authReducer,
     ads: adReducer,
+    adImages: adImagesReducer,
   },
 });

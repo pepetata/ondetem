@@ -4,7 +4,7 @@ const fs = require("fs");
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-const sql = fs.readFileSync("./scripts/setup_test.sql", "utf8");
+const sql = fs.readFileSync("./scripts/setup.sql", "utf8");
 
 pool
   .query(sql)

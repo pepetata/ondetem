@@ -1,4 +1,7 @@
 -- setup.sql
+-- for development and production environments
+
+
 -- first create the database, then run this script to set up the initial schema
 --    psql -U postgres # pw=admin
 --    CREATE USER admin WITH PASSWORD 'admin';
@@ -12,11 +15,31 @@
 --   psql -U <username> -d <database_name> -f setup.sql
 
 
+-- for test environments
+
+-- first create the database, then run this script to set up the initial schema
+--    psql -U postgres # pw=admin
+--    CREATE USER admin WITH PASSWORD 'admin';
+--    ALTER USER admin SUPERUSER;
+--    CREATE DATABASE ondetemdb_test;
+--    GRANT ALL PRIVILEGES ON DATABASE ondetemdb_test TO admin;
+--    \q
+-- then to create the tables, run this script from backend directory as:
+--   node scripts/init_db.js 
+-- or
+--   psql -U <username> -d <database_name> -f setup.sql
+
+
+
+DROP TABLE IF EXISTS ad_photos;
+DROP TABLE IF EXISTS ads;
+DROP TABLE IF EXISTS users;
+
+
 -- Enable the pgcrypto extension for UUID generation
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Drop the existing table
-DROP TABLE IF EXISTS users;
 
 -- Create the new table with a UUID primary key
 CREATE TABLE IF NOT EXISTS users (
@@ -31,7 +54,6 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- --------------------------------------------------------------------
 -- Drop the ads table if it exists
-DROP TABLE IF EXISTS ads;
 
 -- Create the ads table with columns matching AdForm fields
 CREATE TABLE IF NOT EXISTS ads (
@@ -57,4 +79,12 @@ CREATE TABLE IF NOT EXISTS ads (
     finishdate DATE,
     timetext TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create the ad_photos table to store filenames of ad photos
+CREATE TABLE ad_photos (
+  id SERIAL PRIMARY KEY,
+  ad_id UUID NOT NULL REFERENCES ads(id) ON DELETE CASCADE,
+  -- ad_id INTEGER REFERENCES ads(id) ON DELETE CASCADE,
+  filename TEXT NOT NULL
 );
