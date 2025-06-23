@@ -14,7 +14,7 @@ import Notification from "../../components/Notification.jsx";
 import OTButton from "../../components/OTButton.jsx";
 import FormInput from "../../components/FormInput.jsx";
 import { userFormFields } from "../../formFields/userFormFields.js";
-import { buildValidationSchema } from "../../components/validationHelper.js";
+import { buildValidationSchema } from "../../components/helper.js";
 
 const defaultImg = "/images/nophoto.jpg";
 
