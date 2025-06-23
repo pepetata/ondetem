@@ -48,6 +48,12 @@ export const updateAdThunk = createAsyncThunk(
       );
       return ad;
     } catch (err) {
+      dispatch(
+        showNotification({
+          type: "error",
+          message: "ID do anúncio não encontrado.",
+        })
+      );
       return handleThunkError(dispatch, err, rejectWithValue);
     }
   }
@@ -65,6 +71,12 @@ export const deleteAdThunk = createAsyncThunk(
       );
       return adId;
     } catch (err) {
+      dispatch(
+        showNotification({
+          type: "error",
+          message: "Anúncio não encontrado.",
+        })
+      );
       return handleThunkError(dispatch, err, rejectWithValue);
     }
   }

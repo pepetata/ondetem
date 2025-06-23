@@ -98,6 +98,24 @@ exports.updateAd = async (req, res) => {
 exports.deleteAd = async (req, res) => {
   try {
     const adId = req.params.id;
+
+    // 1. Get all image filenames for this ad
+    const images = await adsModel.getAdImages(adId);
+
+    // 2. Delete each file from disk
+    const adImagesDir = path.join(__dirname, "../../uploads/ad_images");
+    images.forEach((filename) => {
+      const safeFilename = path.basename(filename);
+      const filePath = path.join(adImagesDir, safeFilename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        logger.info(`Deleted image file: ${filePath}`);
+      } else {
+        logger.warn(`Image file not found: ${filePath}`);
+      }
+    });
+
+    // 3. Delete the ad (DB will cascade to ad_images)
     const deleted = await adsModel.deleteAd(adId);
     if (!deleted) {
       return res.status(404).json({ error: "Ad not found" });
@@ -125,59 +143,65 @@ exports.getUserAds = async (req, res) => {
   }
 };
 
-// Upload photo
-exports.uploadPhoto = async (req, res) => {
+// Upload image
+exports.uploadImage = async (req, res) => {
   try {
     const adId = req.params.id;
-    console.log("uploadPhoto: adId", adId);
-    console.log("uploadPhoto: req.file", req.file);
+    console.log("uploadImage req.file:", req.file);
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
-    // Limit to 5 photos per ad
-    const photos = await adsModel.getAdPhotos(adId);
-    if (photos.length >= 5) {
+    // Limit to 5 images per ad
+    const images = await adsModel.getAdImages(adId);
+    if (images.length >= 5) {
       fs.unlinkSync(req.file.path);
-      return res.status(400).json({ error: "Maximum 5 photos per ad" });
+      return res.status(400).json({ error: "Maximum 5 images per ad" });
     }
 
-    await adsModel.addAdPhoto(adId, req.file.filename);
+    await adsModel.addAdImage(adId, req.file.filename);
     res.status(201).json({ filename: req.file.filename });
   } catch (err) {
-    console.error("uploadPhoto error:", err);
-    res.status(500).json({ error: "Failed to upload photo" });
+    console.error("uploadImage error:", err);
+    res.status(500).json({ error: "Failed to upload image" });
   }
 };
 
-// Get ad photos
-exports.getPhotos = async (req, res) => {
+// Get ad images
+exports.getImages = async (req, res) => {
   try {
     const adId = req.params.id;
-    const photos = await adsModel.getAdPhotos(adId);
-    res.json(photos);
+    const images = await adsModel.getAdImages(adId);
+    res.json(images);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch photos" });
+    res.status(500).json({ error: "Failed to fetch images" });
   }
 };
 
-// Delete photo
-exports.deletePhoto = async (req, res) => {
+// Delete image
+exports.deleteImage = async (req, res) => {
   try {
     const adId = req.params.id;
     const filename = req.params.filename;
-    const deleted = await adsModel.deleteAdPhoto(adId, filename);
+    const deleted = await adsModel.deleteAdImage(adId, filename);
     if (deleted) {
       // Remove file from disk
+      const safeFilename = path.basename(filename);
       const filePath = path.join(
         __dirname,
         "../../uploads/ad_images",
-        filename
+        safeFilename
       );
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-      res.json({ message: "Photo deleted" });
+      console.log("Trying to delete file:", filePath);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log("File deleted:", filePath);
+      } else {
+        console.log("File not found:", filePath);
+      }
+      res.json({ message: "Image deleted" });
     } else {
-      res.status(404).json({ error: "Photo not found" });
+      res.status(404).json({ error: "Image not found" });
     }
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete photo" });
+    res.status(500).json({ error: "Failed to delete image" });
   }
 };

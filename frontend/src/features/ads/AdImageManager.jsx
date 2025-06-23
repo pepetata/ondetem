@@ -93,7 +93,7 @@ export default function AdImageManager({ adId, onImagesReady }) {
       </div>
     ));
 
-  const renderUploadedPhotos = () =>
+  const renderUploadedImages = () =>
     images.map((filename) => (
       <div
         key={filename}
@@ -138,7 +138,7 @@ export default function AdImageManager({ adId, onImagesReady }) {
   return (
     <div>
       <div style={{ marginBottom: 8 }}>
-        {adId ? renderUploadedPhotos() : renderStagedPreviews()}
+        {adId ? renderUploadedImages() : renderStagedPreviews()}
       </div>
       {count < 5 && (
         <input

@@ -93,14 +93,6 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       });
-    // .addCase(fetchProfileThunk.fulfilled, (state, action) => {
-    //   // Normalize photo_path to photoPath
-    //   const user = action.payload;
-    //   if (user && user.photo_path && !user.photoPath) {
-    //     user.photoPath = user.photo_path;
-    //   }
-    //   state.user = user;
-    // });
   },
 });
 

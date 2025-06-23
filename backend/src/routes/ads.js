@@ -38,7 +38,7 @@ router.get("/:id", adsController.getAdById);
 
 router.post(
   "/",
-  upload.single("photo"),
+  upload.single("image"),
   middleware.tokenExtractor,
   middleware.userExtractor,
   adsController.createAd
@@ -46,7 +46,7 @@ router.post(
 
 router.put(
   "/:id",
-  upload.single("photo"),
+  upload.single("image"),
   middleware.tokenExtractor,
   middleware.userExtractor,
   adsController.updateAd
@@ -59,22 +59,22 @@ router.delete(
   adsController.deleteAd
 );
 
-// Photos
+// Images
 router.post(
-  "/:id/photos",
-  upload.single("photo"),
+  "/:id/images",
+  upload.single("image"),
   middleware.tokenExtractor,
   middleware.userExtractor,
-  adsController.uploadPhoto
+  adsController.uploadImage
 );
 
-router.get("/:id/photos", adsController.getPhotos);
+router.get("/:id/images", adsController.getImages);
 
 router.delete(
-  "/:id/photos/:filename",
+  "/:id/images/:filename",
   middleware.tokenExtractor,
   middleware.userExtractor,
-  adsController.deletePhoto
+  adsController.deleteImage
 );
 
 module.exports = router;

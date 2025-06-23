@@ -69,14 +69,6 @@ export default function AdForm() {
         const updatedAd = await dispatch(
           updateAdThunk({ adId: currentAd.id, formData })
         );
-      } else {
-        // Handle error: ad or ad.id is missing
-        dispatch(
-          showNotification({
-            type: "error",
-            message: "ID do anúncio não encontrado.",
-          })
-        );
       }
       if (updateAdThunk.fulfilled.match(updatedAd)) {
         dispatch(setCurrentAd(updatedAd.payload));
@@ -105,9 +97,8 @@ export default function AdForm() {
 
   const handleTabSelect = (k) => setActiveTab(k);
 
-  const handleCloseLogout = () => setShowLogout(false);
-
   const handleCancel = (dirty) => {
+    dispatch(clearNotification());
     if (dirty) {
       setPendingAction("back");
       setShowUnsavedModal(true);
@@ -118,6 +109,7 @@ export default function AdForm() {
   };
 
   const handleNewAd = (dirty, resetForm) => {
+    dispatch(clearNotification());
     if (dirty) {
       setPendingAction("newAd");
       setShowUnsavedModal(true);
@@ -128,9 +120,9 @@ export default function AdForm() {
   };
 
   const handleUnsavedConfirm = (resetForm) => {
+    dispatch(clearNotification());
     setShowUnsavedModal(false);
     if (pendingAction === "back") {
-      dispatch(clearNotification());
       navigate("/");
     } else if (pendingAction === "newAd") {
       dispatch(clearCurrentAd());
@@ -140,6 +132,8 @@ export default function AdForm() {
   };
 
   const handleUnsavedCancel = () => {
+    dispatch(clearNotification());
+
     setShowUnsavedModal(false);
     setPendingAction(null);
   };
@@ -202,21 +196,21 @@ export default function AdForm() {
     if (currentAd && currentAd.id) {
       const result = await dispatch(deleteAdThunk(currentAd.id));
       if (deleteAdThunk.fulfilled.match(result)) {
-        dispatch(
-          showNotification({ type: "success", message: "Anúncio removido!" })
-        );
+        // dispatch(
+        //   showNotification({ type: "success", message: "Anúncio removido!" })
+        // );
         dispatch(clearCurrentAd());
         resetForm();
         setShowRemoveModal(false);
         return;
       }
     } else {
-      dispatch(
-        showNotification({
-          type: "error",
-          message: "Anúncio não encontrado.",
-        })
-      );
+      // dispatch(
+      //   showNotification({
+      //     type: "error",
+      //     message: "Anúncio não encontrado.",
+      //   })
+      // );
       dispatch(clearCurrentAd());
       resetForm();
     }
@@ -502,7 +496,7 @@ export default function AdForm() {
                     </Row>
                   </Tab>
                   {/* Fotos Tab */}
-                  <Tab eventKey="photo" title="Fotos">
+                  <Tab eventKey="image" title="Fotos">
                     <Row>
                       <Col>
                         <div style={{ textAlign: "center" }}>

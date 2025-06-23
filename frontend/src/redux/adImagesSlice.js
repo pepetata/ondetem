@@ -1,12 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { uploadAdPhoto, getAdPhotos, deleteAdPhoto } from "../api/adAPI";
+import { uploadAdImages, getAdImages, deleteAdImages } from "../api/adAPI";
 import { getToken } from "../api/adAPI";
 
 export const fetchAdImages = createAsyncThunk(
   "adImages/fetch",
   async (adId, { rejectWithValue }) => {
     try {
-      return await getAdPhotos(adId);
+      return await getAdImages(adId);
     } catch (err) {
       console.error("uploadAdImage error:", err);
       return rejectWithValue(err.message);
@@ -20,7 +20,7 @@ export const uploadAdImage = createAsyncThunk(
     try {
       const token = getToken(getState);
       if (!token) throw new Error("Usuário não autenticado");
-      return await uploadAdPhoto(adId, file, token);
+      return await uploadAdImages(adId, file, token);
     } catch (err) {
       console.error("uploadAdImage error:", err);
       return rejectWithValue(err.message);
@@ -34,7 +34,7 @@ export const deleteAdImage = createAsyncThunk(
     try {
       const token = getToken(getState);
       if (!token) throw new Error("Usuário não autenticado");
-      await deleteAdPhoto(adId, filename, token);
+      await deleteAdImages(adId, filename, token);
       return filename;
     } catch (err) {
       console.error("uploadAdImage error:", err);

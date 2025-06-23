@@ -31,7 +31,7 @@
 
 
 
-DROP TABLE IF EXISTS ad_photos;
+DROP TABLE IF EXISTS ad_images;
 DROP TABLE IF EXISTS ads;
 DROP TABLE IF EXISTS users;
 
@@ -81,8 +81,8 @@ CREATE TABLE IF NOT EXISTS ads (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create the ad_photos table to store filenames of ad photos
-CREATE TABLE ad_photos (
+-- Create the ad_images table to store filenames of ad images
+CREATE TABLE ad_images (
   id SERIAL PRIMARY KEY,
   ad_id UUID NOT NULL REFERENCES ads(id) ON DELETE CASCADE,
   -- ad_id INTEGER REFERENCES ads(id) ON DELETE CASCADE,
