@@ -1,34 +1,3 @@
-import { useRef, useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useParams } from "react-router-dom";
-import { Container, Row, Col, Form, Tabs, Tab, Modal } from "react-bootstrap";
-import { Formik, Form as FormikForm, Field } from "formik";
-import Notification from "../../components/Notification";
-import OTButton from "../../components/OTButton";
-import FormInput from "../../components/FormInput";
-import AdFormDescriptionTab from "./AdFormDescriptionTab";
-import AdFormContactTab from "./AdFormContactTab";
-import AdFormImageTab from "./AdFormImageTab";
-import AdFormCalendarTab from "./AdFormCalendarTab";
-import AdFormPublicityTab from "./AdFormPublicityTab";
-import { adFormFields } from "../../formfields/adFormFiels.js";
-import { buildValidationSchema } from "../../components/validationHelper.js";
-import {
-  createAdThunk,
-  updateAdThunk,
-  deleteAdThunk,
-  getAdThunk,
-  clearCurrentAd,
-  setCurrentAd,
-} from "../../redux/adSlice";
-import {
-  uploadAdImage,
-  clearAdImages,
-  deleteAdImage,
-} from "../../redux/adImagesSlice";
-import { showNotification, clearNotification } from "../../components/helper";
-import "../../scss/AdForm.scss";
-
 export default function AdForm() {
   const { id } = useParams();
   const dispatch = useDispatch();
@@ -43,23 +12,6 @@ export default function AdForm() {
   const [imagesToAdd, setImagesToAdd] = useState([]);
   const [imagesToDelete, setImagesToDelete] = useState([]);
   const [ready, setReady] = useState(false);
-
-  const initialValues = currentAd
-    ? {
-        ...Object.fromEntries(
-          Object.values(adFormFields).map((f) => [
-            f.name,
-            f.type === "checkbox" ? false : "",
-          ])
-        ),
-        ...currentAd,
-      }
-    : Object.fromEntries(
-        Object.values(adFormFields).map((f) => [
-          f.name,
-          f.type === "checkbox" ? false : "",
-        ])
-      );
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
@@ -112,8 +64,6 @@ export default function AdForm() {
     }
   };
 
-  const handleTabSelect = (k) => setActiveTab(k);
-
   const handleCancel = (dirty) => {
     dispatch(clearNotification());
     if (dirty) {
@@ -121,8 +71,7 @@ export default function AdForm() {
       setShowUnsavedModal(true);
       return;
     }
-    dispatch(clearCurrentAd());
-    dispatch(clearAdImages()); // <-- Add this line
+    clearAdState();
     navigate("/");
   };
 
@@ -133,8 +82,6 @@ export default function AdForm() {
       setShowUnsavedModal(true);
       return;
     }
-    // dispatch(clearCurrentAd());
-    // dispatch(clearAdImages());
     navigate("/ad");
   };
 
@@ -142,12 +89,10 @@ export default function AdForm() {
     dispatch(clearNotification());
     setShowUnsavedModal(false);
     if (pendingAction === "back") {
-      dispatch(clearCurrentAd());
-      dispatch(clearAdImages());
+      clearAdState();
       navigate("/");
     } else if (pendingAction === "newAd") {
-      dispatch(clearCurrentAd());
-      dispatch(clearAdImages());
+      clearAdState();
       resetForm();
     }
     setPendingAction(null);
@@ -158,59 +103,6 @@ export default function AdForm() {
 
     setShowUnsavedModal(false);
     setPendingAction(null);
-  };
-  const handleZipBlur = async (
-    e,
-    setFieldValue,
-    setFieldError,
-    setFieldTouched
-  ) => {
-    const cep = e.target.value.replace(/\D/g, "");
-    if (cep.length === 8) {
-      let timeoutId;
-      // Show loading message
-      cepAsyncError.current = "Buscando CEP...";
-      setFieldTouched("zipcode", true, false);
-      setFieldError("zipcode", "Buscando CEP...");
-      try {
-        const timeoutPromise = new Promise(
-          (_, reject) =>
-            (timeoutId = setTimeout(
-              () => reject(new Error("Tempo de resposta excedido")),
-              5000
-            ))
-        );
-        const fetchPromise = fetch(
-          `https://viacep.com.br/ws/${cep}/json/`
-        ).then((res) => res.json());
-
-        const data = await Promise.race([fetchPromise, timeoutPromise]);
-
-        if (!data.erro) {
-          setFieldValue("address1", data.logradouro || "");
-          setFieldValue("city", data.localidade || "");
-          setFieldValue("state", data.uf || "");
-          cepAsyncError.current = "";
-          setFieldError("zipcode", undefined);
-          setFieldTouched("zipcode", true, true); // <-- Force re-validation and re-render
-        } else {
-          cepAsyncError.current = "CEP não encontrado";
-          setFieldError("zipcode", "CEP não encontrado");
-          setFieldTouched("zipcode", true, false);
-          setFieldValue("address1", "");
-          setFieldValue("city", "");
-          setFieldValue("state", "");
-          setTimeout(() => e.target.focus(), 0);
-        }
-      } catch (err) {
-        cepAsyncError.current = "Erro ao buscar CEP";
-        setFieldError("zipcode", "Erro ao buscar CEP");
-        setFieldTouched("zipcode", true, false);
-        setTimeout(() => e.target.focus(), 0);
-      } finally {
-        clearTimeout(timeoutId);
-      }
-    }
   };
 
   const handleRemoveAd = async (resetForm) => {
@@ -225,8 +117,7 @@ export default function AdForm() {
         return;
       }
     } else {
-      dispatch(clearCurrentAd());
-      dispatch(clearAdImages());
+      clearAdState();
       resetForm();
     }
     setShowRemoveModal(false);
@@ -234,10 +125,23 @@ export default function AdForm() {
 
   const handleShowRemoveModal = () => setShowRemoveModal(true);
   const handleCloseRemoveModal = () => setShowRemoveModal(false);
+  const handleTabSelect = (k) => setActiveTab(k);
 
-  // When user marks an existing image for deletion:
-  const handleMarkDelete = (filename) => {
-    setImagesToDelete([...imagesToDelete, filename]);
+  function buildInitialValues(adFormFields, currentAd) {
+    const base = Object.fromEntries(
+      Object.values(adFormFields).map((f) => [
+        f.name,
+        f.type === "checkbox" ? false : "",
+      ])
+    );
+    return currentAd ? { ...base, ...currentAd } : base;
+  }
+
+  const initialValues = buildInitialValues(adFormFields, currentAd);
+
+  const clearAdState = () => {
+    dispatch(clearCurrentAd());
+    dispatch(clearAdImages());
   };
 
   //When currentAd changes (e.g., after create/update), update Formik values so the form always reflects the latest ad.
@@ -264,22 +168,22 @@ export default function AdForm() {
   // Get the ad ID from the URL
   useEffect(() => {
     let cancelled = false;
+
+    const finishReady = () => {
+      if (!cancelled) setReady(true);
+    };
+
     if (id) {
       if (!currentAd || currentAd.id !== id) {
-        dispatch(getAdThunk(id)).then(() => {
-          if (!cancelled) setReady(true);
-        });
+        dispatch(getAdThunk(id)).then(finishReady);
       } else {
-        setReady(true);
+        finishReady();
       }
     } else {
-      // Only clear state here, and set ready after clearing
-      dispatch(clearCurrentAd());
-      dispatch(clearAdImages());
-      setTimeout(() => {
-        if (!cancelled) setReady(true);
-      }, 0);
+      clearAdState();
+      setTimeout(finishReady, 0);
     }
+
     return () => {
       cancelled = true;
       setReady(false);
@@ -403,22 +307,10 @@ export default function AdForm() {
                 Tem certeza que deseja remover este anúncio?
               </Modal.Body>
               <Modal.Footer>
-                <OTButton
-                  className="cancelbutton"
-                  imgSrc="/images/cancel.png"
-                  imgAlt="Cancelar"
-                  onClick={handleCloseRemoveModal}
-                >
-                  Cancelar
-                </OTButton>
-                <OTButton
-                  className="btn-danger"
-                  imgSrc="/images/delete.png"
-                  imgAlt="Confirmar"
+                <ModalCancelButton onClick={handleCloseRemoveModal} />
+                <ModalConfirmarButton
                   onClick={() => handleRemoveAd(resetForm)}
-                >
-                  Confirmar
-                </OTButton>
+                />
               </Modal.Footer>
             </Modal>
             <Modal show={showUnsavedModal} onHide={handleUnsavedCancel}>
@@ -429,22 +321,10 @@ export default function AdForm() {
                 Você tem alterações não salvas. Deseja continuar mesmo assim?
               </Modal.Body>
               <Modal.Footer>
-                <OTButton
-                  className="cancelbutton"
-                  imgSrc="/images/cancel.png"
-                  imgAlt="Cancelar"
-                  onClick={handleUnsavedCancel}
-                >
-                  Cancelar
-                </OTButton>
-                <OTButton
-                  className="btn-danger"
-                  imgSrc="/images/return.png"
-                  imgAlt="Confirmar"
+                <ModalCancelButton onClick={handleUnsavedCancel} />
+                <ModalConfirmarButton
                   onClick={() => handleUnsavedConfirm(resetForm)}
-                >
-                  Confirmar
-                </OTButton>
+                />
               </Modal.Footer>
             </Modal>
           </FormikForm>
@@ -453,3 +333,42 @@ export default function AdForm() {
     </Container>
   );
 }
+
+import { useRef, useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, useParams } from "react-router-dom";
+import { Container, Row, Col, Form, Tabs, Tab, Modal } from "react-bootstrap";
+import { Formik, Form as FormikForm, Field } from "formik";
+
+import Notification from "../../components/Notification";
+import OTButton from "../../components/OTButton";
+import FormInput from "../../components/FormInput";
+import AdFormDescriptionTab from "./AdFormDescriptionTab";
+import AdFormContactTab from "./AdFormContactTab";
+import AdFormImageTab from "./AdFormImageTab";
+import AdFormCalendarTab from "./AdFormCalendarTab";
+import AdFormPublicityTab from "./AdFormPublicityTab";
+import ModalButton, {
+  ModalCancelButton,
+  ModalConfirmarButton,
+} from "../../components/ModalButton";
+
+import { adFormFields } from "../../formfields/adFormFiels.js";
+import { buildValidationSchema } from "../../components/validationHelper.js";
+import { showNotification, clearNotification } from "../../components/helper";
+
+import {
+  createAdThunk,
+  updateAdThunk,
+  deleteAdThunk,
+  getAdThunk,
+  clearCurrentAd,
+  setCurrentAd,
+} from "../../redux/adSlice";
+import {
+  uploadAdImage,
+  clearAdImages,
+  deleteAdImage,
+} from "../../redux/adImagesSlice";
+
+import "../../scss/AdForm.scss";

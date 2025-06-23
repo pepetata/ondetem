@@ -130,7 +130,6 @@ const adSlice = createSlice({
   },
   reducers: {
     setCurrentAd(state, action) {
-      console.log(`Setting current ad:`, action.payload);
       state.currentAd = action.payload;
     },
     clearCurrentAd(state) {
