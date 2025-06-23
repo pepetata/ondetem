@@ -1,8 +1,8 @@
 // import { useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import "./scss/App.scss";
-import Menu from "./components/Menu";
-import Home from "./components/Home";
+import Menu from "./features/menu/Menu";
+import Home from "./features/home/Home";
 import UserForm from "./features/users/UserForm";
 import LoginForm from "./features/auth/LoginForm";
 import AdForm from "./features/ads/AdForm";

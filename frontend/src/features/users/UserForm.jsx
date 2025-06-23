@@ -1,14 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { Formik, Form as FormikForm, Field } from "formik";
 import { Form, Row, Col, Image } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import PropTypes from "prop-types";
-import {
-  createUserThunk,
-  updateUserThunk,
-  fetchUserThunk,
-} from "../../redux/userSlice";
+import { createUserThunk, updateUserThunk } from "../../redux/userSlice";
 import { setUser } from "../../redux/authSlice";
 import Notification from "../../components/Notification.jsx";
 import OTButton from "../../components/OTButton.jsx";
@@ -62,11 +58,9 @@ const UserForm = ({ user }) => {
 
   const validationSchema = buildValidationSchema(filteredFields, isNewUser);
 
-  // useEffect(() => {
-  //   if (!user) {
-  //     dispatch(fetchUserThunk());
-  //   }
-  // }, [user, dispatch]);
+  useEffect(() => {
+    document.title = user ? "Perfil do Usuário" : "Cadastro de Novo Usuário";
+  }, []);
 
   const handleCancel = () => {
     console.log(`canceling`);

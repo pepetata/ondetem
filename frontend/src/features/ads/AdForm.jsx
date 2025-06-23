@@ -157,12 +157,12 @@ export default function AdForm() {
         ...currentAd,
       });
     }
-  }, [currentAd]);
-
-  // Reset images to add/delete when currentAd changes
-  useEffect(() => {
+    // Reset images to add/delete when currentAd changes
     setImagesToAdd([]);
     setImagesToDelete([]);
+
+    // set the page title
+    document.title = currentAd ? `Editar Anúncio` : "Novo Anúncio";
   }, [currentAd]);
 
   // Get the ad ID from the URL

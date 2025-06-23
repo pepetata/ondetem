@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Formik, Form, Field } from "formik";
@@ -47,6 +48,11 @@ const LoginForm = () => {
   const handleSignup = () => {
     navigate("/user");
   };
+
+  // Set document title when component mounts
+  useEffect(() => {
+    document.title = "Entrar no Sistema";
+  }, []);
 
   return (
     <div className="container">

@@ -1,9 +1,9 @@
 import { Navbar, Nav, Container } from "react-bootstrap";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { logout } from "../redux/authSlice";
-import { clearCurrentAd } from "../redux/adSlice";
-import "../scss/Menu.scss";
+import { logout } from "../../redux/authSlice";
+import { clearCurrentAd } from "../../redux/adSlice";
+import "../../scss/Menu.scss";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -15,6 +15,8 @@ const Menu = () => {
   const isSignup = location.pathname === "/signup";
   const isLogin = location.pathname === "/login";
   const isAdForm = location.pathname.startsWith("/ad");
+  const isUserPage = location.pathname === "/user";
+  console.log(`isUserPage:`, isUserPage);
 
   const userPhoto =
     user && user.photoPath
@@ -115,16 +117,18 @@ const Menu = () => {
                     />{" "}
                     Meus Anúncios
                   </Nav.Link>
-                  <Nav.Link as={Link} to="/user" className="d-lg-none mb-2">
-                    <img
-                      src={userPhoto}
-                      alt="Meu Perfil"
-                      height="24"
-                      className="menu-user-photo"
-                      aria-hidden="true"
-                    />{" "}
-                    Meu Perfil
-                  </Nav.Link>
+                  {!isUserPage && (
+                    <Nav.Link as={Link} to="/user" className="d-lg-none mb-2">
+                      <img
+                        src={userPhoto}
+                        alt="Meu Perfil"
+                        height="24"
+                        className="menu-user-photo"
+                        aria-hidden="true"
+                      />{" "}
+                      Meu Perfil
+                    </Nav.Link>
+                  )}
                   <Nav.Link
                     href="#"
                     onClick={handleLogout}
@@ -165,20 +169,22 @@ const Menu = () => {
                       aria-hidden="true"
                     />
                   </Nav.Link>
-                  <Nav.Link
-                    as={Link}
-                    to="/user"
-                    className="menu-icon-btn d-none d-lg-inline"
-                    title="Alterar meus dados"
-                  >
-                    <img
-                      src={userPhoto}
-                      alt="Alterar meus dados"
-                      height="40"
-                      className="menu-user-photo"
-                      aria-hidden="true"
-                    />
-                  </Nav.Link>
+                  {!isUserPage && (
+                    <Nav.Link
+                      as={Link}
+                      to="/user"
+                      className="menu-icon-btn d-none d-lg-inline"
+                      title="Alterar meus dados"
+                    >
+                      <img
+                        src={userPhoto}
+                        alt="Alterar meus dados"
+                        height="40"
+                        className="menu-user-photo"
+                        aria-hidden="true"
+                      />
+                    </Nav.Link>
+                  )}
                   <Nav.Link
                     href="#"
                     onClick={handleLogout}
