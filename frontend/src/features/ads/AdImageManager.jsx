@@ -57,45 +57,23 @@ export default function AdImageManager({
 
   return (
     <div>
-      <div style={{ marginBottom: 8 }}>
+      <div className="adimage-preview-list">
         {/* Show existing images (not marked for deletion) */}
         {visibleImages.map((filename) => (
-          <div
-            key={filename}
-            style={{ display: "inline-block", margin: 8, position: "relative" }}
-          >
+          <div key={filename} className="adimage-preview">
             <img
               src={`${API_URL}/uploads/ad_images/${filename}`}
               alt="ad"
-              style={{
-                width: 150,
-                height: 150,
-                objectFit: "cover",
-                border: "1px solid #ccc",
-                borderRadius: 8,
-                opacity: 1,
+              className="adimage-img"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "/images/nophoto.jpg";
               }}
-              //   onError={(e) => {
-              //     e.target.onerror = null;
-              //     e.target.src = "/images/nophoto.jpg";
-              //   }}
             />
             <button
               type="button"
               onClick={() => handleDelete(filename)}
-              style={{
-                position: "absolute",
-                top: 2,
-                right: 2,
-                background: "rgba(255,255,255,0.8)",
-                border: "none",
-                borderRadius: "50%",
-                width: 24,
-                height: 24,
-                cursor: "pointer",
-                fontWeight: "bold",
-                color: "#d00",
-              }}
+              className="adimage-remove-btn"
               title="Remover"
             >
               ×
@@ -106,48 +84,21 @@ export default function AdImageManager({
         {(imagesToDelete || []).map((filename) => (
           <div
             key={filename}
-            style={{
-              display: "inline-block",
-              margin: 16,
-              position: "relative",
-              background: "#fafafa",
-              padding: 8,
-              borderRadius: 12,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
-            }}
+            className="adimage-preview adimage-preview-deleting"
           >
             <img
               src={`/uploads/ad_images/${filename}`}
               alt="ad"
-              style={{
-                width: 150,
-                height: 150,
-                objectFit: "cover",
-                border: "1px solid #ccc",
-                borderRadius: 8,
-                opacity: 1,
+              className="adimage-img"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "/images/nophoto.jpg";
               }}
-              //   onError={(e) => {
-              //     e.target.onerror = null;
-              //     e.target.src = "/images/nophoto.jpg";
-              //   }}
             />
             <button
               type="button"
               onClick={() => handleUndoDelete(filename)}
-              style={{
-                position: "absolute",
-                top: 2,
-                right: 2,
-                background: "rgba(255,255,255,0.8)",
-                border: "none",
-                borderRadius: "50%",
-                width: 24,
-                height: 24,
-                cursor: "pointer",
-                fontWeight: "bold",
-                color: "#090",
-              }}
+              className="adimage-undo-btn"
               title="Desfazer remoção"
             >
               ↩
@@ -156,38 +107,16 @@ export default function AdImageManager({
         ))}
         {/* Show staged new images */}
         {(imagesToAdd || []).map((file, idx) => (
-          <div
-            key={file.name + idx}
-            style={{ display: "inline-block", margin: 8, position: "relative" }}
-          >
+          <div key={file.name + idx} className="adimage-preview">
             <img
               src={URL.createObjectURL(file)}
               alt="preview"
-              style={{
-                width: 150,
-                height: 150,
-                objectFit: "cover",
-                border: "1px solid #ccc",
-                borderRadius: 4,
-                opacity: 1,
-              }}
+              className="adimage-img"
             />
             <button
               type="button"
               onClick={() => handleRemoveStaged(idx)}
-              style={{
-                position: "absolute",
-                top: 2,
-                right: 2,
-                background: "rgba(255,255,255,0.8)",
-                border: "none",
-                borderRadius: "50%",
-                width: 24,
-                height: 24,
-                cursor: "pointer",
-                fontWeight: "bold",
-                color: "#d00",
-              }}
+              className="adimage-remove-btn"
               title="Remover"
             >
               ×
@@ -203,6 +132,7 @@ export default function AdImageManager({
           multiple
           onChange={handleFileChange}
           disabled={loading}
+          className="adimage-file-input"
         />
       )}
     </div>

@@ -18,3 +18,80 @@
   color: #d4d4d4 !important;
   opacity: 1;
 }
+
+.adform-container {
+  background: #fff7ee;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.adform-title {
+  font-family: "Fira Mono", monospace;
+  font-size: 2rem;
+}
+
+.adform-tabs {
+  margin-bottom: 2rem;
+}
+
+.adform-image-info {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.adform-actions {
+  margin-top: 2rem;
+}
+
+.adimage-preview-list {
+  margin-bottom: 8px;
+}
+
+.adimage-preview {
+  display: inline-block;
+  margin: 8px;
+  position: relative;
+  background: #fafafa;
+  padding: 8px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+}
+
+.adimage-preview-deleting {
+  opacity: 0.4;
+}
+
+.adimage-img {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.adimage-remove-btn,
+.adimage-undo-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.adimage-remove-btn {
+  color: #d00;
+}
+
+.adimage-undo-btn {
+  color: #090;
+}
+
+.adimage-file-input {
+  margin-top: 8px;
+}

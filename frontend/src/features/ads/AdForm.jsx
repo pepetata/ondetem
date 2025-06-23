@@ -234,10 +234,10 @@ export default function AdForm() {
   const validationSchema = buildValidationSchema(adFormFields, false);
 
   return (
-    <Container className="px-2 px-lg-5 py-3 adform-container">
+    <Container className="adform-container px-2 px-lg-5 py-3">
       <Row>
         <Col>
-          <h3 className="mt-4 mb-1 text-center">
+          <h3 className="adform-title mt-4 mb-1 text-center">
             Registre as informações de seus anúncios
           </h3>
         </Col>
@@ -261,7 +261,7 @@ export default function AdForm() {
                 />
               </Col>
             </Row>
-            <Row className="px-2 px-lg-5 py-3 adform-container">
+            <Row className="adform-tabs px-2 px-lg-5 py-3">
               <Col>
                 <Tabs
                   id="adform-tabs"
@@ -510,7 +510,7 @@ export default function AdForm() {
                   <Tab eventKey="image" title="Fotos">
                     <Row>
                       <Col>
-                        <div style={{ textAlign: "center" }}>
+                        <div className="adform-image-info">
                           Você poderá cadastrar até 5 imagens de seu anúncio!
                           <br />
                           Use apenas imagens do tipo JPEG, PNG ou JPG.
@@ -579,7 +579,7 @@ export default function AdForm() {
             </Row>
             <Notification />
             {/* Action buttons */}
-            <div className="d-flex flex-wrap gap-2 mt-3 justify-content-center">
+            <div className="adform-actions d-flex flex-wrap gap-2 mt-3 justify-content-center">
               <OTButton
                 type="submit"
                 className="savebutton"
