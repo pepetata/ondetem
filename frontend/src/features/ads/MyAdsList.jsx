@@ -16,7 +16,9 @@ export default function MyAdsList() {
 
   const handleAdClick = (ad) => {
     dispatch(setCurrentAd(ad));
-    navigate("/ad");
+    navigate(`/ad/${ad.id}/edit`, {
+      state: { from: "MyAdsList" },
+    });
   };
 
   if (!userAds || userAds.length === 0) {

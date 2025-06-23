@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useCallback } from "react";
 import PropTypes from "prop-types";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAdImages } from "../../redux/adImagesSlice";
@@ -21,44 +21,50 @@ export default function AdImageManager({
     }
   }, [adId, dispatch]);
 
-  // Remove staged file
-  const handleRemoveStaged = (idx) => {
-    setImagesToAdd((prev) => prev.filter((_, i) => i !== idx));
-  };
+  const handleRemoveStaged = useCallback(
+    (idx) => {
+      setImagesToAdd((prev) => prev.filter((_, i) => i !== idx));
+    },
+    [setImagesToAdd]
+  );
 
-  // Mark uploaded image for deletion
-  const handleDelete = (filename) => {
-    setImagesToDelete((prev) => [...prev, filename]);
-  };
+  const handleDelete = useCallback(
+    (filename) => {
+      setImagesToDelete((prev) => [...prev, filename]);
+    },
+    [setImagesToDelete]
+  );
 
-  // Unmark image for deletion
-  const handleUndoDelete = (filename) => {
-    setImagesToDelete((prev) => prev.filter((f) => f !== filename));
-  };
+  const handleUndoDelete = useCallback(
+    (filename) => {
+      setImagesToDelete((prev) => prev.filter((f) => f !== filename));
+    },
+    [setImagesToDelete]
+  );
 
-  // Add new files
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    // Only allow up to 5 total (existing - to delete + to add)
-    const currentCount =
-      (images?.length || 0) -
-      (imagesToDelete?.length || 0) +
-      (imagesToAdd?.length || 0);
-    const remaining = 5 - currentCount;
-    const filesToAdd = files.slice(0, remaining);
-    setImagesToAdd((prev) => [...prev, ...filesToAdd]);
-    e.target.value = "";
-  };
+  const handleFileChange = useCallback(
+    (e) => {
+      const files = Array.from(e.target.files);
+      const currentCount =
+        (images?.length || 0) -
+        (imagesToDelete?.length || 0) +
+        (imagesToAdd?.length || 0);
+      const remaining = 5 - currentCount;
+      const filesToAdd = files.slice(0, remaining);
+      setImagesToAdd((prev) => [...prev, ...filesToAdd]);
+      e.target.value = "";
+    },
+    [images, imagesToDelete, imagesToAdd, setImagesToAdd]
+  );
 
-  // Images to show: existing images minus those marked for deletion
-  const visibleImages = (images || []).filter(
-    (img) => !(imagesToDelete || []).includes(img)
+  const visibleImages = useMemo(
+    () => (images || []).filter((img) => !(imagesToDelete || []).includes(img)),
+    [images, imagesToDelete]
   );
 
   return (
     <div>
       <div className="adimage-preview-list">
-        {/* Show existing images (not marked for deletion) */}
         {visibleImages.map((filename) => (
           <div key={filename} className="adimage-preview">
             <img
@@ -72,6 +78,7 @@ export default function AdImageManager({
             />
             <button
               type="button"
+              aria-label="Remover imagem"
               onClick={() => handleDelete(filename)}
               className="adimage-remove-btn"
               title="Remover"
@@ -80,14 +87,13 @@ export default function AdImageManager({
             </button>
           </div>
         ))}
-        {/* Show images marked for deletion (faded, with undo) */}
         {(imagesToDelete || []).map((filename) => (
           <div
             key={filename}
             className="adimage-preview adimage-preview-deleting"
           >
             <img
-              src={`/uploads/ad_images/${filename}`}
+              src={`${API_URL}/uploads/ad_images/${filename}`}
               alt="ad"
               className="adimage-img"
               onError={(e) => {
@@ -97,6 +103,7 @@ export default function AdImageManager({
             />
             <button
               type="button"
+              aria-label="Desfazer remoção"
               onClick={() => handleUndoDelete(filename)}
               className="adimage-undo-btn"
               title="Desfazer remoção"
@@ -105,7 +112,6 @@ export default function AdImageManager({
             </button>
           </div>
         ))}
-        {/* Show staged new images */}
         {(imagesToAdd || []).map((file, idx) => (
           <div key={file.name + idx} className="adimage-preview">
             <img
@@ -115,6 +121,7 @@ export default function AdImageManager({
             />
             <button
               type="button"
+              aria-label="Remover imagem"
               onClick={() => handleRemoveStaged(idx)}
               className="adimage-remove-btn"
               title="Remover"
@@ -124,7 +131,6 @@ export default function AdImageManager({
           </div>
         ))}
       </div>
-      {/* Only allow file input if total images < 5 */}
       {visibleImages.length + (imagesToAdd?.length || 0) < 5 && (
         <input
           type="file"
@@ -140,7 +146,7 @@ export default function AdImageManager({
 }
 
 AdImageManager.propTypes = {
-  adId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  adId: PropTypes.string,
   imagesToAdd: PropTypes.array.isRequired,
   setImagesToAdd: PropTypes.func.isRequired,
   imagesToDelete: PropTypes.array.isRequired,

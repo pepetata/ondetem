@@ -39,6 +39,10 @@ const App = () => {
           path="/ad"
           element={user ? <AdForm /> : <Navigate to="/login" replace />}
         />
+        <Route
+          path="/ad/:id/edit"
+          element={user ? <AdForm /> : <Navigate to="/login" replace />}
+        />
       </Routes>
     </>
   );

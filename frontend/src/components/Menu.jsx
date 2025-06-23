@@ -2,17 +2,19 @@ import { Navbar, Nav, Container } from "react-bootstrap";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../redux/authSlice";
+import { clearCurrentAd } from "../redux/adSlice";
 import "../scss/Menu.scss";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 const Menu = () => {
   const navigate = useNavigate();
-  const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
   const location = useLocation();
   const isSignup = location.pathname === "/signup";
   const isLogin = location.pathname === "/login";
+  const isAdForm = location.pathname.startsWith("/ad");
 
   const userPhoto =
     user && user.photoPath
@@ -25,6 +27,11 @@ const Menu = () => {
       dispatch(logout());
       navigate("/");
     }
+  };
+
+  const handleNewAd = () => {
+    dispatch(clearCurrentAd());
+    navigate("/ad");
   };
 
   return (
@@ -54,14 +61,17 @@ const Menu = () => {
               >
                 Home
               </Nav.Link>
-              <Nav.Link
-                as={Link}
-                to="/ad"
-                className="mb-2 mb-lg-0 menu-btn bt-add-ad"
-                variant="outline-success"
-              >
-                Anuncie Grátis
-              </Nav.Link>
+              {!isAdForm && (
+                <Nav.Link
+                  as={Link}
+                  to="/ad"
+                  className="mb-2 mb-lg-0 menu-btn bt-add-ad"
+                  variant="outline-success"
+                  onClick={handleNewAd}
+                >
+                  Anuncie Grátis
+                </Nav.Link>
+              )}
             </div>
 
             {/* Center: Logo (only on large screens) */}

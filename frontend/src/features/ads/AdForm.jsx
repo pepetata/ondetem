@@ -1,20 +1,25 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Container, Row, Col, Form, Tabs, Tab, Modal } from "react-bootstrap";
 import { Formik, Form as FormikForm, Field } from "formik";
 import Notification from "../../components/Notification";
 import OTButton from "../../components/OTButton";
 import FormInput from "../../components/FormInput";
-import AdImageManager from "./AdImageManager";
+import AdFormDescriptionTab from "./AdFormDescriptionTab";
+import AdFormContactTab from "./AdFormContactTab";
+import AdFormImageTab from "./AdFormImageTab";
+import AdFormCalendarTab from "./AdFormCalendarTab";
+import AdFormPublicityTab from "./AdFormPublicityTab";
 import { adFormFields } from "../../formfields/adFormFiels.js";
 import { buildValidationSchema } from "../../components/validationHelper.js";
 import {
   createAdThunk,
   updateAdThunk,
   deleteAdThunk,
-  setCurrentAd,
+  getAdThunk,
   clearCurrentAd,
+  setCurrentAd,
 } from "../../redux/adSlice";
 import {
   uploadAdImage,
@@ -25,17 +30,19 @@ import { showNotification, clearNotification } from "../../components/helper";
 import "../../scss/AdForm.scss";
 
 export default function AdForm() {
+  const { id } = useParams();
   const dispatch = useDispatch();
   const cepAsyncError = useRef("");
+  const formikRef = useRef();
   const navigate = useNavigate();
   const currentAd = useSelector((state) => state.ads.currentAd);
   const [activeTab, setActiveTab] = useState("description");
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
-  const [stagedImages, setStagedImages] = useState([]);
   const [imagesToAdd, setImagesToAdd] = useState([]);
   const [imagesToDelete, setImagesToDelete] = useState([]);
+  const [ready, setReady] = useState(false);
 
   const initialValues = currentAd
     ? {
@@ -54,47 +61,54 @@ export default function AdForm() {
         ])
       );
 
-  console.log(`Current Ad:`, currentAd);
-
-  const handleImagesReady = (files) => {
-    setStagedImages(files);
-  };
-
   const handleSubmit = async (values, { setSubmitting }) => {
-    dispatch(clearNotification());
-    console.log(`Submitting form with values:`, values);
-    const formData = Object.fromEntries(
-      Object.entries(values).map(([key, value]) => [key, value])
-    );
-    console.log(`Form data to submit:`, formData);
-    console.log(`Ad: `, currentAd);
+    try {
+      dispatch(clearNotification());
+      console.log(`Submitting form with values:`, values);
+      const formData = Object.fromEntries(
+        Object.entries(values).map(([key, value]) => [key, value])
+      );
+      console.log(`Form data to submit:`, formData);
+      console.log(`Ad: `, currentAd);
 
-    let result;
-    if (currentAd) {
-      // Update existing ad
-      result = await dispatch(updateAdThunk({ adId: currentAd.id, formData }));
-      console.log(`Ad updated:`, currentAd);
-    } else {
-      // Create new ad
-      result = await dispatch(createAdThunk(formData));
-      console.log(`Ad created:`, currentAd);
-    }
-    const ad = result.payload;
-    // dispatch(setCurrentAd(ad));
-    console.log(`Ad: `, ad);
-    // Now upload images using the slice
-    if (ad && ad.id) {
-      // 2. Delete marked images
-      for (const filename of imagesToDelete) {
-        await dispatch(deleteAdImage({ adId: ad.id, filename }));
+      let result, ad;
+      if (currentAd) {
+        // Update existing ad
+        result = await dispatch(
+          updateAdThunk({ adId: currentAd.id, formData })
+        );
+        ad = result.payload;
+        console.log(`Ad updated:`, currentAd);
+      } else {
+        // Create new ad
+        result = await dispatch(createAdThunk(formData));
+        ad = result.payload;
+        console.log(`Ad created:`, currentAd);
+        if (ad && ad.id) {
+          dispatch(setCurrentAd(ad));
+          navigate(`/ad/${ad.id}/edit`);
+          // Optionally: setImagesToAdd([]), setImagesToDelete([]), etc.
+        }
       }
-      setImagesToDelete([]);
-      // 3. Upload new images
-      for (const file of imagesToAdd) {
-        await dispatch(uploadAdImage({ adId: ad.id, file }));
+      ad = result.payload;
+      // dispatch(setCurrentAd(ad));
+      console.log(`Ad: `, ad);
+      // Now upload images using the slice
+      if (ad && ad.id) {
+        // 2. Delete marked images
+        for (const filename of imagesToDelete) {
+          await dispatch(deleteAdImage({ adId: ad.id, filename }));
+        }
+        setImagesToDelete([]);
+        // 3. Upload new images
+        for (const file of imagesToAdd) {
+          await dispatch(uploadAdImage({ adId: ad.id, file }));
+        }
+        // 4. Clear staged changes
+        setImagesToAdd([]);
       }
-      // 4. Clear staged changes
-      setImagesToAdd([]);
+    } catch (err) {
+      dispatch(showNotification({ type: "error", message: err.message }));
     }
   };
 
@@ -119,9 +133,9 @@ export default function AdForm() {
       setShowUnsavedModal(true);
       return;
     }
-    dispatch(clearCurrentAd());
-    dispatch(clearAdImages()); // <-- Add this line
-    resetForm();
+    // dispatch(clearCurrentAd());
+    // dispatch(clearAdImages());
+    navigate("/ad");
   };
 
   const handleUnsavedConfirm = (resetForm) => {
@@ -221,15 +235,57 @@ export default function AdForm() {
   const handleShowRemoveModal = () => setShowRemoveModal(true);
   const handleCloseRemoveModal = () => setShowRemoveModal(false);
 
-  // When user selects new files:
-  const handleAddImages = (files) => {
-    setImagesToAdd([...imagesToAdd, ...files]);
-  };
-
   // When user marks an existing image for deletion:
   const handleMarkDelete = (filename) => {
     setImagesToDelete([...imagesToDelete, filename]);
   };
+
+  //When currentAd changes (e.g., after create/update), update Formik values so the form always reflects the latest ad.
+  useEffect(() => {
+    if (formikRef.current && currentAd) {
+      formikRef.current.setValues({
+        ...Object.fromEntries(
+          Object.values(adFormFields).map((f) => [
+            f.name,
+            f.type === "checkbox" ? false : "",
+          ])
+        ),
+        ...currentAd,
+      });
+    }
+  }, [currentAd]);
+
+  // Reset images to add/delete when currentAd changes
+  useEffect(() => {
+    setImagesToAdd([]);
+    setImagesToDelete([]);
+  }, [currentAd]);
+
+  // Get the ad ID from the URL
+  useEffect(() => {
+    let cancelled = false;
+    if (id) {
+      if (!currentAd || currentAd.id !== id) {
+        dispatch(getAdThunk(id)).then(() => {
+          if (!cancelled) setReady(true);
+        });
+      } else {
+        setReady(true);
+      }
+    } else {
+      // Only clear state here, and set ready after clearing
+      dispatch(clearCurrentAd());
+      dispatch(clearAdImages());
+      setTimeout(() => {
+        if (!cancelled) setReady(true);
+      }, 0);
+    }
+    return () => {
+      cancelled = true;
+      setReady(false);
+    };
+  }, [id, currentAd, dispatch]);
+  if (!ready) return null;
 
   const validationSchema = buildValidationSchema(adFormFields, false);
 
@@ -243,6 +299,7 @@ export default function AdForm() {
         </Col>
       </Row>
       <Formik
+        innerRef={formikRef}
         enableReinitialize
         initialValues={initialValues}
         validationSchema={validationSchema}
@@ -269,310 +326,32 @@ export default function AdForm() {
                   onSelect={handleTabSelect}
                   className="mb-3 center-tabs"
                 >
-                  {/* Descrição Tab */}
                   <Tab eventKey="description" title="Descrição">
-                    <Row className="justify-content-center">
-                      <Col md={8}>
-                        <Field name={adFormFields.short.name}>
-                          {({ field, form }) => (
-                            <FormInput
-                              field={field}
-                              form={form}
-                              {...adFormFields.short}
-                            />
-                          )}
-                        </Field>
-                        <Field name={adFormFields.description.name}>
-                          {({ field, form }) => (
-                            <FormInput
-                              field={field}
-                              form={form}
-                              {...adFormFields.description}
-                            />
-                          )}
-                        </Field>
-                        <Field name={adFormFields.tags.name}>
-                          {({ field, form }) => (
-                            <FormInput
-                              field={field}
-                              form={form}
-                              {...adFormFields.tags}
-                            />
-                          )}
-                        </Field>
-                      </Col>
-                      <Col md={4}>
-                        {/* Categories selection UI goes here */}
-                        <Form.Group>
-                          <Form.Label>Categorias selecionadas:</Form.Label>
-                          <div className="selectedCategories">
-                            <span style={{ color: "red" }}>
-                              Nenhuma categoria selecionada.
-                            </span>
-                          </div>
-                        </Form.Group>
-                        <Form.Group>
-                          <Form.Label>
-                            Categorias (clique nas categorias):
-                          </Form.Label>
-                          {/* Render categories tree here */}
-                        </Form.Group>
-                        <Form.Group>
-                          <Form.Label>
-                            <a
-                              href="#"
-                              onClick={() => {
-                                /* show modal */
-                              }}
-                            >
-                              Não encontro minha categoria
-                            </a>
-                          </Form.Label>
-                        </Form.Group>
-                      </Col>
-                    </Row>
+                    <AdFormDescriptionTab adFormFields={adFormFields} />
                   </Tab>
-                  {/* Contato Tab */}
                   <Tab eventKey="contact" title="Contato">
-                    <Row className="justify-content-center px-2 px-lg-5">
-                      <Row>
-                        <Col md={3}>
-                          <Field
-                            name={adFormFields.zipcode.name}
-                            validate={() => {
-                              if (cepAsyncError.current)
-                                return cepAsyncError.current;
-                              return undefined;
-                            }}
-                          >
-                            {({ field, form }) => (
-                              <FormInput
-                                field={{
-                                  ...field,
-                                  onBlur: (e) => {
-                                    field.onBlur(e);
-                                    handleZipBlur(
-                                      e,
-                                      form.setFieldValue,
-                                      form.setFieldError,
-                                      form.setFieldTouched
-                                    );
-                                  },
-                                  onChange: (e) => {
-                                    cepAsyncError.current = "";
-                                    form.setFieldError("zipcode", undefined);
-                                    field.onChange(e);
-                                  },
-                                }}
-                                form={form}
-                                {...adFormFields.zipcode}
-                              />
-                            )}
-                          </Field>
-                        </Col>
-                        <Col md={7}>
-                          <Field name={adFormFields.city.name}>
-                            {({ field, form }) => (
-                              <FormInput
-                                field={field}
-                                form={form}
-                                {...adFormFields.city}
-                              />
-                            )}
-                          </Field>
-                        </Col>
-                        <Col md={2}>
-                          <Field name={adFormFields.state.name}>
-                            {({ field, form }) => (
-                              <FormInput
-                                field={field}
-                                form={form}
-                                {...adFormFields.state}
-                              />
-                            )}
-                          </Field>
-                        </Col>
-                      </Row>
-                      <Row>
-                        <Col md={6}>
-                          <Field name={adFormFields.address1.name}>
-                            {({ field, form }) => (
-                              <FormInput
-                                field={field}
-                                form={form}
-                                {...adFormFields.address1}
-                              />
-                            )}
-                          </Field>
-                        </Col>
-                        <Col md={2}>
-                          <Field name={adFormFields.streetnumber.name}>
-                            {({ field, form }) => (
-                              <FormInput
-                                field={field}
-                                form={form}
-                                {...adFormFields.streetnumber}
-                              />
-                            )}
-                          </Field>
-                        </Col>
-                        <Col md={4}>
-                          <Field name={adFormFields.address2.name}>
-                            {({ field, form }) => (
-                              <FormInput
-                                field={field}
-                                form={form}
-                                {...adFormFields.address2}
-                              />
-                            )}
-                          </Field>
-                        </Col>
-                      </Row>
-                      <Row>
-                        <Col md={4}>
-                          {/* Custom select for radius */}
-                          <Form.Group>
-                            <Form.Label>{adFormFields.radius.label}</Form.Label>
-                            <Field
-                              as="select"
-                              name={adFormFields.radius.name}
-                              className="form-select"
-                            >
-                              {adFormFields.radius.options.map((opt) => (
-                                <option key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </option>
-                              ))}
-                            </Field>
-                          </Form.Group>
-                        </Col>
-                      </Row>
-                      <Row>
-                        <Col md={4}>
-                          <Field name={adFormFields.phone1.name}>
-                            {({ field, form }) => (
-                              <FormInput
-                                field={field}
-                                form={form}
-                                {...adFormFields.phone1}
-                              />
-                            )}
-                          </Field>
-                        </Col>
-                        <Col md={4}>
-                          <Field name={adFormFields.phone2.name}>
-                            {({ field, form }) => (
-                              <FormInput
-                                field={field}
-                                form={form}
-                                {...adFormFields.phone2}
-                              />
-                            )}
-                          </Field>
-                        </Col>
-                        <Col md={4}>
-                          <Field name={adFormFields.whatsapp.name}>
-                            {({ field, form }) => (
-                              <FormInput
-                                field={field}
-                                form={form}
-                                {...adFormFields.whatsapp}
-                              />
-                            )}
-                          </Field>
-                        </Col>
-                      </Row>
-                      <Form.Group controlId="email" className="mb-3">
-                        <Field name={adFormFields.email.name}>
-                          {({ field, form }) => (
-                            <FormInput
-                              field={field}
-                              form={form}
-                              {...adFormFields.email}
-                            />
-                          )}
-                        </Field>
-                      </Form.Group>
-                      <Form.Group controlId="website" className="mb-3">
-                        <Field name={adFormFields.website.name}>
-                          {({ field, form }) => (
-                            <FormInput
-                              field={field}
-                              form={form}
-                              {...adFormFields.website}
-                            />
-                          )}
-                        </Field>
-                      </Form.Group>
-                    </Row>
+                    <AdFormContactTab
+                      adFormFields={adFormFields}
+                      formikRef={formikRef}
+                    />
                   </Tab>
-                  {/* Fotos Tab */}
                   <Tab eventKey="image" title="Fotos">
-                    <Row>
-                      <Col>
-                        <div className="adform-image-info">
-                          Você poderá cadastrar até 5 imagens de seu anúncio!
-                          <br />
-                          Use apenas imagens do tipo JPEG, PNG ou JPG.
-                        </div>
-                        <AdImageManager
-                          adId={currentAd && currentAd.id}
-                          imagesToAdd={imagesToAdd}
-                          setImagesToAdd={setImagesToAdd}
-                          imagesToDelete={imagesToDelete}
-                          setImagesToDelete={setImagesToDelete}
-                        />
-                      </Col>
-                    </Row>
+                    <AdFormImageTab
+                      currentAd={currentAd}
+                      imagesToAdd={imagesToAdd}
+                      setImagesToAdd={setImagesToAdd}
+                      imagesToDelete={imagesToDelete}
+                      setImagesToDelete={setImagesToDelete}
+                    />
                   </Tab>
-                  {/* Calendário Tab */}
                   <Tab eventKey="calendar" title="Calendário">
-                    <Row>
-                      <Col md={6}>
-                        <div style={{ textAlign: "center" }}>
-                          Informe claramente o período e horários de seu
-                          serviço, negócio ou evento!
-                        </div>
-                        <Field name={adFormFields.startdate.name}>
-                          {({ field, form }) => (
-                            <FormInput
-                              field={field}
-                              form={form}
-                              {...adFormFields.startdate}
-                            />
-                          )}
-                        </Field>
-                        <Field name={adFormFields.finishdate.name}>
-                          {({ field, form }) => (
-                            <FormInput
-                              field={field}
-                              form={form}
-                              {...adFormFields.finishdate}
-                            />
-                          )}
-                        </Field>
-                        <Field name={adFormFields.timetext.name}>
-                          {({ field, form }) => (
-                            <FormInput
-                              field={field}
-                              form={form}
-                              {...adFormFields.timetext}
-                            />
-                          )}
-                        </Field>
-                      </Col>
-                    </Row>
+                    <AdFormCalendarTab adFormFields={adFormFields} />
                   </Tab>
-                  {/* Publicidade Tab */}
                   <Tab
                     eventKey="publicity"
                     title={<span className="spanredbold">Publicidade</span>}
                   >
-                    <Row>
-                      <Col className="text-center">
-                        <h4>Contrate publicidade para seu anúncio!!</h4>
-                      </Col>
-                    </Row>
+                    <AdFormPublicityTab />
                   </Tab>
                 </Tabs>
               </Col>
