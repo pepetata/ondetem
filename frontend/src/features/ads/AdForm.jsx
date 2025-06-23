@@ -16,7 +16,11 @@ import {
   setCurrentAd,
   clearCurrentAd,
 } from "../../redux/adSlice";
-import { uploadAdImage } from "../../redux/adImagesSlice";
+import {
+  uploadAdImage,
+  clearAdImages,
+  deleteAdImage,
+} from "../../redux/adImagesSlice";
 import { showNotification, clearNotification } from "../../components/helper";
 import "../../scss/AdForm.scss";
 
@@ -30,6 +34,8 @@ export default function AdForm() {
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
   const [stagedImages, setStagedImages] = useState([]);
+  const [imagesToAdd, setImagesToAdd] = useState([]);
+  const [imagesToDelete, setImagesToDelete] = useState([]);
 
   const initialValues = currentAd
     ? {
@@ -63,35 +69,32 @@ export default function AdForm() {
     console.log(`Form data to submit:`, formData);
     console.log(`Ad: `, currentAd);
 
+    let result;
     if (currentAd) {
-      if (currentAd && currentAd.id) {
-        // Update existing ad
-        const updatedAd = await dispatch(
-          updateAdThunk({ adId: currentAd.id, formData })
-        );
-      }
-      if (updateAdThunk.fulfilled.match(updatedAd)) {
-        dispatch(setCurrentAd(updatedAd.payload));
-        console.log(`Ad updated:`, currentAd);
-        // Update ad in Redux
-        // dispatch(setAd(updatedAd.payload));
-        // Update storage for persistence
-      }
+      // Update existing ad
+      result = await dispatch(updateAdThunk({ adId: currentAd.id, formData }));
+      console.log(`Ad updated:`, currentAd);
     } else {
       // Create new ad
-      const createdAd = await dispatch(createAdThunk(formData));
-      if (createAdThunk.fulfilled.match(createdAd)) {
-        const ad = createdAd.payload;
-        dispatch(setCurrentAd(ad));
-        // Now upload images using the slice
-        if (ad.id && stagedImages.length) {
-          console.log("stagedImages to upload:", stagedImages);
-          for (const file of stagedImages) {
-            await dispatch(uploadAdImage({ adId: ad.id, file }));
-          }
-          setStagedImages([]);
-        }
+      result = await dispatch(createAdThunk(formData));
+      console.log(`Ad created:`, currentAd);
+    }
+    const ad = result.payload;
+    // dispatch(setCurrentAd(ad));
+    console.log(`Ad: `, ad);
+    // Now upload images using the slice
+    if (ad && ad.id) {
+      // 2. Delete marked images
+      for (const filename of imagesToDelete) {
+        await dispatch(deleteAdImage({ adId: ad.id, filename }));
       }
+      setImagesToDelete([]);
+      // 3. Upload new images
+      for (const file of imagesToAdd) {
+        await dispatch(uploadAdImage({ adId: ad.id, file }));
+      }
+      // 4. Clear staged changes
+      setImagesToAdd([]);
     }
   };
 
@@ -104,7 +107,8 @@ export default function AdForm() {
       setShowUnsavedModal(true);
       return;
     }
-    dispatch(clearNotification());
+    dispatch(clearCurrentAd());
+    dispatch(clearAdImages()); // <-- Add this line
     navigate("/");
   };
 
@@ -116,6 +120,7 @@ export default function AdForm() {
       return;
     }
     dispatch(clearCurrentAd());
+    dispatch(clearAdImages()); // <-- Add this line
     resetForm();
   };
 
@@ -123,9 +128,12 @@ export default function AdForm() {
     dispatch(clearNotification());
     setShowUnsavedModal(false);
     if (pendingAction === "back") {
+      dispatch(clearCurrentAd());
+      dispatch(clearAdImages());
       navigate("/");
     } else if (pendingAction === "newAd") {
       dispatch(clearCurrentAd());
+      dispatch(clearAdImages());
       resetForm();
     }
     setPendingAction(null);
@@ -196,22 +204,15 @@ export default function AdForm() {
     if (currentAd && currentAd.id) {
       const result = await dispatch(deleteAdThunk(currentAd.id));
       if (deleteAdThunk.fulfilled.match(result)) {
-        // dispatch(
-        //   showNotification({ type: "success", message: "Anúncio removido!" })
-        // );
         dispatch(clearCurrentAd());
         resetForm();
         setShowRemoveModal(false);
+        dispatch(clearAdImages());
         return;
       }
     } else {
-      // dispatch(
-      //   showNotification({
-      //     type: "error",
-      //     message: "Anúncio não encontrado.",
-      //   })
-      // );
       dispatch(clearCurrentAd());
+      dispatch(clearAdImages());
       resetForm();
     }
     setShowRemoveModal(false);
@@ -219,6 +220,16 @@ export default function AdForm() {
 
   const handleShowRemoveModal = () => setShowRemoveModal(true);
   const handleCloseRemoveModal = () => setShowRemoveModal(false);
+
+  // When user selects new files:
+  const handleAddImages = (files) => {
+    setImagesToAdd([...imagesToAdd, ...files]);
+  };
+
+  // When user marks an existing image for deletion:
+  const handleMarkDelete = (filename) => {
+    setImagesToDelete([...imagesToDelete, filename]);
+  };
 
   const validationSchema = buildValidationSchema(adFormFields, false);
 
@@ -395,12 +406,12 @@ export default function AdForm() {
                           </Field>
                         </Col>
                         <Col md={2}>
-                          <Field name={adFormFields.streetNumber.name}>
+                          <Field name={adFormFields.streetnumber.name}>
                             {({ field, form }) => (
                               <FormInput
                                 field={field}
                                 form={form}
-                                {...adFormFields.streetNumber}
+                                {...adFormFields.streetnumber}
                               />
                             )}
                           </Field>
@@ -500,13 +511,16 @@ export default function AdForm() {
                     <Row>
                       <Col>
                         <div style={{ textAlign: "center" }}>
-                          Você poderá cadastrar até 5 fotos de seu anúncio!
+                          Você poderá cadastrar até 5 imagens de seu anúncio!
                           <br />
                           Use apenas imagens do tipo JPEG, PNG ou JPG.
                         </div>
                         <AdImageManager
                           adId={currentAd && currentAd.id}
-                          onImagesReady={handleImagesReady}
+                          imagesToAdd={imagesToAdd}
+                          setImagesToAdd={setImagesToAdd}
+                          imagesToDelete={imagesToDelete}
+                          setImagesToDelete={setImagesToDelete}
                         />
                       </Col>
                     </Row>

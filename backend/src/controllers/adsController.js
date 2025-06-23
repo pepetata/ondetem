@@ -147,7 +147,7 @@ exports.getUserAds = async (req, res) => {
 exports.uploadImage = async (req, res) => {
   try {
     const adId = req.params.id;
-    console.log("uploadImage req.file:", req.file);
+    console.log("uploadImage req.file:", req.file); // <--- Add this
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
     // Limit to 5 images per ad

@@ -68,10 +68,10 @@ export const adFormFields = {
     readOnly: true,
     tabIndex: -1,
   },
-  streetNumber: {
+  streetnumber: {
     label: "Número",
     type: "text",
-    name: "streetNumber",
+    name: "streetnumber",
     maxLength: 20,
     placeholder: "197",
   },

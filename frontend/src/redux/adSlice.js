@@ -42,11 +42,13 @@ export const updateAdThunk = createAsyncThunk(
     try {
       const token = getToken(getState);
       if (!token) throw new Error("Usuário não autenticado");
-      const ad = await updateAd(adId, formData, token);
+      await updateAd(adId, formData, token); // just update, ignore response
+      // Now fetch the updated ad
+      const updatedAd = await getAd(adId);
       dispatch(
         showNotification({ type: "success", message: "Anúncio atualizado!" })
       );
-      return ad;
+      return updatedAd;
     } catch (err) {
       dispatch(
         showNotification({

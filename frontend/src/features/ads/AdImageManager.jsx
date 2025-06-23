@@ -1,146 +1,202 @@
 import { useEffect, useState } from "react";
+import PropTypes from "prop-types";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  fetchAdImages,
-  uploadAdImage,
-  deleteAdImage,
-} from "../../redux/adImagesSlice";
+import { fetchAdImages } from "../../redux/adImagesSlice";
 
-export default function AdImageManager({ adId, onImagesReady }) {
+export default function AdImageManager({
+  adId,
+  imagesToAdd,
+  setImagesToAdd,
+  imagesToDelete,
+  setImagesToDelete,
+}) {
   const dispatch = useDispatch();
-  const token = useSelector((state) => state.auth.token);
   const images = useSelector((state) => state.adImages.images);
   const loading = useSelector((state) => state.adImages.loading);
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-  const [selectedFiles, setSelectedFiles] = useState([]);
-
-  // Fetch images for existing ad
   useEffect(() => {
     if (adId) {
       dispatch(fetchAdImages(adId));
-      setSelectedFiles([]); // REMOVE THIS LINE
     }
   }, [adId, dispatch]);
 
-  // For new ad: notify parent of selected files
-  useEffect(() => {
-    if (!adId && onImagesReady) {
-      onImagesReady(selectedFiles);
-    }
-  }, [selectedFiles, adId, onImagesReady]);
+  // Remove staged file
+  const handleRemoveStaged = (idx) => {
+    setImagesToAdd((prev) => prev.filter((_, i) => i !== idx));
+  };
 
+  // Mark uploaded image for deletion
+  const handleDelete = (filename) => {
+    setImagesToDelete((prev) => [...prev, filename]);
+  };
+
+  // Unmark image for deletion
+  const handleUndoDelete = (filename) => {
+    setImagesToDelete((prev) => prev.filter((f) => f !== filename));
+  };
+
+  // Add new files
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-    if (adId) {
-      const remaining = 5 - images.length;
-      const filesToUpload = files.slice(0, remaining);
-      filesToUpload.forEach((file) => {
-        dispatch(uploadAdImage({ adId, file }));
-      });
-    } else {
-      const remaining = 5 - selectedFiles.length;
-      const filesToAdd = files.slice(0, remaining);
-      setSelectedFiles((prev) => [...prev, ...filesToAdd]);
-    }
+    // Only allow up to 5 total (existing - to delete + to add)
+    const currentCount =
+      (images?.length || 0) -
+      (imagesToDelete?.length || 0) +
+      (imagesToAdd?.length || 0);
+    const remaining = 5 - currentCount;
+    const filesToAdd = files.slice(0, remaining);
+    setImagesToAdd((prev) => [...prev, ...filesToAdd]);
     e.target.value = "";
   };
 
-  const handleRemoveStaged = (idx) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== idx));
-  };
-
-  const handleDelete = (filename) => {
-    dispatch(deleteAdImage({ adId, filename }));
-  };
-
-  const renderStagedPreviews = () =>
-    selectedFiles.map((file, idx) => (
-      <div
-        key={file.name + idx}
-        style={{ display: "inline-block", margin: 8, position: "relative" }}
-      >
-        <img
-          src={URL.createObjectURL(file)}
-          alt="preview"
-          style={{
-            width: 100,
-            height: 100,
-            objectFit: "cover",
-            border: "1px solid #ccc",
-            borderRadius: 4,
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => handleRemoveStaged(idx)}
-          style={{
-            position: "absolute",
-            top: 2,
-            right: 2,
-            background: "rgba(255,255,255,0.8)",
-            border: "none",
-            borderRadius: "50%",
-            width: 24,
-            height: 24,
-            cursor: "pointer",
-            fontWeight: "bold",
-            color: "#d00",
-          }}
-          title="Remover"
-        >
-          ×
-        </button>
-      </div>
-    ));
-
-  const renderUploadedImages = () =>
-    images.map((filename) => (
-      <div
-        key={filename}
-        style={{ display: "inline-block", margin: 8, position: "relative" }}
-      >
-        <img
-          src={`/uploads/ad_images/${filename}`}
-          alt="ad"
-          style={{
-            width: 100,
-            height: 100,
-            objectFit: "cover",
-            border: "1px solid #ccc",
-            borderRadius: 4,
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => handleDelete(filename)}
-          style={{
-            position: "absolute",
-            top: 2,
-            right: 2,
-            background: "rgba(255,255,255,0.8)",
-            border: "none",
-            borderRadius: "50%",
-            width: 24,
-            height: 24,
-            cursor: "pointer",
-            fontWeight: "bold",
-            color: "#d00",
-          }}
-          title="Remover"
-        >
-          ×
-        </button>
-      </div>
-    ));
-
-  const count = adId ? images.length : selectedFiles.length;
+  // Images to show: existing images minus those marked for deletion
+  const visibleImages = (images || []).filter(
+    (img) => !(imagesToDelete || []).includes(img)
+  );
 
   return (
     <div>
       <div style={{ marginBottom: 8 }}>
-        {adId ? renderUploadedImages() : renderStagedPreviews()}
+        {/* Show existing images (not marked for deletion) */}
+        {visibleImages.map((filename) => (
+          <div
+            key={filename}
+            style={{ display: "inline-block", margin: 8, position: "relative" }}
+          >
+            <img
+              src={`${API_URL}/uploads/ad_images/${filename}`}
+              alt="ad"
+              style={{
+                width: 150,
+                height: 150,
+                objectFit: "cover",
+                border: "1px solid #ccc",
+                borderRadius: 8,
+                opacity: 1,
+              }}
+              //   onError={(e) => {
+              //     e.target.onerror = null;
+              //     e.target.src = "/images/nophoto.jpg";
+              //   }}
+            />
+            <button
+              type="button"
+              onClick={() => handleDelete(filename)}
+              style={{
+                position: "absolute",
+                top: 2,
+                right: 2,
+                background: "rgba(255,255,255,0.8)",
+                border: "none",
+                borderRadius: "50%",
+                width: 24,
+                height: 24,
+                cursor: "pointer",
+                fontWeight: "bold",
+                color: "#d00",
+              }}
+              title="Remover"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        {/* Show images marked for deletion (faded, with undo) */}
+        {(imagesToDelete || []).map((filename) => (
+          <div
+            key={filename}
+            style={{
+              display: "inline-block",
+              margin: 16,
+              position: "relative",
+              background: "#fafafa",
+              padding: 8,
+              borderRadius: 12,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+            }}
+          >
+            <img
+              src={`/uploads/ad_images/${filename}`}
+              alt="ad"
+              style={{
+                width: 150,
+                height: 150,
+                objectFit: "cover",
+                border: "1px solid #ccc",
+                borderRadius: 8,
+                opacity: 1,
+              }}
+              //   onError={(e) => {
+              //     e.target.onerror = null;
+              //     e.target.src = "/images/nophoto.jpg";
+              //   }}
+            />
+            <button
+              type="button"
+              onClick={() => handleUndoDelete(filename)}
+              style={{
+                position: "absolute",
+                top: 2,
+                right: 2,
+                background: "rgba(255,255,255,0.8)",
+                border: "none",
+                borderRadius: "50%",
+                width: 24,
+                height: 24,
+                cursor: "pointer",
+                fontWeight: "bold",
+                color: "#090",
+              }}
+              title="Desfazer remoção"
+            >
+              ↩
+            </button>
+          </div>
+        ))}
+        {/* Show staged new images */}
+        {(imagesToAdd || []).map((file, idx) => (
+          <div
+            key={file.name + idx}
+            style={{ display: "inline-block", margin: 8, position: "relative" }}
+          >
+            <img
+              src={URL.createObjectURL(file)}
+              alt="preview"
+              style={{
+                width: 150,
+                height: 150,
+                objectFit: "cover",
+                border: "1px solid #ccc",
+                borderRadius: 4,
+                opacity: 1,
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => handleRemoveStaged(idx)}
+              style={{
+                position: "absolute",
+                top: 2,
+                right: 2,
+                background: "rgba(255,255,255,0.8)",
+                border: "none",
+                borderRadius: "50%",
+                width: 24,
+                height: 24,
+                cursor: "pointer",
+                fontWeight: "bold",
+                color: "#d00",
+              }}
+              title="Remover"
+            >
+              ×
+            </button>
+          </div>
+        ))}
       </div>
-      {count < 5 && (
+      {/* Only allow file input if total images < 5 */}
+      {visibleImages.length + (imagesToAdd?.length || 0) < 5 && (
         <input
           type="file"
           accept="image/*"
@@ -149,7 +205,14 @@ export default function AdImageManager({ adId, onImagesReady }) {
           disabled={loading}
         />
       )}
-      <div>{count}/5 fotos</div>
     </div>
   );
 }
+
+AdImageManager.propTypes = {
+  adId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  imagesToAdd: PropTypes.array.isRequired,
+  setImagesToAdd: PropTypes.func.isRequired,
+  imagesToDelete: PropTypes.array.isRequired,
+  setImagesToDelete: PropTypes.func.isRequired,
+};
