@@ -3,7 +3,18 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 exports.getAllAds = async () => {
   const result = await pool.query(`SELECT * FROM ads ORDER BY created_at DESC`);
-  return result.rows;
+  const ads = result.rows;
+
+  // Get images for each ad
+  for (const ad of ads) {
+    const imagesResult = await pool.query(
+      `SELECT filename FROM ad_images WHERE ad_id = $1`,
+      [ad.id]
+    );
+    ad.images = imagesResult.rows.map((row) => row.filename);
+  }
+
+  return ads;
 };
 
 exports.getAdById = async (id) => {

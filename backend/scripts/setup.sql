@@ -3,6 +3,7 @@
 
 
 -- first create the database, then run this script to set up the initial schema
+--
 --    psql -U postgres # pw=admin
 --    CREATE USER admin WITH PASSWORD 'admin';
 --    ALTER USER admin SUPERUSER;
@@ -15,7 +16,7 @@
 --   psql -U <username> -d <database_name> -f setup.sql
 
 
--- for test environments
+-- for TEST environments
 
 -- first create the database, then run this script to set up the initial schema
 --    psql -U postgres # pw=admin
@@ -78,6 +79,9 @@ CREATE TABLE IF NOT EXISTS ads (
     startdate DATE,
     finishdate DATE,
     timetext TEXT,
+    comments integer,
+    likes integer,
+    rating smallint,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

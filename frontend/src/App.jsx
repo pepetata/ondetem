@@ -21,10 +21,7 @@ const App = () => {
   return (
     <>
       <Menu user={user} />
-      <div className="main-content" style={{ marginTop: navbarHeight }}>
-        {isHome && <MyAdsList />}
-      </div>
-      {/* Main Routes ------------------------------------------------------*/}
+      <div className="main-content" style={{ marginTop: navbarHeight }}></div>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<UserForm user={user} />} />
@@ -42,6 +39,12 @@ const App = () => {
         <Route
           path="/ad/:id/edit"
           element={user ? <AdForm /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/my-ads"
+          element={
+            user ? <MyAdsList user={user} /> : <Navigate to="/login" replace />
+          }
         />
       </Routes>
     </>
