@@ -15,12 +15,12 @@
   "type": "commonjs",
   "main": "app.js",
   "scripts": {
-    "start": "NODE_ENV=production node src/app.js",
-    "dev": "NODE_ENV=development node --watch src/app.js",
-    "test": "NODE_ENV=test jest",
-    "testonly": "NODE_ENV=test npm test -- --test-only",
+    "start": "cross-env NODE_ENV=production node src/app.js",
+    "dev": "cross-env NODE_ENV=development node --watch src/app.js",
+    "test": "cross-env NODE_ENV=test jest",
+    "testonly": "cross-env NODE_ENV=test npm test -- --test-only",
     "lint": "eslint .",
-    "start:test": "NODE_ENV=test node --watch src/app.js"
+    "start:test": "cross-env NODE_ENV=test node src/app.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

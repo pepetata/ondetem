@@ -239,7 +239,7 @@ export default function AdForm() {
                       formikRef={formikRef}
                     />
                   </Tab>
-                  <Tab eventKey="image" title="Fotos">
+                  <Tab eventKey="image" title="Imagens">
                     <AdFormImageTab
                       currentAd={currentAd}
                       imagesToAdd={imagesToAdd}

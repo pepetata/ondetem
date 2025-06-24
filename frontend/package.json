@@ -18,12 +18,14 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start:backend": "cd ../backend && NODE_ENV=test npm start",
+    "start:backend": "cd ../backend && npm run start:test",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
-    "test:pw": "playwright test tests-e2e",
-    "test:pw:ui": "playwright test tests-e2e --ui"
+    "test:pw": "NODE_ENV=test playwright test tests-e2e",
+    "test:pw:ui": "NODE_ENV=test playwright test tests-e2e --ui",
+    "test:cleanup": "NODE_ENV=test node tests-e2e/utils/manual-cleanup.js",
+    "test:setup": "NODE_ENV=test node tests-e2e/utils/test-setup.js"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.2",
