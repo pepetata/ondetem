@@ -25,7 +25,8 @@
     "test:pw": "NODE_ENV=test playwright test tests-e2e",
     "test:pw:ui": "NODE_ENV=test playwright test tests-e2e --ui",
     "test:cleanup": "NODE_ENV=test node tests-e2e/utils/manual-cleanup.js",
-    "test:setup": "NODE_ENV=test node tests-e2e/utils/test-setup.js"
+    "test:setup": "NODE_ENV=test node tests-e2e/utils/test-setup.js",
+    "seed:tmdb": "node scripts/seed-tmdb-data.js"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.2",
@@ -58,6 +59,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "eslint-plugin-vitest-globals": "^1.5.0",
+    "form-data": "^4.0.3",
     "jsdom": "^26.1.0",
     "prettier": "^3.5.3",
     "vite": "^6.3.5",

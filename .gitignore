@@ -1,4 +1,5 @@
 .history/
+uploads/
 # Logs
 logs
 *.log
