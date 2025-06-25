@@ -53,6 +53,13 @@ export const getAllAds = async () => {
   return response.data;
 };
 
+export const searchAds = async (searchTerm) => {
+  const response = await axios.get(`${baseUrl}/search`, {
+    params: { q: searchTerm },
+  });
+  return response.data;
+};
+
 export const getUserAds = async (token) => {
   const response = await axios.get(`${baseUrl}/my`, {
     headers: {

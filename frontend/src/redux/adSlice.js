@@ -7,6 +7,7 @@ import {
   getAllAds,
   getUserAds,
   getToken,
+  searchAds,
 } from "../api/adAPI";
 import { showNotification } from "../components/helper";
 
@@ -119,6 +120,17 @@ export const getUserAdsThunk = createAsyncThunk(
   }
 );
 
+export const searchAdsThunk = createAsyncThunk(
+  "ads/search",
+  async (searchTerm, { dispatch, rejectWithValue }) => {
+    try {
+      return await searchAds(searchTerm);
+    } catch (err) {
+      return handleThunkError(dispatch, err, rejectWithValue);
+    }
+  }
+);
+
 const adSlice = createSlice({
   name: "ads",
   initialState: {
@@ -126,6 +138,7 @@ const adSlice = createSlice({
     userAds: [],
     currentAd: null,
     loading: false,
+    searchLoading: false,
     error: null,
   },
   reducers: {
@@ -163,6 +176,18 @@ const adSlice = createSlice({
       })
       .addCase(getAllAdsThunk.fulfilled, (state, action) => {
         state.ads = action.payload;
+      })
+      .addCase(searchAdsThunk.pending, (state) => {
+        state.searchLoading = true;
+        state.error = null;
+      })
+      .addCase(searchAdsThunk.fulfilled, (state, action) => {
+        state.searchLoading = false;
+        state.ads = action.payload;
+      })
+      .addCase(searchAdsThunk.rejected, (state, action) => {
+        state.searchLoading = false;
+        state.error = action.payload;
       })
       .addCase(getUserAdsThunk.fulfilled, (state, action) => {
         state.userAds = action.payload;

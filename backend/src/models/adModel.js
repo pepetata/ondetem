@@ -2,9 +2,44 @@ const { Pool } = require("pg");
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 exports.getAllAds = async () => {
+  const result = await pool.query(`SELECT * FROM ads ORDER BY created_at DESC`);
+  const ads = result.rows;
+
+  // Get images for each ad
+  for (const ad of ads) {
+    const imagesResult = await pool.query(
+      `SELECT filename FROM ad_images WHERE ad_id = $1`,
+      [ad.id]
+    );
+    ad.images = imagesResult.rows.map((row) => row.filename);
+  }
+
+  return ads;
+};
+
+exports.searchAds = async (searchTerm) => {
+  const searchPattern = `%${searchTerm.toLowerCase()}%`;
+
   const result = await pool.query(
-    `SELECT * FROM ads ORDER BY created_at DESC LIMIT 10`
+    `SELECT * FROM ads 
+     WHERE LOWER(title) LIKE $1 
+        OR LOWER(description) LIKE $1 
+        OR LOWER(short) LIKE $1 
+        OR LOWER(city) LIKE $1
+        OR LOWER(state) LIKE $1
+        OR LOWER(address1) LIKE $1
+        OR LOWER(tags) LIKE $1
+     ORDER BY 
+       CASE 
+         WHEN LOWER(title) LIKE $1 THEN 1
+         WHEN LOWER(short) LIKE $1 THEN 2
+         WHEN LOWER(description) LIKE $1 THEN 3
+         ELSE 4
+       END,
+       created_at DESC`,
+    [searchPattern]
   );
+
   const ads = result.rows;
 
   // Get images for each ad

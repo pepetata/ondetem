@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllAdsThunk, setCurrentAd } from "../../redux/adSlice";
+import {
+  getAllAdsThunk,
+  searchAdsThunk,
+  setCurrentAd,
+} from "../../redux/adSlice";
 import { useNavigate } from "react-router-dom";
 import { Container, Row, Col, Card } from "react-bootstrap";
 import { generateAdSlug } from "../../utils/slugify";
@@ -11,11 +15,12 @@ const Home = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const allAds = useSelector((state) => state.ads.ads);
+  const searchLoading = useSelector((state) => state.ads.searchLoading);
   const [imageIndices, setImageIndices] = useState({});
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
   const [featuredAds, setFeaturedAds] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredAds, setFilteredAds] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
   // console.log(`All Ads: ${JSON.stringify(allAds)}`);
@@ -24,12 +29,30 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
+    // Load all ads initially
     dispatch(getAllAdsThunk());
   }, [dispatch]);
 
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchTerm.trim() === "") {
+        // If search is empty, load all ads
+        setIsSearching(false);
+        dispatch(getAllAdsThunk());
+      } else {
+        // Perform database search
+        setIsSearching(true);
+        dispatch(searchAdsThunk(searchTerm.trim()));
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, dispatch]);
+
   // Initialize featured ads - only ads with images
   useEffect(() => {
-    if (allAds && allAds.length > 0) {
+    if (allAds && allAds.length > 0 && !isSearching) {
       const adsWithImages = allAds.filter(
         (ad) =>
           ad.images &&
@@ -44,8 +67,11 @@ const Home = () => {
         .slice(0, 6);
       setFeaturedAds(shuffled);
       setCurrentCarouselIndex(0);
+    } else if (isSearching) {
+      // Don't show featured ads during search
+      setFeaturedAds([]);
     }
-  }, [allAds]);
+  }, [allAds, isSearching]);
 
   // Initialize image rotation for ads with images
   useEffect(() => {
@@ -167,6 +193,9 @@ const Home = () => {
     );
   }
 
+  // Show message when search returns no results
+  const showNoResults = isSearching && allAds.length === 0;
+
   return (
     <Container fluid className="home-container">
       <Row>
@@ -184,11 +213,70 @@ const Home = () => {
         <Col xl={8} lg={8} md={12} sm={12} xs={12} className="main-content">
           <div className="text-center mb-4">
             <h2>Todos os Anúncios</h2>
-            <p className="text-muted">{allAds.length} anúncios encontrados</p>
+            <p className="text-muted">
+              {searchLoading
+                ? "Pesquisando..."
+                : `${allAds.length} anúncios encontrados`}
+            </p>
           </div>
 
-          {/* Featured Ads Carousel */}
-          {featuredAds.length > 0 && (
+          {/* Search Bar */}
+          <div className="search-section mb-4">
+            <div className="search-container">
+              <div className="search-input-wrapper">
+                <input
+                  type="text"
+                  className="form-control search-input"
+                  placeholder="Pesquisar anúncios por título, descrição ou localização..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  disabled={searchLoading}
+                />
+                <button
+                  className="search-btn"
+                  type="button"
+                  disabled={searchLoading}
+                >
+                  {searchLoading ? (
+                    <div
+                      className="spinner-border spinner-border-sm"
+                      role="status"
+                    >
+                      <span className="visually-hidden">Pesquisando...</span>
+                    </div>
+                  ) : (
+                    <img
+                      src="/images/search.png"
+                      alt="Search"
+                      className="search-icon"
+                    />
+                  )}
+                </button>
+              </div>
+              {searchTerm && (
+                <div className="search-results-info">
+                  {isSearching ? (
+                    <>Pesquisando por &ldquo;{searchTerm}&rdquo;</>
+                  ) : (
+                    <>
+                      Mostrando {allAds.length} resultado(s) para &ldquo;
+                      {searchTerm}&rdquo;
+                    </>
+                  )}
+                  <button
+                    className="clear-search-btn"
+                    onClick={() => setSearchTerm("")}
+                    disabled={searchLoading}
+                  >
+                    <i className="fas fa-times"></i> Limpar
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Featured Ads Carousel - only show when not searching or search has results */}
+          {featuredAds.length > 0 && !isSearching && (
             <div className="featured-ads-section mb-5">
               <h4 className="featured-ads-title mb-3">
                 <i className="fas fa-star text-warning me-2"></i>
@@ -277,74 +365,93 @@ const Home = () => {
             </div>
           )}
 
-          <div className="ads-list">
-            {allAds.map((ad) => (
-              <div
-                key={ad.id}
-                className="ad-row mb-3"
-                onClick={() => handleAdClick(ad)}
-              >
-                <Row className="align-items-center g-3">
-                  {/* Column 1: Rotating Images */}
-                  <Col xs={3} className="image-column">
-                    <div className="ad-image-container">
-                      <img
-                        src={getCurrentImage(ad)}
-                        alt={ad.title}
-                        className="ad-image"
-                        onError={(e) => {
-                          e.target.src = "/images/nophoto.jpg";
-                        }}
-                      />
-                      {ad.images && ad.images.length > 1 && (
-                        <div className="image-counter">
-                          {(imageIndices[ad.id] || 0) + 1}/{ad.images.length}
-                        </div>
-                      )}
-                    </div>
-                  </Col>
+          {/* No Results Message */}
+          {showNoResults && (
+            <div className="no-results-message text-center mb-4">
+              <i
+                className="fas fa-search text-muted"
+                style={{ fontSize: "3rem" }}
+              ></i>
+              <h4 className="text-muted mt-3">Nenhum resultado encontrado</h4>
+              <p className="text-muted">
+                Não encontramos anúncios que correspondam à sua pesquisa.
+                <br />
+                Tente usar termos diferentes ou menos específicos.
+              </p>
+            </div>
+          )}
 
-                  {/* Column 2: Title and Description */}
-                  <Col xs={8} className="content-column">
-                    <h5 className="ad-title">{ad.title}</h5>
-                    <p className="ad-description">
-                      {ad.short ||
-                        ad.description?.substring(0, 150) + "..." ||
-                        "Sem descrição"}
-                    </p>
-                  </Col>
+          {/* Ads List - only show when there are results */}
+          {!showNoResults && (
+            <div className="ads-list">
+              {allAds.map((ad) => (
+                <div
+                  key={ad.id}
+                  className="ad-row mb-3"
+                  onClick={() => handleAdClick(ad)}
+                >
+                  <Row className="align-items-center g-3">
+                    {/* Column 1: Rotating Images */}
+                    <Col xs={3} className="image-column">
+                      <div className="ad-image-container">
+                        <img
+                          src={getCurrentImage(ad)}
+                          alt={ad.title}
+                          className="ad-image"
+                          onError={(e) => {
+                            e.target.src = "/images/nophoto.jpg";
+                          }}
+                        />
+                        {ad.images && ad.images.length > 1 && (
+                          <div className="image-counter">
+                            {(imageIndices[ad.id] || 0) + 1}/{ad.images.length}
+                          </div>
+                        )}
+                      </div>
+                    </Col>
 
-                  {/* Column 3: Stats (Rating, Likes, Comments) */}
-                  <Col xs={1} className="stats-column">
-                    <div className="stat-line">
-                      <img
-                        src="/images/star.png"
-                        alt="Rating"
-                        className="stat-icon"
-                      />
-                      <span>{ad.rating || "ND"}</span>
-                    </div>
-                    <div className="stat-line favorite-line">
-                      <FavoriteButton
-                        adId={ad.id}
-                        size="sm"
-                        className="home-favorite-btn"
-                      />
-                      <span>{ad.likes}</span>
-                    </div>
-                    <div className="stat-line">
-                      <img
-                        src="/images/comment.png"
-                        alt="Comments"
-                        className="stat-icon"
-                      />
-                      <span>{ad.comments}</span>
-                    </div>
-                  </Col>
-                </Row>
-              </div>
-            ))}
-          </div>
+                    {/* Column 2: Title and Description */}
+                    <Col xs={8} className="content-column">
+                      <h5 className="ad-title">{ad.title}</h5>
+                      <p className="ad-description">
+                        {ad.short ||
+                          ad.description?.substring(0, 150) + "..." ||
+                          "Sem descrição"}
+                      </p>
+                    </Col>
+
+                    {/* Column 3: Stats (Rating, Likes, Comments) */}
+                    <Col xs={1} className="stats-column">
+                      <div className="stat-line">
+                        <img
+                          src="/images/star.png"
+                          alt="Rating"
+                          className="stat-icon"
+                        />
+                        <span>{ad.rating || "ND"}</span>
+                      </div>
+                      <div className="stat-line favorite-line">
+                        <FavoriteButton
+                          adId={ad.id}
+                          size="sm"
+                          className="home-favorite-btn"
+                        />
+                        <span>{ad.likes}</span>
+                      </div>
+                      <div className="stat-line">
+                        <img
+                          src="/images/comment.png"
+                          alt="Comments"
+                          className="stat-icon"
+                        />
+                        <span>{ad.comments}</span>
+                      </div>
+                    </Col>
+                  </Row>
+                </div>
+              ))}
+            </div>
+          )}
         </Col>
 
         {/* Right Sidebar - 20% */}

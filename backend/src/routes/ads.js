@@ -28,6 +28,7 @@ const router = express.Router();
 
 // Public: Get all ads and get ad by ID
 router.get("/", adsController.getAllAds);
+router.get("/search", adsController.searchAds);
 router.get(
   "/my",
   middleware.tokenExtractor,

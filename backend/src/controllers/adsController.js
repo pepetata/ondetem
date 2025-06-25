@@ -15,6 +15,26 @@ exports.getAllAds = async (req, res) => {
   }
 };
 
+// Search ads
+exports.searchAds = async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || q.trim() === "") {
+      // If no search term, return all ads
+      const ads = await adsModel.getAllAds();
+      logger.info(`Fetched ${ads.length} ads (no search term)`);
+      return res.status(200).json(ads);
+    }
+
+    const ads = await adsModel.searchAds(q.trim());
+    logger.info(`Searched for "${q}" and found ${ads.length} ads`);
+    res.status(200).json(ads);
+  } catch (err) {
+    logger.error(`Error searching ads: ${err.message}`);
+    res.status(500).json({ error: "Failed to search ads" });
+  }
+};
+
 // Get ad by ID
 exports.getAdById = async (req, res) => {
   try {
