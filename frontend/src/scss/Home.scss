@@ -1,3 +1,4 @@
+@use "sass:color";
 @use "./_variables.scss" as *;
 
 .home-container {
@@ -6,6 +7,15 @@
   max-width: 100%;
   background-color: $bg-color;
   min-height: 100vh;
+  // padding-top: 80px; // Add padding to prevent menu overlap
+
+  @media (max-width: 768px) {
+    padding-top: 40px; // More padding on mobile devices
+  }
+
+  @media (max-width: 576px) {
+    padding-top: 40px; // Even more padding on very small screens
+  }
 }
 
 .sidebar-left {
@@ -237,7 +247,11 @@
     }
 
     .carousel-btn {
-      background: linear-gradient(135deg, $logoO 0%, darken($logoO, 10%) 100%);
+      background: linear-gradient(
+        135deg,
+        $logoO 0%,
+        color.adjust($logoO, $lightness: -10%) 100%
+      );
       border: 3px solid white;
       border-radius: 50%;
       width: 60px;
@@ -259,11 +273,11 @@
         box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
         background: linear-gradient(
           135deg,
-          darken($logoO, 5%) 0%,
-          darken($logoO, 15%) 100%
+          color.adjust($logoO, $lightness: -5%) 0%,
+          color.adjust($logoO, $lightness: -15%) 100%
         );
         opacity: 1;
-        border-color: darken($logoO, 20%);
+        border-color: color.adjust($logoO, $lightness: -20%);
       }
 
       &:active {
@@ -550,7 +564,7 @@
 }
 
 .search-section-top {
-  background-color: #f8f9fa;
+  background-color: $bg-color;
   padding: 20px 0;
   border-bottom: 1px solid #e0e0e0;
 
@@ -656,7 +670,7 @@
 
 // Search Results Section Styles
 .search-results-section {
-  background-color: #f8f9fa;
+  background-color: $bg-color;
   min-height: calc(100vh - 200px);
 }
 
