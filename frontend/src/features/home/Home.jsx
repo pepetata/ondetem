@@ -12,6 +12,10 @@ const Home = () => {
   const navigate = useNavigate();
   const allAds = useSelector((state) => state.ads.ads);
   const [imageIndices, setImageIndices] = useState({});
+  const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
+  const [featuredAds, setFeaturedAds] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredAds, setFilteredAds] = useState([]);
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
   // console.log(`All Ads: ${JSON.stringify(allAds)}`);
@@ -22,6 +26,26 @@ const Home = () => {
   useEffect(() => {
     dispatch(getAllAdsThunk());
   }, [dispatch]);
+
+  // Initialize featured ads - only ads with images
+  useEffect(() => {
+    if (allAds && allAds.length > 0) {
+      const adsWithImages = allAds.filter(
+        (ad) =>
+          ad.images &&
+          ad.images.length > 0 &&
+          ad.images[0] &&
+          ad.images[0].trim() !== ""
+      );
+
+      // Randomly shuffle and take first 6
+      const shuffled = adsWithImages
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 6);
+      setFeaturedAds(shuffled);
+      setCurrentCarouselIndex(0);
+    }
+  }, [allAds]);
 
   // Initialize image rotation for ads with images
   useEffect(() => {
@@ -62,6 +86,17 @@ const Home = () => {
     };
   }, [allAds]); // Remove imageIndices dependency to avoid resetting intervals
 
+  // Auto-rotate featured carousel every 3 seconds
+  useEffect(() => {
+    if (featuredAds.length > 1) {
+      const carouselInterval = setInterval(() => {
+        setCurrentCarouselIndex((prev) => (prev + 1) % featuredAds.length);
+      }, 3000); // 3 seconds
+
+      return () => clearInterval(carouselInterval);
+    }
+  }, [featuredAds]);
+
   const handleAdClick = (ad) => {
     dispatch(setCurrentAd(ad));
     const slug = generateAdSlug(ad);
@@ -77,6 +112,25 @@ const Home = () => {
     }
     const currentIndex = imageIndices[ad.id] || 0;
     return `${API_URL}/uploads/ad_images/${ad.images[currentIndex]}`;
+  };
+
+  const scrollCarousel = (direction) => {
+    if (direction === "left") {
+      setCurrentCarouselIndex((prev) =>
+        prev === 0 ? featuredAds.length - 1 : prev - 1
+      );
+    } else {
+      setCurrentCarouselIndex((prev) =>
+        prev === featuredAds.length - 1 ? 0 : prev + 1
+      );
+    }
+  };
+
+  const getFirstImage = (ad) => {
+    if (!ad.images || ad.images.length === 0) {
+      return "/images/nophoto.jpg";
+    }
+    return `${API_URL}/uploads/ad_images/${ad.images[0]}`;
   };
 
   const getPlaceholderStat = (adId, max, offset = 0) => {
@@ -132,6 +186,96 @@ const Home = () => {
             <h2>Todos os Anúncios</h2>
             <p className="text-muted">{allAds.length} anúncios encontrados</p>
           </div>
+
+          {/* Featured Ads Carousel */}
+          {featuredAds.length > 0 && (
+            <div className="featured-ads-section mb-5">
+              <h4 className="featured-ads-title mb-3">
+                <i className="fas fa-star text-warning me-2"></i>
+                Anúncios em Destaque
+              </h4>
+              <div className="featured-ads-carousel">
+                <button
+                  className="carousel-btn carousel-btn-prev"
+                  onClick={() => scrollCarousel("left")}
+                >
+                  <span>‹</span>
+                </button>
+
+                <div className="carousel-wrapper">
+                  <div className="single-ad-container">
+                    {featuredAds.length > 0 && (
+                      <div
+                        key={`featured-${featuredAds[currentCarouselIndex].id}`}
+                        className="featured-ad-card-single"
+                        onClick={() =>
+                          handleAdClick(featuredAds[currentCarouselIndex])
+                        }
+                      >
+                        <div className="featured-ad-image-single">
+                          <img
+                            src={getFirstImage(
+                              featuredAds[currentCarouselIndex]
+                            )}
+                            alt={featuredAds[currentCarouselIndex].title}
+                            onError={(e) => {
+                              e.target.src = "/images/nophoto.jpg";
+                            }}
+                          />
+                          <div className="featured-overlay">
+                            <div className="featured-overlay-content">
+                              <i className="fas fa-eye"></i>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="featured-ad-content-single">
+                          <h5 className="featured-ad-title-single">
+                            {featuredAds[currentCarouselIndex].title}
+                          </h5>
+                          <p className="featured-ad-price-single">
+                            <i className="fas fa-euro-sign me-2"></i>
+                            {featuredAds[currentCarouselIndex].price
+                              ? `${featuredAds[currentCarouselIndex].price}`
+                              : "Sob consulta"}
+                          </p>
+                          <p className="featured-ad-location-single">
+                            <i className="fas fa-map-marker-alt me-2"></i>
+                            {featuredAds[currentCarouselIndex].location ||
+                              "Localização não especificada"}
+                          </p>
+                          <p className="featured-ad-description-single">
+                            {featuredAds[currentCarouselIndex].short ||
+                              featuredAds[
+                                currentCarouselIndex
+                              ].description?.substring(0, 120) + "..." ||
+                              "Sem descrição"}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Carousel Indicators */}
+                  <div className="carousel-indicators">
+                    {featuredAds.map((_, index) => (
+                      <button
+                        key={index}
+                        className={`indicator ${index === currentCarouselIndex ? "active" : ""}`}
+                        onClick={() => setCurrentCarouselIndex(index)}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  className="carousel-btn carousel-btn-next"
+                  onClick={() => scrollCarousel("right")}
+                >
+                  <span>›</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="ads-list">
             {allAds.map((ad) => (
