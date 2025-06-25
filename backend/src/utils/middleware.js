@@ -59,10 +59,45 @@ const errorHandler = (error, request, response, next) => {
 
   next(error);
 };
+
+// Authentication middleware that requires a valid token and user
+const authenticateToken = async (request, response, next) => {
+  try {
+    const authorization = request.get("authorization");
+    if (!authorization || !authorization.toLowerCase().startsWith("bearer ")) {
+      return response.status(401).json({ error: "Token missing or invalid" });
+    }
+
+    const token = authorization.substring(7);
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (!decodedToken.userId) {
+      return response.status(401).json({ error: "Token invalid" });
+    }
+
+    const user = await User.getUserById(decodedToken.userId);
+    if (!user) {
+      return response.status(401).json({ error: "User not found" });
+    }
+
+    request.user = user;
+    request.token = token;
+    next();
+  } catch (error) {
+    if (error.name === "JsonWebTokenError") {
+      return response.status(401).json({ error: "Invalid token" });
+    } else if (error.name === "TokenExpiredError") {
+      return response.status(401).json({ error: "Token expired" });
+    }
+    return response.status(401).json({ error: "Token validation failed" });
+  }
+};
+
 module.exports = {
   requestLogger,
   unknownEndpoint,
   errorHandler,
   tokenExtractor,
   userExtractor,
+  authenticateToken,
 };

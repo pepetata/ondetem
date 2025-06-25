@@ -166,6 +166,29 @@
       flex-shrink: 0;
     }
 
+    &.favorite-line {
+      .home-favorite-btn {
+        border: none;
+        background: transparent;
+        padding: 0;
+        width: 16px;
+        height: 16px;
+        min-width: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:hover {
+          background: transparent;
+          transform: scale(1.1);
+        }
+
+        span {
+          font-size: 0.8rem;
+        }
+      }
+    }
+
     span {
       font-weight: 500;
       font-size: 0.75rem;

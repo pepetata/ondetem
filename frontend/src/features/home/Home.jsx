@@ -4,6 +4,7 @@ import { getAllAdsThunk, setCurrentAd } from "../../redux/adSlice";
 import { useNavigate } from "react-router-dom";
 import { Container, Row, Col, Card } from "react-bootstrap";
 import { generateAdSlug } from "../../utils/slugify";
+import FavoriteButton from "../../components/FavoriteButton";
 import "../../scss/Home.scss";
 
 const Home = () => {
@@ -179,11 +180,11 @@ const Home = () => {
                       />
                       <span>{ad.rating || "ND"}</span>
                     </div>
-                    <div className="stat-line">
-                      <img
-                        src="/images/favorite.png"
-                        alt="Likes"
-                        className="stat-icon"
+                    <div className="stat-line favorite-line">
+                      <FavoriteButton
+                        adId={ad.id}
+                        size="sm"
+                        className="home-favorite-btn"
                       />
                       <span>{ad.likes}</span>
                     </div>

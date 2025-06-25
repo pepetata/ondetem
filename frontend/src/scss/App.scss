@@ -4,3 +4,131 @@ body {
   background: $bg-color !important;
   font-family: $body-font !important;
 }
+
+// Loading animation for favorite button
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spin {
+  animation: spin 1s linear infinite;
+}
+
+// Favorite button styles
+.favorite-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(255, 170, 0, 0.3);
+  border-radius: 50%;
+  padding: 8px;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    background: rgba(255, 255, 255, 1);
+    border-color: $logoO;
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(255, 170, 0, 0.3);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 170, 0, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  &--active {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    border-color: #ee5a24;
+
+    &:hover {
+      background: linear-gradient(135deg, #ff5252, #e55039);
+      border-color: #e55039;
+    }
+  }
+
+  &__icon {
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  }
+
+  &__text {
+    margin-left: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: $dark;
+  }
+
+  &__spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+// Animation for when heart is clicked
+@keyframes heartBeat {
+  0% {
+    transform: scale(1);
+  }
+  14% {
+    transform: scale(1.3);
+  }
+  28% {
+    transform: scale(1);
+  }
+  42% {
+    transform: scale(1.3);
+  }
+  70% {
+    transform: scale(1);
+  }
+}
+
+.favorite-btn--animating .favorite-btn__icon {
+  animation: heartBeat 0.8s ease-in-out;
+}
+
+// Size variations
+.favorite-btn {
+  &.size-sm {
+    width: 36px;
+    height: 36px;
+    padding: 6px;
+
+    .favorite-btn__icon {
+      height: 18px;
+    }
+  }
+
+  &.size-lg {
+    width: 52px;
+    height: 52px;
+    padding: 10px;
+
+    .favorite-btn__icon {
+      height: 28px;
+    }
+  }
+}

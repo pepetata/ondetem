@@ -97,7 +97,7 @@ export const getAdThunk = createAsyncThunk(
 
 export const getAllAdsThunk = createAsyncThunk(
   "ads/getAll",
-  async (_, { rejectWithValue }) => {
+  async (_, { dispatch, rejectWithValue }) => {
     try {
       return await getAllAds();
     } catch (err) {

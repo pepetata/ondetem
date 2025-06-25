@@ -85,10 +85,23 @@ CREATE TABLE IF NOT EXISTS ads (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- DROP TABLE IF EXISTS ad_images;
+
 -- Create the ad_images table to store filenames of ad images
 CREATE TABLE ad_images (
   id SERIAL PRIMARY KEY,
   ad_id UUID NOT NULL REFERENCES ads(id) ON DELETE CASCADE,
   -- ad_id INTEGER REFERENCES ads(id) ON DELETE CASCADE,
   filename TEXT NOT NULL
+);
+
+-- DROP TABLE IF EXISTS favorites;
+
+-- Create the favorites table to store user favorites
+CREATE TABLE IF NOT EXISTS favorites (
+  id SERIAL PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  ad_id UUID NOT NULL REFERENCES ads(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, ad_id)
 );

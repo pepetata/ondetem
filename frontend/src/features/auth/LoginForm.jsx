@@ -38,8 +38,15 @@ const LoginForm = () => {
       //   }
       // }
 
-      // Check if there's a redirect path from location state
-      const from = location.state?.from?.pathname || "/";
+      // Check if there's a redirect path from location state or sessionStorage
+      const sessionRedirect = sessionStorage.getItem("redirectAfterLogin");
+      const from = location.state?.from?.pathname || sessionRedirect || "/";
+
+      // Clear the redirect from sessionStorage after using it
+      if (sessionRedirect) {
+        sessionStorage.removeItem("redirectAfterLogin");
+      }
+
       navigate(from, { replace: true });
     }
     setSubmitting(false);

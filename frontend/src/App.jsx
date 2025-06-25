@@ -7,6 +7,7 @@ import UserForm from "./features/users/UserForm";
 import LoginForm from "./features/auth/LoginForm";
 import AdForm from "./features/ads/AdForm";
 import AdView from "./features/ads/AdView";
+import Favorites from "./features/favorites/Favorites";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useSelector } from "react-redux";
 import MyAdsList from "./features/ads/MyAdsList";
@@ -48,6 +49,7 @@ const App = () => {
           }
         />
         <Route path="/ad/view/:title/:id" element={<AdView />} />
+        <Route path="/ad/view/:id" element={<AdView />} />
         <Route path="/ad/:id/view" element={<AdView />} />
         <Route
           path="/ad"
@@ -56,12 +58,20 @@ const App = () => {
               <AdForm />
             </ProtectedRoute>
           }
-        />
+        />{" "}
         <Route
           path="/my-ads"
           element={
             <ProtectedRoute>
               <MyAdsList user={user} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/favorites"
+          element={
+            <ProtectedRoute>
+              <Favorites />
             </ProtectedRoute>
           }
         />

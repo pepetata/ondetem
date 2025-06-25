@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
 import { Container, Row, Col, Card, Badge, Button } from "react-bootstrap";
 import { getAdThunk } from "../../redux/adSlice";
+import FavoriteButton from "../../components/FavoriteButton";
 import "../../scss/AdView.scss";
 
 const AdView = () => {
@@ -335,12 +336,12 @@ const AdView = () => {
 
                 {/* Action Buttons */}
                 <div className="action-buttons">
-                  <Button
+                  <FavoriteButton
+                    adId={currentAd.id}
                     variant="outline-danger"
                     className="action-btn favorite-btn"
-                  >
-                    ❤️ Favoritar
-                  </Button>
+                    size="md"
+                  />
 
                   <Button
                     variant="outline-primary"

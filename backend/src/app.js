@@ -14,6 +14,7 @@ const middleware = require("./utils/middleware");
 const usersRouter = require("./routes/users");
 const authRouter = require("./routes/auth");
 const adsRouter = require("./routes/ads");
+const favoritesRouter = require("./routes/favorites");
 
 const app = express();
 app.use(cors());
@@ -29,6 +30,7 @@ app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 app.use("/api/users", usersRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/ads", adsRouter);
+app.use("/api/favorites", favoritesRouter);
 
 if (process.env.NODE_ENV !== "test" || process.env.E2E === "true") {
   app.listen(process.env.PORT || 3000, () => {
