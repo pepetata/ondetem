@@ -118,6 +118,19 @@ const Menu = () => {
                     />{" "}
                     Meus Anúncios
                   </Nav.Link>
+                  <Nav.Link
+                    as={Link}
+                    to="/my-comments"
+                    className="d-lg-none mb-2"
+                  >
+                    <img
+                      src="/images/comments.png"
+                      alt="Meus Comentários"
+                      height="24"
+                      aria-hidden="true"
+                    />{" "}
+                    Meus Comentários
+                  </Nav.Link>
                   {!isUserPage && (
                     <Nav.Link as={Link} to="/user" className="d-lg-none mb-2">
                       <img
@@ -166,6 +179,19 @@ const Menu = () => {
                     <img
                       src="/images/portfolio.png"
                       alt="Meus Anúncios"
+                      height="40"
+                      aria-hidden="true"
+                    />
+                  </Nav.Link>
+                  <Nav.Link
+                    as={Link}
+                    to="/my-comments"
+                    className="menu-icon-btn d-none d-lg-inline"
+                    title="Meus comentários"
+                  >
+                    <img
+                      src="/images/comments.png"
+                      alt="Meus Comentários"
                       height="40"
                       aria-hidden="true"
                     />

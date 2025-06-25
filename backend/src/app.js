@@ -15,6 +15,7 @@ const usersRouter = require("./routes/users");
 const authRouter = require("./routes/auth");
 const adsRouter = require("./routes/ads");
 const favoritesRouter = require("./routes/favorites");
+const commentsRouter = require("./routes/comments");
 
 const app = express();
 app.use(cors());
@@ -31,6 +32,10 @@ app.use("/api/users", usersRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/ads", adsRouter);
 app.use("/api/favorites", favoritesRouter);
+app.use("/api/comments", commentsRouter);
+
+app.use(middleware.unknownEndpoint);
+app.use(middleware.errorHandler);
 
 if (process.env.NODE_ENV !== "test" || process.env.E2E === "true") {
   app.listen(process.env.PORT || 3000, () => {
@@ -39,8 +44,5 @@ if (process.env.NODE_ENV !== "test" || process.env.E2E === "true") {
     );
   });
 }
-
-app.use(middleware.unknownEndpoint);
-app.use(middleware.errorHandler);
 
 module.exports = app; // Export the app for testing purposes

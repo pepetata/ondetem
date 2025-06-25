@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Container, Row, Col, Card, Badge, Button } from "react-bootstrap";
 import { getAdThunk } from "../../redux/adSlice";
 import FavoriteButton from "../../components/FavoriteButton";
+import Comments from "../../components/Comments";
 import "../../scss/AdView.scss";
 
 const AdView = () => {
@@ -361,6 +362,13 @@ const AdView = () => {
                 </Button>
               </Card.Body>
             </Card>
+          </Col>
+        </Row>
+
+        {/* Comments Section */}
+        <Row className="mt-4">
+          <Col>
+            <Comments adId={actualId} />
           </Col>
         </Row>
       </Container>

@@ -5,6 +5,7 @@ import notificationReducer from "./notificationSlice";
 import adReducer from "./adSlice";
 import adImagesReducer from "./adImagesSlice";
 import favoritesReducer from "./favoritesSlice";
+import commentsReducer from "./commentsSlice";
 
 export const store = configureStore({
   reducer: {
@@ -14,5 +15,6 @@ export const store = configureStore({
     ads: adReducer,
     adImages: adImagesReducer,
     favorites: favoritesReducer,
+    comments: commentsReducer,
   },
 });

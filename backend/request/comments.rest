@@ -1,0 +1,34 @@
+# Comments API Endpoints
+
+# Get comments for an ad (public)
+GET http://localhost:3000/api/comments/ad/YOUR_AD_ID_HERE
+
+# Get comments count for an ad (public)
+GET http://localhost:3000/api/comments/ad/YOUR_AD_ID_HERE/count
+
+# Create a new comment (requires authentication)
+POST http://localhost:3000/api/comments
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "ad_id": "YOUR_AD_ID_HERE",
+  "content": "This is a test comment"
+}
+
+# Get user's comments (requires authentication)
+GET http://localhost:3000/api/comments/user
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+# Update a comment (requires authentication and ownership)
+PUT http://localhost:3000/api/comments/YOUR_COMMENT_ID_HERE
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "content": "This is an updated comment"
+}
+
+# Delete a comment (requires authentication and ownership)
+DELETE http://localhost:3000/api/comments/YOUR_COMMENT_ID_HERE
+Authorization: Bearer YOUR_JWT_TOKEN_HERE

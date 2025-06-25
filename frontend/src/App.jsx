@@ -8,6 +8,7 @@ import LoginForm from "./features/auth/LoginForm";
 import AdForm from "./features/ads/AdForm";
 import AdView from "./features/ads/AdView";
 import Favorites from "./features/favorites/Favorites";
+import UserComments from "./features/comments/UserComments";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useSelector } from "react-redux";
 import MyAdsList from "./features/ads/MyAdsList";
@@ -72,6 +73,14 @@ const App = () => {
           element={
             <ProtectedRoute>
               <Favorites />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-comments"
+          element={
+            <ProtectedRoute>
+              <UserComments />
             </ProtectedRoute>
           }
         />

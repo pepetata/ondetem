@@ -38,9 +38,12 @@ const LoginForm = () => {
       //   }
       // }
 
-      // Check if there's a redirect path from location state or sessionStorage
+      // Check if there's a redirect path from location state, sessionStorage, or URL params
+      const urlParams = new URLSearchParams(location.search);
+      const returnUrl = urlParams.get("returnUrl");
       const sessionRedirect = sessionStorage.getItem("redirectAfterLogin");
-      const from = location.state?.from?.pathname || sessionRedirect || "/";
+      const from =
+        location.state?.from?.pathname || returnUrl || sessionRedirect || "/";
 
       // Clear the redirect from sessionStorage after using it
       if (sessionRedirect) {
