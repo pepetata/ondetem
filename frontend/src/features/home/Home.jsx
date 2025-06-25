@@ -117,7 +117,7 @@ const Home = () => {
     <Container fluid className="home-container">
       <Row>
         {/* Left Sidebar - 20% */}
-        <Col xl={2} lg={2} md={2} className="sidebar-left d-none d-md-block">
+        <Col xl={2} lg={2} className="sidebar-left d-none d-lg-block">
           <div className="sidebar-content">
             <h6>Filtros</h6>
             <p>Categorias</p>
@@ -126,8 +126,8 @@ const Home = () => {
           </div>
         </Col>
 
-        {/* Main Content - 60% */}
-        <Col xl={8} lg={8} md={8} sm={12} xs={12} className="main-content">
+        {/* Main Content - 60% on large screens, 100% on medium and below */}
+        <Col xl={8} lg={8} md={12} sm={12} xs={12} className="main-content">
           <div className="text-center mb-4">
             <h2>Todos os Anúncios</h2>
             <p className="text-muted">{allAds.length} anúncios encontrados</p>
@@ -204,7 +204,7 @@ const Home = () => {
         </Col>
 
         {/* Right Sidebar - 20% */}
-        <Col xl={2} lg={2} md={2} className="sidebar-right d-none d-md-block">
+        <Col xl={2} lg={2} className="sidebar-right d-none d-lg-block">
           <div className="sidebar-content">
             <h6>Publicidade</h6>
             <div className="ad-space">
