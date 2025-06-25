@@ -7,6 +7,7 @@ import UserForm from "./features/users/UserForm";
 import LoginForm from "./features/auth/LoginForm";
 import AdForm from "./features/ads/AdForm";
 import AdView from "./features/ads/AdView";
+import ProtectedRoute from "./components/ProtectedRoute";
 import { useSelector } from "react-redux";
 import MyAdsList from "./features/ads/MyAdsList";
 
@@ -22,31 +23,46 @@ const App = () => {
   return (
     <>
       <Menu user={user} />
-      <div className="main-content" style={{ marginTop: navbarHeight }}></div>
+      <div
+        className="main-content"
+        style={{ marginTop: navbarHeight }}
+      ></div>{" "}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<UserForm user={user} />} />
         <Route
           path="/user"
           element={
-            user ? <UserForm user={user} /> : <Navigate to="/login" replace />
+            <ProtectedRoute>
+              <UserForm user={user} />
+            </ProtectedRoute>
           }
-        />{" "}
-        <Route path="/login" element={<LoginForm />} />{" "}
+        />
+        <Route path="/login" element={<LoginForm />} />
         <Route
           path="/ad/:id/edit"
-          element={user ? <AdForm /> : <Navigate to="/login" replace />}
+          element={
+            <ProtectedRoute>
+              <AdForm />
+            </ProtectedRoute>
+          }
         />
         <Route path="/ad/view/:title/:id" element={<AdView />} />
         <Route path="/ad/:id/view" element={<AdView />} />
         <Route
           path="/ad"
-          element={user ? <AdForm /> : <Navigate to="/login" replace />}
+          element={
+            <ProtectedRoute>
+              <AdForm />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/my-ads"
           element={
-            user ? <MyAdsList user={user} /> : <Navigate to="/login" replace />
+            <ProtectedRoute>
+              <MyAdsList user={user} />
+            </ProtectedRoute>
           }
         />
       </Routes>

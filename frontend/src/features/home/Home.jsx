@@ -177,17 +177,15 @@ const Home = () => {
                         alt="Rating"
                         className="stat-icon"
                       />
-                      <span>{ad.rating || getPlaceholderStat(ad.id, 5)}</span>
+                      <span>{ad.rating || "ND"}</span>
                     </div>
                     <div className="stat-line">
                       <img
-                        src="/images/favorit.png"
+                        src="/images/favorite.png"
                         alt="Likes"
                         className="stat-icon"
                       />
-                      <span>
-                        {ad.likes || getPlaceholderStat(ad.id, 50, 1)}
-                      </span>
+                      <span>{ad.likes}</span>
                     </div>
                     <div className="stat-line">
                       <img
@@ -195,9 +193,7 @@ const Home = () => {
                         alt="Comments"
                         className="stat-icon"
                       />
-                      <span>
-                        {ad.comments || getPlaceholderStat(ad.id, 20, 2)}
-                      </span>
+                      <span>{ad.comments}</span>
                     </div>
                   </Col>
                 </Row>

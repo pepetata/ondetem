@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Formik, Form, Field } from "formik";
 import Notification from "../../components/Notification.jsx";
 import OTButton from "../../components/OTButton.jsx";
@@ -12,6 +12,7 @@ import "../../scss/LoginForm.scss";
 const LoginForm = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
 
   const handleSubmit = async (values, { setSubmitting, setFieldError }) => {
     const { email, password, rememberMe } = values;
@@ -36,7 +37,10 @@ const LoginForm = () => {
       //     sessionStorage.setItem("user", JSON.stringify(profileResult.payload));
       //   }
       // }
-      navigate("/");
+
+      // Check if there's a redirect path from location state
+      const from = location.state?.from?.pathname || "/";
+      navigate(from, { replace: true });
     }
     setSubmitting(false);
   };

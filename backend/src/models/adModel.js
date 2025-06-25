@@ -2,7 +2,9 @@ const { Pool } = require("pg");
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 exports.getAllAds = async () => {
-  const result = await pool.query(`SELECT * FROM ads ORDER BY created_at DESC`);
+  const result = await pool.query(
+    `SELECT * FROM ads ORDER BY created_at DESC LIMIT 10`
+  );
   const ads = result.rows;
 
   // Get images for each ad

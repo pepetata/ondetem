@@ -27,11 +27,13 @@ const Menu = () => {
     e.preventDefault();
     if (window.confirm("Tem certeza que deseja encerrar sua sessão?")) {
       dispatch(logout());
-      navigate("/");
+      // Force immediate navigation to home
+      window.location.href = "/";
     }
   };
 
-  const handleNewAd = () => {
+  const handleNewAd = (e) => {
+    e.preventDefault();
     dispatch(clearCurrentAd());
     navigate("/ad");
   };
@@ -65,8 +67,7 @@ const Menu = () => {
               </Nav.Link>
               {!isAdForm && (
                 <Nav.Link
-                  as={Link}
-                  to="/ad"
+                  href="#"
                   className="mb-2 mb-lg-0 menu-btn bt-add-ad"
                   variant="outline-success"
                   onClick={handleNewAd}
