@@ -1,0 +1,498 @@
+@use "./_variables.scss" as *;
+
+.ad-view-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, $bg-color 0%, #f8f9fa 100%);
+}
+
+// Loading Spinner
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid $logoO;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  p {
+    margin-top: 20px;
+    color: #666;
+    font-size: 1.1rem;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+// Hero Section
+.hero-section {
+  position: relative;
+  height: 70vh;
+  min-height: 500px;
+  overflow: hidden;
+  background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+}
+
+.hero-image-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+
+  .hero-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s ease;
+
+    &:hover {
+      transform: scale(1.02);
+    }
+  }
+
+  .image-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  // Navigation Buttons
+  .nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 3;
+
+    &:hover {
+      background: rgba(255, 255, 255, 1);
+      transform: translateY(-50%) scale(1.1);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    &.nav-btn-prev {
+      left: 20px;
+    }
+
+    &.nav-btn-next {
+      right: 20px;
+    }
+  }
+
+  // Image Counter
+  .image-counter {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    z-index: 3;
+  }
+}
+
+.hero-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  padding: 60px 0 40px;
+  z-index: 2;
+}
+
+.hero-content {
+  color: white;
+
+  .hero-title {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    animation: slideInUp 0.8s ease;
+  }
+
+  .hero-subtitle {
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+    opacity: 0.95;
+    animation: slideInUp 0.8s ease 0.2s both;
+  }
+}
+
+.hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  animation: slideInUp 0.8s ease 0.4s both;
+
+  .badge {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+
+    &.location-badge {
+      background: rgba(255, 255, 255, 0.9) !important;
+      color: #333 !important;
+    }
+
+    &.tags-badge {
+      background: rgba(102, 126, 234, 0.9) !important;
+    }
+  }
+}
+
+// Thumbnails Section
+.thumbnails-section {
+  background: white;
+  padding: 20px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.thumbnails-container {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 10px 0;
+
+  .thumbnail {
+    flex-shrink: 0;
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    &.active {
+      border-color: $logoO;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+}
+
+// Main Content
+.main-content {
+  padding: 40px 15px;
+}
+
+// Glass Cards Effect
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+  }
+}
+
+// Description Section
+.description-section {
+  margin-bottom: 30px;
+}
+
+.description-card {
+  margin-bottom: 30px;
+
+  .section-title {
+    color: #333;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    border-bottom: 2px solid $logoO;
+    padding-bottom: 10px;
+  }
+
+  .description-text {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: #555;
+    margin: 0;
+  }
+}
+
+// Info Cards
+.info-cards {
+  gap: 20px;
+}
+
+.info-card {
+  margin-bottom: 20px;
+
+  .card-title {
+    color: #333;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+  }
+
+  .location-info,
+  .schedule-info {
+    p {
+      margin-bottom: 8px;
+      color: #666;
+      font-size: 1rem;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      strong {
+        color: #333;
+      }
+    }
+  }
+}
+
+// Contact Section
+.contact-section {
+  .sticky-card {
+    position: sticky;
+    top: 20px;
+  }
+}
+
+.contact-card {
+  .section-title {
+    color: #333;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 25px;
+    text-align: center;
+    border-bottom: 2px solid $logoO;
+    padding-bottom: 10px;
+  }
+}
+
+.contact-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 25px;
+
+  .contact-btn {
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: 500;
+    border-radius: 12px;
+    border: 2px solid;
+    transition: all 0.3s ease;
+    text-align: left;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    &.whatsapp-btn {
+      background: #25d366;
+      border-color: #25d366;
+      color: white;
+
+      &:hover {
+        background: #128c7e;
+        border-color: #128c7e;
+      }
+    }
+  }
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+
+  .action-btn {
+    flex: 1;
+    padding: 10px;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+  }
+}
+
+.back-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Animations
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+// Responsive Design
+@media (max-width: 991px) {
+  .hero-section {
+    height: 50vh;
+    min-height: 400px;
+  }
+
+  .hero-content {
+    .hero-title {
+      font-size: 2.2rem;
+    }
+
+    .hero-subtitle {
+      font-size: 1.1rem;
+    }
+  }
+
+  .contact-section {
+    margin-top: 30px;
+
+    .sticky-card {
+      position: static;
+    }
+  }
+
+  .nav-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+
+    &.nav-btn-prev {
+      left: 10px;
+    }
+
+    &.nav-btn-next {
+      right: 10px;
+    }
+  }
+}
+
+@media (max-width: 767px) {
+  .hero-section {
+    height: 40vh;
+    min-height: 300px;
+  }
+
+  .hero-content {
+    .hero-title {
+      font-size: 1.8rem;
+    }
+
+    .hero-subtitle {
+      font-size: 1rem;
+    }
+  }
+
+  .main-content {
+    padding: 20px 15px;
+  }
+
+  .thumbnails-container {
+    .thumbnail {
+      width: 60px;
+      height: 60px;
+    }
+  }
+
+  .action-buttons {
+    flex-direction: column;
+
+    .action-btn {
+      flex: none;
+    }
+  }
+}
+
+@media (max-width: 575px) {
+  .hero-overlay {
+    padding: 40px 0 20px;
+  }
+
+  .hero-content {
+    .hero-title {
+      font-size: 1.5rem;
+    }
+
+    .hero-subtitle {
+      font-size: 0.9rem;
+    }
+  }
+
+  .hero-badges {
+    .badge {
+      font-size: 0.8rem;
+      padding: 6px 12px;
+    }
+  }
+}

@@ -6,6 +6,7 @@ import Home from "./features/home/Home";
 import UserForm from "./features/users/UserForm";
 import LoginForm from "./features/auth/LoginForm";
 import AdForm from "./features/ads/AdForm";
+import AdView from "./features/ads/AdView";
 import { useSelector } from "react-redux";
 import MyAdsList from "./features/ads/MyAdsList";
 
@@ -30,14 +31,16 @@ const App = () => {
           element={
             user ? <UserForm user={user} /> : <Navigate to="/login" replace />
           }
-        />
-        <Route path="/login" element={<LoginForm />} />
-        <Route
-          path="/ad"
-          element={user ? <AdForm /> : <Navigate to="/login" replace />}
-        />
+        />{" "}
+        <Route path="/login" element={<LoginForm />} />{" "}
         <Route
           path="/ad/:id/edit"
+          element={user ? <AdForm /> : <Navigate to="/login" replace />}
+        />
+        <Route path="/ad/view/:title/:id" element={<AdView />} />
+        <Route path="/ad/:id/view" element={<AdView />} />
+        <Route
+          path="/ad"
           element={user ? <AdForm /> : <Navigate to="/login" replace />}
         />
         <Route

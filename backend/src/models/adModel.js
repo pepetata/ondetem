@@ -19,7 +19,18 @@ exports.getAllAds = async () => {
 
 exports.getAdById = async (id) => {
   const result = await pool.query(`SELECT * FROM ads WHERE id = $1`, [id]);
-  return result.rows[0] || null;
+  const ad = result.rows[0] || null;
+
+  if (ad) {
+    // Get images for this ad
+    const imagesResult = await pool.query(
+      `SELECT filename FROM ad_images WHERE ad_id = $1`,
+      [ad.id]
+    );
+    ad.images = imagesResult.rows.map((row) => row.filename);
+  }
+
+  return ad;
 };
 
 exports.getUserAds = async (userId) => {

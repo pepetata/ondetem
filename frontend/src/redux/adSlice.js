@@ -149,8 +149,17 @@ const adSlice = createSlice({
       .addCase(deleteAdThunk.fulfilled, (state, action) => {
         state.ads = state.ads.filter((ad) => ad.id !== action.payload);
       })
+      .addCase(getAdThunk.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(getAdThunk.fulfilled, (state, action) => {
+        state.loading = false;
         state.currentAd = action.payload;
+      })
+      .addCase(getAdThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       })
       .addCase(getAllAdsThunk.fulfilled, (state, action) => {
         state.ads = action.payload;

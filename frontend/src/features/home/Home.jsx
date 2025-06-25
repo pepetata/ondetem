@@ -3,7 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { getAllAdsThunk, setCurrentAd } from "../../redux/adSlice";
 import { useNavigate } from "react-router-dom";
 import { Container, Row, Col, Card } from "react-bootstrap";
-import "./Home.scss";
+import { generateAdSlug } from "../../utils/slugify";
+import "../../scss/Home.scss";
 
 const Home = () => {
   const dispatch = useDispatch();
@@ -34,7 +35,7 @@ const Home = () => {
     }
   }, [allAds]);
 
-  // Rotate images with random intervals (0.9 to 1.5 seconds)
+  // Rotate images with random intervals for each ad
   useEffect(() => {
     if (!allAds || allAds.length === 0) return;
 
@@ -42,7 +43,7 @@ const Home = () => {
 
     allAds.forEach((ad) => {
       if (ad && ad.images && ad.images.length > 1) {
-        // Random interval between 900ms and 1500ms for each ad
+        // Random interval between 0.9 and 1.5 seconds for each ad
         const randomInterval = Math.random() * (1500 - 900) + 900;
 
         intervals[ad.id] = setInterval(() => {
@@ -62,7 +63,9 @@ const Home = () => {
 
   const handleAdClick = (ad) => {
     dispatch(setCurrentAd(ad));
-    navigate(`/ad/${ad.id}/view`, {
+    const slug = generateAdSlug(ad);
+    const url = `/ad/view/${slug}/${ad.id}`;
+    navigate(url, {
       state: { from: "Home" },
     });
   };
@@ -75,23 +78,30 @@ const Home = () => {
     return `${API_URL}/uploads/ad_images/${ad.images[currentIndex]}`;
   };
 
+  const getPlaceholderStat = (adId, max, offset = 0) => {
+    // Use ad ID as seed for consistent random values
+    const seed = parseInt(adId) || 1;
+    const randomValue = ((seed + offset) * 37) % max;
+    return Math.max(1, randomValue + 1);
+  };
+
   if (!allAds || allAds.length === 0) {
     return (
       <Container fluid className="home-container">
         <Row>
-          <Col xl={2} lg={2} className="sidebar-left d-none d-lg-block">
+          <Col xl={2} lg={2} md={2} className="sidebar-left d-none d-md-block">
             <div className="sidebar-content">
               <h6>Filtros</h6>
               <p>Nenhum filtro disponível</p>
             </div>
           </Col>
-          <Col xl={8} lg={8} md={12} sm={12} xs={12} className="main-content">
+          <Col xl={8} lg={8} md={8} sm={12} xs={12} className="main-content">
             <div className="text-center">
               <h2>Todos os Anúncios</h2>
               <p>Nenhum anúncio encontrado.</p>
             </div>
           </Col>
-          <Col xl={2} lg={2} className="sidebar-right d-none d-lg-block">
+          <Col xl={2} lg={2} md={2} className="sidebar-right d-none d-md-block">
             <div className="sidebar-content">
               <h6>Publicidade</h6>
               <p>Espaço disponível</p>
@@ -105,8 +115,8 @@ const Home = () => {
   return (
     <Container fluid className="home-container">
       <Row>
-        {/* Left Sidebar - 20% on large screens, hidden on small */}
-        <Col xl={2} lg={2} className="sidebar-left d-none d-lg-block">
+        {/* Left Sidebar - 20% */}
+        <Col xl={2} lg={2} md={2} className="sidebar-left d-none d-md-block">
           <div className="sidebar-content">
             <h6>Filtros</h6>
             <p>Categorias</p>
@@ -115,8 +125,8 @@ const Home = () => {
           </div>
         </Col>
 
-        {/* Main Content - 60% on large screens, 100% on small */}
-        <Col xl={8} lg={8} md={12} sm={12} xs={12} className="main-content">
+        {/* Main Content - 60% */}
+        <Col xl={8} lg={8} md={8} sm={12} xs={12} className="main-content">
           <div className="text-center mb-4">
             <h2>Todos os Anúncios</h2>
             <p className="text-muted">{allAds.length} anúncios encontrados</p>
@@ -130,15 +140,8 @@ const Home = () => {
                 onClick={() => handleAdClick(ad)}
               >
                 <Row className="align-items-center g-3">
-                  {/* Column 1: Rotating Images - responsive sizing */}
-                  <Col
-                    xl={3}
-                    lg={3}
-                    md={4}
-                    sm={12}
-                    xs={12}
-                    className="image-column"
-                  >
+                  {/* Column 1: Rotating Images */}
+                  <Col xs={3} className="image-column">
                     <div className="ad-image-container">
                       <img
                         src={getCurrentImage(ad)}
@@ -156,15 +159,8 @@ const Home = () => {
                     </div>
                   </Col>
 
-                  {/* Column 2: Title and Description - responsive sizing */}
-                  <Col
-                    xl={7}
-                    lg={7}
-                    md={6}
-                    sm={12}
-                    xs={12}
-                    className="content-column"
-                  >
+                  {/* Column 2: Title and Description */}
+                  <Col xs={8} className="content-column">
                     <h5 className="ad-title">{ad.title}</h5>
                     <p className="ad-description">
                       {ad.short ||
@@ -173,30 +169,25 @@ const Home = () => {
                     </p>
                   </Col>
 
-                  {/* Column 3: Stats (Rating, Likes, Comments) - responsive sizing */}
-                  <Col
-                    xl={2}
-                    lg={2}
-                    md={2}
-                    sm={12}
-                    xs={12}
-                    className="stats-column"
-                  >
+                  {/* Column 3: Stats (Rating, Likes, Comments) */}
+                  <Col xs={1} className="stats-column">
                     <div className="stat-line">
                       <img
                         src="/images/star.png"
                         alt="Rating"
                         className="stat-icon"
                       />
-                      <span>{ad.rating || 0}</span>
+                      <span>{ad.rating || getPlaceholderStat(ad.id, 5)}</span>
                     </div>
                     <div className="stat-line">
                       <img
-                        src="/images/favorite.png"
+                        src="/images/favorit.png"
                         alt="Likes"
                         className="stat-icon"
                       />
-                      <span>{ad.likes || 0}</span>
+                      <span>
+                        {ad.likes || getPlaceholderStat(ad.id, 50, 1)}
+                      </span>
                     </div>
                     <div className="stat-line">
                       <img
@@ -204,7 +195,9 @@ const Home = () => {
                         alt="Comments"
                         className="stat-icon"
                       />
-                      <span>{ad.comments || 0}</span>
+                      <span>
+                        {ad.comments || getPlaceholderStat(ad.id, 20, 2)}
+                      </span>
                     </div>
                   </Col>
                 </Row>
@@ -213,8 +206,8 @@ const Home = () => {
           </div>
         </Col>
 
-        {/* Right Sidebar - 20% on large screens, hidden on small */}
-        <Col xl={2} lg={2} className="sidebar-right d-none d-lg-block">
+        {/* Right Sidebar - 20% */}
+        <Col xl={2} lg={2} md={2} className="sidebar-right d-none d-md-block">
           <div className="sidebar-content">
             <h6>Publicidade</h6>
             <div className="ad-space">
