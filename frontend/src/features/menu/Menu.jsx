@@ -147,6 +147,7 @@ const Menu = () => {
                     href="#"
                     onClick={handleLogout}
                     className="d-lg-none mb-2"
+                    data-testid="user-menu-mobile"
                   >
                     <img
                       src="/images/logout.png"
@@ -217,6 +218,7 @@ const Menu = () => {
                     onClick={handleLogout}
                     className="menu-icon-btn d-none d-lg-inline"
                     title="Encerrar sessão"
+                    data-testid="user-menu"
                   >
                     <img
                       src="/images/logout.png"

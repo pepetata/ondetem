@@ -27,7 +27,7 @@ const Home = () => {
   // Category images with their search terms
   const categoryImages = [
     {
-      image: "beautyshop.jpg",
+      image: "beautyshop.png",
       searchTerm: "beleza",
       label: "Beleza e Estética",
     },
@@ -256,9 +256,9 @@ const Home = () => {
 
       {/* Category Images - Show when not searching */}
       {showCategories && (
-        <div className="categories-section mb-5">
+        <div className="categories-section mb-5" data-testid="category-grid">
           <Container>
-            <Row className="justify-content-center">
+            <Row className="justify-content-center" data-testid="category-row">
               {categoryImages.map((category, index) => (
                 <Col
                   xs={6}
@@ -278,6 +278,7 @@ const Home = () => {
                         src={`/images/${category.image}`}
                         alt={category.label}
                         className="category-image"
+                        data-testid="category-image"
                         onError={(e) => {
                           e.target.src = "/images/nophoto.jpg";
                         }}

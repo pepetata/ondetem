@@ -130,7 +130,7 @@ const Comments = ({ adId }) => {
   }
 
   return (
-    <div className="comments-section">
+    <div className="comments-section" data-testid="comments-section">
       <h5 className="comments-title">Comentários ({comments.length})</h5>
 
       {error && (
@@ -157,6 +157,7 @@ const Comments = ({ adId }) => {
                   onChange={(e) => setNewComment(e.target.value)}
                   maxLength={1000}
                   disabled={submitting}
+                  data-testid="comment-input"
                 />
                 <Form.Text className="text-muted">
                   {newComment.length}/1000 caracteres
@@ -172,6 +173,7 @@ const Comments = ({ adId }) => {
                   variant="primary"
                   disabled={!newComment.trim() || submitting}
                   size="sm"
+                  data-testid="comment-submit"
                 >
                   {submitting ? (
                     <>
@@ -215,7 +217,10 @@ const Comments = ({ adId }) => {
                     <strong className="comment-author">
                       {comment.nickname || comment.full_name || "Anonymous"}
                     </strong>
-                    <small className="text-muted ms-2">
+                    <small
+                      className="text-muted ms-2"
+                      data-testid="comment-date"
+                    >
                       {formatDate(comment.created_at)}
                       {comment.updated_at !== comment.created_at && (
                         <span className="ms-1">(editado)</span>
