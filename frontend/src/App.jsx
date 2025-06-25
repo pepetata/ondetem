@@ -25,10 +25,7 @@ const App = () => {
   return (
     <>
       <Menu user={user} />
-      <div
-        className="main-content"
-        style={{ marginTop: navbarHeight }}
-      ></div>{" "}
+      <div className="main-content"></div>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<UserForm user={user} />} />
