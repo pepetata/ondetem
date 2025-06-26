@@ -47,10 +47,10 @@ const Home = () => {
     document.title = "Onde Tem?";
   }, []);
 
-  // Don't load ads initially - only load when searching
-  // useEffect(() => {
-  //   dispatch(getAllAdsThunk());
-  // }, [dispatch]);
+  // Load ads initially to show featured carousel and for category searches
+  useEffect(() => {
+    dispatch(getAllAdsThunk());
+  }, [dispatch]);
 
   // Debounced search effect
   useEffect(() => {
@@ -70,9 +70,9 @@ const Home = () => {
     return () => clearTimeout(timeoutId);
   }, [searchTerm, dispatch]);
 
-  // Initialize featured ads - only ads with images
+  // Initialize featured ads - only ads with images - Show only during search results
   useEffect(() => {
-    if (allAds && allAds.length > 0 && !isSearching) {
+    if (allAds && allAds.length > 0 && isSearching) {
       const adsWithImages = allAds.filter(
         (ad) =>
           ad.images &&
@@ -81,67 +81,36 @@ const Home = () => {
           ad.images[0].trim() !== ""
       );
 
-      // Randomly shuffle and take first 6
+      // Get 10 random ads for the carousel from search results
       const shuffled = adsWithImages
         .sort(() => 0.5 - Math.random())
-        .slice(0, 6);
+        .slice(0, 10);
       setFeaturedAds(shuffled);
       setCurrentCarouselIndex(0);
-    } else if (isSearching) {
-      // Don't show featured ads during search
+    } else {
+      // Don't show featured ads on initial home page
       setFeaturedAds([]);
     }
   }, [allAds, isSearching]);
 
-  // Initialize image rotation for ads with images
+  // Initialize image rotation for ads with images (DISABLED to prevent server overload)
   useEffect(() => {
     if (allAds && allAds.length > 0) {
       const newImageIndices = {};
       allAds.forEach((ad) => {
         if (ad.images && ad.images.length > 0) {
-          newImageIndices[ad.id] = 0;
+          newImageIndices[ad.id] = 0; // Always show first image
         }
       });
       setImageIndices(newImageIndices);
     }
   }, [allAds]);
 
-  // Rotate images with random intervals for each ad
-  useEffect(() => {
-    if (!allAds || allAds.length === 0) return;
+  // REMOVED: Auto-rotating images to prevent server overload
+  // Users can still see all images when they click on the ad
 
-    const intervals = {};
-
-    allAds.forEach((ad) => {
-      if (ad && ad.images && ad.images.length > 1) {
-        // Random interval between 0.9 and 1.5 seconds for each ad
-        const randomInterval = Math.random() * (1500 - 900) + 900;
-
-        intervals[ad.id] = setInterval(() => {
-          setImageIndices((prev) => ({
-            ...prev,
-            [ad.id]: (prev[ad.id] + 1) % ad.images.length,
-          }));
-        }, randomInterval);
-      }
-    });
-
-    // Cleanup function
-    return () => {
-      Object.values(intervals).forEach((interval) => clearInterval(interval));
-    };
-  }, [allAds]); // Remove imageIndices dependency to avoid resetting intervals
-
-  // Auto-rotate featured carousel every 3 seconds
-  useEffect(() => {
-    if (featuredAds.length > 1) {
-      const carouselInterval = setInterval(() => {
-        setCurrentCarouselIndex((prev) => (prev + 1) % featuredAds.length);
-      }, 3000); // 3 seconds
-
-      return () => clearInterval(carouselInterval);
-    }
-  }, [featuredAds]);
+  // Manual carousel control (no auto-rotation to prevent server overload)
+  // Users can click arrows to navigate
 
   // Handle category image click
   const handleCategoryClick = (category) => {
@@ -205,7 +174,7 @@ const Home = () => {
               <input
                 type="text"
                 className="form-control search-input"
-                placeholder="Pesquisar anúncios por título, descrição ou localização..."
+                placeholder="pesquisar anúncios por título, descrição ou localização..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 disabled={searchLoading}
@@ -256,7 +225,10 @@ const Home = () => {
 
       {/* Category Images - Show when not searching */}
       {showCategories && (
-        <div className="categories-section mb-5" data-testid="category-grid">
+        <div
+          className="categories-section category-grid mb-5"
+          data-testid="category-grid"
+        >
           <Container>
             <Row className="justify-content-center" data-testid="category-row">
               {categoryImages.map((category, index) => (
@@ -288,6 +260,102 @@ const Home = () => {
                 </Col>
               ))}
             </Row>
+          </Container>
+        </div>
+      )}
+
+      {/* Featured Ads Carousel - Show only during search results */}
+      {!showCategories && featuredAds.length > 0 && (
+        <div className="featured-ads-section">
+          <Container>
+            <h3 className="featured-ads-title text-center mb-4">
+              <i className="fas fa-star"></i> Anúncios em Destaque
+            </h3>
+            <div className="featured-ads-carousel">
+              {featuredAds.length > 1 && (
+                <button
+                  className="carousel-btn carousel-btn-left"
+                  onClick={() => scrollCarousel("left")}
+                  aria-label="Anúncio anterior"
+                >
+                  <span>‹</span>
+                </button>
+              )}
+
+              <div className="carousel-wrapper">
+                <div className="single-ad-container">
+                  {featuredAds[currentCarouselIndex] && (
+                    <div
+                      className="featured-ad-card-single"
+                      onClick={() =>
+                        handleAdClick(featuredAds[currentCarouselIndex])
+                      }
+                    >
+                      <div className="featured-ad-image-single">
+                        <img
+                          src={getFirstImage(featuredAds[currentCarouselIndex])}
+                          alt={featuredAds[currentCarouselIndex].title}
+                          onError={(e) => {
+                            e.target.src = "/images/nophoto.jpg";
+                          }}
+                        />
+                        <div className="featured-overlay">
+                          <div className="featured-overlay-content">
+                            <i className="fas fa-search"></i>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="featured-ad-content-single">
+                        <h4 className="featured-ad-title-single">
+                          {featuredAds[currentCarouselIndex].title}
+                        </h4>
+                        <div className="featured-ad-price-single">
+                          <i className="fas fa-tag"></i> R${" "}
+                          {featuredAds[currentCarouselIndex].price ||
+                            "Consulte"}
+                        </div>
+                        <div className="featured-ad-location-single">
+                          <i className="fas fa-map-marker-alt"></i>{" "}
+                          {featuredAds[currentCarouselIndex].city},{" "}
+                          {featuredAds[currentCarouselIndex].state}
+                        </div>
+                        <p className="featured-ad-description-single">
+                          {featuredAds[currentCarouselIndex].short ||
+                            featuredAds[
+                              currentCarouselIndex
+                            ].description?.substring(0, 150) + "..." ||
+                            "Veja mais detalhes clicando no anúncio"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {featuredAds.length > 1 && (
+                <button
+                  className="carousel-btn carousel-btn-right"
+                  onClick={() => scrollCarousel("right")}
+                  aria-label="Próximo anúncio"
+                >
+                  <span>›</span>
+                </button>
+              )}
+            </div>
+
+            {/* Carousel Indicators */}
+            {featuredAds.length > 1 && (
+              <div className="carousel-indicators">
+                {featuredAds.map((_, index) => (
+                  <button
+                    key={index}
+                    className={`indicator ${index === currentCarouselIndex ? "active" : ""}`}
+                    onClick={() => setCurrentCarouselIndex(index)}
+                    aria-label={`Ir para anúncio ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </Container>
         </div>
       )}
@@ -352,11 +420,11 @@ const Home = () => {
                         onClick={() => handleAdClick(ad)}
                       >
                         <Row className="align-items-center g-3">
-                          {/* Column 1: Rotating Images */}
+                          {/* Column 1: Static Image (no rotation to prevent server overload) */}
                           <Col xs={3} className="image-column">
                             <div className="ad-image-container">
                               <img
-                                src={getCurrentImage(ad)}
+                                src={getFirstImage(ad)}
                                 alt={ad.title}
                                 className="ad-image"
                                 onError={(e) => {
@@ -365,8 +433,7 @@ const Home = () => {
                               />
                               {ad.images && ad.images.length > 1 && (
                                 <div className="image-counter">
-                                  {(imageIndices[ad.id] || 0) + 1}/
-                                  {ad.images.length}
+                                  1/{ad.images.length}
                                 </div>
                               )}
                             </div>

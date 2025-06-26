@@ -1,21 +1,10 @@
-import { test, expect, request } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 
+// Use pre-seeded test user (no dynamic creation needed)
 const TEST_USER = {
-  fullName: "Test User",
-  nickname: "Test",
-  email: "testuser@example.com",
-  password: "testpassword123",
+  email: "testuser1@example.com", // This user is pre-seeded
+  password: "TestPassword123!", // Correct password from seed data
 };
-
-test.beforeAll(async () => {
-  // Use Playwright's APIRequestContext to create the user via your backend API
-  const api = await request.newContext();
-  // Try to create the user (ignore error if already exists)
-  await api.post("http://localhost:3000/api/users", {
-    data: TEST_USER,
-  });
-  await api.dispose();
-});
 
 test.describe("Login Form", () => {
   test("should login successfully with valid credentials", async ({ page }) => {
@@ -35,7 +24,9 @@ test.describe("Login Form - Invalid Credentials", () => {
     await page.getByRole("button", { name: /Entrar/i }).click();
 
     // Expect notification with "Credenciais inválidas"
-    await expect(page.getByText(/Credenciais inválidas/i)).toBeVisible();
+    await expect(
+      page.getByText(/Credenciais inválidas/i).first()
+    ).toBeVisible();
     // Optionally, ensure we are still on the login page
     await expect(page).toHaveURL(/\/login$/);
   });
@@ -47,7 +38,9 @@ test.describe("Login Form - Invalid Credentials", () => {
     await page.getByRole("button", { name: /Entrar/i }).click();
 
     // Expect notification with "Credenciais inválidas"
-    await expect(page.getByText(/Credenciais inválidas/i)).toBeVisible();
+    await expect(
+      page.getByText(/Credenciais inválidas/i).first()
+    ).toBeVisible();
     // Optionally, ensure we are still on the login page
     await expect(page).toHaveURL(/\/login$/);
   });

@@ -1,0 +1,322 @@
+{
+  "config": {
+    "configFile": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\playwright.config.js",
+    "rootDir": "C:/Users/flavi/OneDrive/jscodes/ondetem/frontend/tests-e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\global-setup.js",
+    "globalTeardown": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\global-teardown.js",
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "json",
+        {
+          "outputFile": "test-results.json"
+        }
+      ],
+      [
+        "github",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "C:/Users/flavi/OneDrive/jscodes/ondetem/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 2,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "C:/Users/flavi/OneDrive/jscodes/ondetem/frontend/tests-e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.53.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "ad.spec.js",
+      "file": "ad.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Ads E2E",
+          "file": "ad.spec.js",
+          "line": 4,
+          "column": 6,
+          "specs": [
+            {
+              "title": "User can delete existing images from saved ad",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5397,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T19:29:07.579Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2bfb0f53557d84fee47a-8edf81ea7292b153de04",
+              "file": "ad.spec.js",
+              "line": 254,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "integration.spec.js",
+      "file": "integration.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Feature Integration E2E",
+          "file": "integration.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Complete user journey: search, view ad, favorite, comment",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 4106,
+                      "error": {
+                        "message": "Error: expect.toBeVisible: Error: strict mode violation: locator('.comments-section, .comment-form, form') resolved to 2 elements:\n    1) <div class=\"comments-section\" data-testid=\"comments-section\">…</div> aka getByTestId('comments-section')\n    2) <form class=\"\">…</form> aka locator('form')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.comments-section, .comment-form, form')\u001b[22m\n",
+                        "stack": "Error: expect.toBeVisible: Error: strict mode violation: locator('.comments-section, .comment-form, form') resolved to 2 elements:\n    1) <div class=\"comments-section\" data-testid=\"comments-section\">…</div> aka getByTestId('comments-section')\n    2) <form class=\"\">…</form> aka locator('form')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.comments-section, .comment-form, form')\u001b[22m\n\n    at C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js:87:7",
+                        "location": {
+                          "file": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js",
+                          "column": 7,
+                          "line": 87
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 85 |\u001b[39m     \u001b[36mawait\u001b[39m expect(\n \u001b[90m 86 |\u001b[39m       page\u001b[33m.\u001b[39mlocator(\u001b[32m\".comments-section, .comment-form, form\"\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 87 |\u001b[39m     )\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 88 |\u001b[39m\n \u001b[90m 89 |\u001b[39m     \u001b[90m// Step 8: Remove from favorites\u001b[39m\n \u001b[90m 90 |\u001b[39m     \u001b[36mawait\u001b[39m detailFavoriteButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js",
+                            "column": 7,
+                            "line": 87
+                          },
+                          "message": "Error: expect.toBeVisible: Error: strict mode violation: locator('.comments-section, .comment-form, form') resolved to 2 elements:\n    1) <div class=\"comments-section\" data-testid=\"comments-section\">…</div> aka getByTestId('comments-section')\n    2) <form class=\"\">…</form> aka locator('form')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.comments-section, .comment-form, form')\u001b[22m\n\n\n\u001b[0m \u001b[90m 85 |\u001b[39m     \u001b[36mawait\u001b[39m expect(\n \u001b[90m 86 |\u001b[39m       page\u001b[33m.\u001b[39mlocator(\u001b[32m\".comments-section, .comment-form, form\"\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 87 |\u001b[39m     )\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 88 |\u001b[39m\n \u001b[90m 89 |\u001b[39m     \u001b[90m// Step 8: Remove from favorites\u001b[39m\n \u001b[90m 90 |\u001b[39m     \u001b[36mawait\u001b[39m detailFavoriteButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js:87:7\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T19:29:13.126Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\test-results\\integration-Feature-Integr-2f492-ch-view-ad-favorite-comment\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js",
+                        "column": 7,
+                        "line": 87
+                      }
+                    },
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 4481,
+                      "error": {
+                        "message": "Error: expect.toBeVisible: Error: strict mode violation: locator('.comments-section, .comment-form, form') resolved to 2 elements:\n    1) <div class=\"comments-section\" data-testid=\"comments-section\">…</div> aka getByTestId('comments-section')\n    2) <form class=\"\">…</form> aka locator('form')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.comments-section, .comment-form, form')\u001b[22m\n",
+                        "stack": "Error: expect.toBeVisible: Error: strict mode violation: locator('.comments-section, .comment-form, form') resolved to 2 elements:\n    1) <div class=\"comments-section\" data-testid=\"comments-section\">…</div> aka getByTestId('comments-section')\n    2) <form class=\"\">…</form> aka locator('form')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.comments-section, .comment-form, form')\u001b[22m\n\n    at C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js:87:7",
+                        "location": {
+                          "file": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js",
+                          "column": 7,
+                          "line": 87
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 85 |\u001b[39m     \u001b[36mawait\u001b[39m expect(\n \u001b[90m 86 |\u001b[39m       page\u001b[33m.\u001b[39mlocator(\u001b[32m\".comments-section, .comment-form, form\"\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 87 |\u001b[39m     )\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 88 |\u001b[39m\n \u001b[90m 89 |\u001b[39m     \u001b[90m// Step 8: Remove from favorites\u001b[39m\n \u001b[90m 90 |\u001b[39m     \u001b[36mawait\u001b[39m detailFavoriteButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js",
+                            "column": 7,
+                            "line": 87
+                          },
+                          "message": "Error: expect.toBeVisible: Error: strict mode violation: locator('.comments-section, .comment-form, form') resolved to 2 elements:\n    1) <div class=\"comments-section\" data-testid=\"comments-section\">…</div> aka getByTestId('comments-section')\n    2) <form class=\"\">…</form> aka locator('form')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.comments-section, .comment-form, form')\u001b[22m\n\n\n\u001b[0m \u001b[90m 85 |\u001b[39m     \u001b[36mawait\u001b[39m expect(\n \u001b[90m 86 |\u001b[39m       page\u001b[33m.\u001b[39mlocator(\u001b[32m\".comments-section, .comment-form, form\"\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 87 |\u001b[39m     )\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 88 |\u001b[39m\n \u001b[90m 89 |\u001b[39m     \u001b[90m// Step 8: Remove from favorites\u001b[39m\n \u001b[90m 90 |\u001b[39m     \u001b[36mawait\u001b[39m detailFavoriteButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js:87:7\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2025-06-26T19:29:19.274Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\test-results\\integration-Feature-Integr-2f492-ch-view-ad-favorite-comment-retry1\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js",
+                        "column": 7,
+                        "line": 87
+                      }
+                    },
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 4971,
+                      "error": {
+                        "message": "Error: expect.toBeVisible: Error: strict mode violation: locator('.comments-section, .comment-form, form') resolved to 2 elements:\n    1) <div class=\"comments-section\" data-testid=\"comments-section\">…</div> aka getByTestId('comments-section')\n    2) <form class=\"\">…</form> aka locator('form')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.comments-section, .comment-form, form')\u001b[22m\n",
+                        "stack": "Error: expect.toBeVisible: Error: strict mode violation: locator('.comments-section, .comment-form, form') resolved to 2 elements:\n    1) <div class=\"comments-section\" data-testid=\"comments-section\">…</div> aka getByTestId('comments-section')\n    2) <form class=\"\">…</form> aka locator('form')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.comments-section, .comment-form, form')\u001b[22m\n\n    at C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js:87:7",
+                        "location": {
+                          "file": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js",
+                          "column": 7,
+                          "line": 87
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 85 |\u001b[39m     \u001b[36mawait\u001b[39m expect(\n \u001b[90m 86 |\u001b[39m       page\u001b[33m.\u001b[39mlocator(\u001b[32m\".comments-section, .comment-form, form\"\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 87 |\u001b[39m     )\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 88 |\u001b[39m\n \u001b[90m 89 |\u001b[39m     \u001b[90m// Step 8: Remove from favorites\u001b[39m\n \u001b[90m 90 |\u001b[39m     \u001b[36mawait\u001b[39m detailFavoriteButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js",
+                            "column": 7,
+                            "line": 87
+                          },
+                          "message": "Error: expect.toBeVisible: Error: strict mode violation: locator('.comments-section, .comment-form, form') resolved to 2 elements:\n    1) <div class=\"comments-section\" data-testid=\"comments-section\">…</div> aka getByTestId('comments-section')\n    2) <form class=\"\">…</form> aka locator('form')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.comments-section, .comment-form, form')\u001b[22m\n\n\n\u001b[0m \u001b[90m 85 |\u001b[39m     \u001b[36mawait\u001b[39m expect(\n \u001b[90m 86 |\u001b[39m       page\u001b[33m.\u001b[39mlocator(\u001b[32m\".comments-section, .comment-form, form\"\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 87 |\u001b[39m     )\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 88 |\u001b[39m\n \u001b[90m 89 |\u001b[39m     \u001b[90m// Step 8: Remove from favorites\u001b[39m\n \u001b[90m 90 |\u001b[39m     \u001b[36mawait\u001b[39m detailFavoriteButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js:87:7\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 2,
+                      "startTime": "2025-06-26T19:29:25.630Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\test-results\\integration-Feature-Integr-2f492-ch-view-ad-favorite-comment-retry2\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js",
+                        "column": 7,
+                        "line": 87
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2cc1944cd770ce0e0997-6e5e3ce6fe947bb57775",
+              "file": "integration.spec.js",
+              "line": 18,
+              "column": 7
+            },
+            {
+              "title": "Search with multiple categories and verify favorites persist",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6401,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T19:29:32.436Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2cc1944cd770ce0e0997-283af14c80193257988d",
+              "file": "integration.spec.js",
+              "line": 105,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-06-26T19:29:02.150Z",
+    "duration": 55877.797999999995,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

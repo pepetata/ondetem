@@ -10,6 +10,7 @@ import AdView from "./features/ads/AdView";
 import Favorites from "./features/favorites/Favorites";
 import UserComments from "./features/comments/UserComments";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Notification from "./components/Notification";
 import { useSelector } from "react-redux";
 import MyAdsList from "./features/ads/MyAdsList";
 
@@ -25,6 +26,7 @@ const App = () => {
   return (
     <>
       <Menu user={user} />
+      <Notification />
       <div className="main-content"></div>
       <Routes>
         <Route path="/" element={<Home />} />
