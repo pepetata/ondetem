@@ -58,6 +58,352 @@
   },
   "suites": [
     {
+      "title": "404-errors.spec.js",
+      "file": "404-errors.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "404 Error Handling E2E",
+          "file": "404-errors.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Frontend handles non-existent routes gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2374,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✓ Route /non-existent-page shows user-friendly 404 page\n"
+                        },
+                        {
+                          "text": "✓ Route /invalid/route shows user-friendly 404 page\n"
+                        },
+                        {
+                          "text": "✓ Route /admin shows user-friendly 404 page\n"
+                        },
+                        {
+                          "text": "✓ Route /dashboard shows user-friendly 404 page\n"
+                        },
+                        {
+                          "text": "✓ Route /some-random-path/with/multiple/segments shows user-friendly 404 page\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:14:38.071Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "88ce97ec92557e2477bd-711f4818164fcb253f65",
+              "file": "404-errors.spec.js",
+              "line": 22,
+              "column": 7
+            },
+            {
+              "title": "Frontend handles non-existent ad routes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9376,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "PAGE ERROR: Failed to load resource: the server responded with a status of 404 (Not Found)\n"
+                        },
+                        {
+                          "text": "✓ Ad route /ad/view/non-existent-title/999999 handled gracefully\n"
+                        },
+                        {
+                          "text": "PAGE ERROR: Failed to load resource: the server responded with a status of 404 (Not Found)\n"
+                        },
+                        {
+                          "text": "✓ Ad route /ad/view/999999 handled gracefully\n"
+                        },
+                        {
+                          "text": "PAGE ERROR: Failed to load resource: the server responded with a status of 404 (Not Found)\n"
+                        },
+                        {
+                          "text": "✓ Ad route /ad/999999/view handled gracefully\n"
+                        },
+                        {
+                          "text": "PAGE ERROR: Failed to load resource: the server responded with a status of 404 (Not Found)\n"
+                        },
+                        {
+                          "text": "✓ Ad route /ad/00000000-0000-0000-0000-000000000000/edit handled gracefully\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:14:40.597Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "88ce97ec92557e2477bd-a8b15c2f001486b16be6",
+              "file": "404-errors.spec.js",
+              "line": 53,
+              "column": 7
+            },
+            {
+              "title": "Backend API returns proper 404 for non-existent endpoints",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 149,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✓ API endpoint /api/non-existent returned proper 404 with user message\n"
+                        },
+                        {
+                          "text": "✓ API endpoint /api/users/999999 returned proper 404 with user message\n"
+                        },
+                        {
+                          "text": "✓ API endpoint /api/ads/00000000-0000-0000-0000-000000000000 returned proper 404 with user message\n"
+                        },
+                        {
+                          "text": "✓ API endpoint /api/invalid-endpoint returned proper 404 with user message\n"
+                        },
+                        {
+                          "text": "✓ API endpoint /api/users/invalid-id returned proper 404 with user message\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:14:49.978Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "88ce97ec92557e2477bd-651fbd415fcdf57e322c",
+              "file": "404-errors.spec.js",
+              "line": 84,
+              "column": 7
+            },
+            {
+              "title": "Backend middleware catches unknown endpoints",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 118,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✓ Unknown path /api/completely-unknown caught by middleware with user message\n"
+                        },
+                        {
+                          "text": "✓ Unknown path /api/v2/users caught by middleware with user message\n"
+                        },
+                        {
+                          "text": "✓ Unknown path /api/admin caught by middleware with user message\n"
+                        },
+                        {
+                          "text": "✓ Unknown path /unknown-path caught by middleware with user message\n"
+                        },
+                        {
+                          "text": "✓ Unknown path /static/non-existent-file.js caught by middleware with user message\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:14:50.135Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "88ce97ec92557e2477bd-963e58778697067e4d3e",
+              "file": "404-errors.spec.js",
+              "line": 125,
+              "column": 7
+            },
+            {
+              "title": "Frontend shows user-friendly error for API failures",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3829,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "PAGE ERROR: Failed to load resource: the server responded with a status of 404 (Not Found)\n"
+                        },
+                        {
+                          "text": "✓ API error handled gracefully in frontend\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:14:50.259Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "88ce97ec92557e2477bd-ebfb1c988befe35b04e4",
+              "file": "404-errors.spec.js",
+              "line": 151,
+              "column": 7
+            },
+            {
+              "title": "Deep linking to non-existent resources shows appropriate feedback",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 573,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "PAGE ERROR: Failed to load resource: the server responded with a status of 404 (Not Found)\n"
+                        },
+                        {
+                          "text": "✓ Deep linking to non-existent resources handled gracefully\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:14:54.093Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "88ce97ec92557e2477bd-a60e4c63f6c9b161ca97",
+              "file": "404-errors.spec.js",
+              "line": 185,
+              "column": 7
+            },
+            {
+              "title": "404 page navigation buttons work correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1718,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "✓ 404 page navigation buttons work correctly\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:14:54.671Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "88ce97ec92557e2477bd-6c6dbbfb587a1d284c8a",
+              "file": "404-errors.spec.js",
+              "line": 207,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
       "title": "ad.spec.js",
       "file": "ad.spec.js",
       "column": 0,
@@ -70,6 +416,210 @@
           "line": 4,
           "column": 6,
           "specs": [
+            {
+              "title": "User can create a new ad",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2331,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:14:56.412Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2bfb0f53557d84fee47a-31e347c852564d21e912",
+              "file": "ad.spec.js",
+              "line": 20,
+              "column": 7
+            },
+            {
+              "title": "User can see their ads in \"Meus Anúncios\"",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2302,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:14:58.749Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2bfb0f53557d84fee47a-9cca2b036670c59d1601",
+              "file": "ad.spec.js",
+              "line": 63,
+              "column": 7
+            },
+            {
+              "title": "User can edit an ad",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1660,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:01.059Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2bfb0f53557d84fee47a-ab14747531e94cd61d91",
+              "file": "ad.spec.js",
+              "line": 100,
+              "column": 7
+            },
+            {
+              "title": "User can delete an ad",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2180,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:02.723Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2bfb0f53557d84fee47a-c4d59db41fcbb020a3c6",
+              "file": "ad.spec.js",
+              "line": 126,
+              "column": 7
+            },
+            {
+              "title": "Form validation works",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1735,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:04.910Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2bfb0f53557d84fee47a-4a585220e6df6c2f4ac5",
+              "file": "ad.spec.js",
+              "line": 160,
+              "column": 7
+            },
+            {
+              "title": "User can upload and manage images",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1809,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:06.650Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2bfb0f53557d84fee47a-4e499691302a1e3ca4bf",
+              "file": "ad.spec.js",
+              "line": 175,
+              "column": 7
+            },
             {
               "title": "User can delete existing images from saved ad",
               "ok": true,
@@ -86,12 +636,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5397,
+                      "duration": 4349,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-06-26T19:29:07.579Z",
+                      "startTime": "2025-06-26T20:15:08.466Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -103,6 +653,963 @@
               "file": "ad.spec.js",
               "line": 254,
               "column": 7
+            },
+            {
+              "title": "Image upload respects 5 image limit",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1390,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:12.820Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2bfb0f53557d84fee47a-a6796161df31d43d8e00",
+              "file": "ad.spec.js",
+              "line": 317,
+              "column": 7
+            },
+            {
+              "title": "Image upload shows error for invalid file types",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 909,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:14.215Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2bfb0f53557d84fee47a-ebe5fb5658d2671e9a96",
+              "file": "ad.spec.js",
+              "line": 361,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "comments.spec.js",
+      "file": "comments.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Comments Functionality E2E",
+          "file": "comments.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "User can view comments section in ad detail",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1937,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:15.134Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c8f12aa76baf09d2629-f786267981dac8640d21",
+              "file": "comments.spec.js",
+              "line": 19,
+              "column": 7
+            },
+            {
+              "title": "User can add a comment to an ad",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2859,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:17.074Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c8f12aa76baf09d2629-93aeec746dc1e1fa01d2",
+              "file": "comments.spec.js",
+              "line": 42,
+              "column": 7
+            },
+            {
+              "title": "User can view existing comments",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4914,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:19.938Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c8f12aa76baf09d2629-bd9a7667df9e67af5fbc",
+              "file": "comments.spec.js",
+              "line": 73,
+              "column": 7
+            },
+            {
+              "title": "Comments require authentication",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip"
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:24.857Z",
+                      "annotations": [
+                        {
+                          "type": "skip"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8c8f12aa76baf09d2629-8f3d702ed134f1135588",
+              "file": "comments.spec.js",
+              "line": 100,
+              "column": 8
+            },
+            {
+              "title": "Comments display with user information",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4954,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:24.857Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c8f12aa76baf09d2629-20d4064f64f356285a1f",
+              "file": "comments.spec.js",
+              "line": 122,
+              "column": 7
+            },
+            {
+              "title": "Comments section loads and functions on mobile viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2835,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:29.815Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c8f12aa76baf09d2629-7d63bf8005925ff62361",
+              "file": "comments.spec.js",
+              "line": 153,
+              "column": 7
+            },
+            {
+              "title": "Multiple comments display correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5981,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:32.655Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8c8f12aa76baf09d2629-3c9111bcc9f51931a467",
+              "file": "comments.spec.js",
+              "line": 184,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "favorites.spec.js",
+      "file": "favorites.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Favorites Functionality E2E",
+          "file": "favorites.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "User can add ad to favorites from ad list",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1778,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:38.646Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "62cda71af6f80f24b489-3151b769cc02816437a8",
+              "file": "favorites.spec.js",
+              "line": 18,
+              "column": 7
+            },
+            {
+              "title": "User can remove ad from favorites",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5767,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:40.428Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "62cda71af6f80f24b489-24da8845b1a53685ab87",
+              "file": "favorites.spec.js",
+              "line": 48,
+              "column": 7
+            },
+            {
+              "title": "Favorite button shows login modal for non-authenticated users",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip"
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:46.198Z",
+                      "annotations": [
+                        {
+                          "type": "skip"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "62cda71af6f80f24b489-c879336132218a65e691",
+              "file": "favorites.spec.js",
+              "line": 79,
+              "column": 8
+            },
+            {
+              "title": "Favorite animation works when adding to favorites",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip"
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:46.198Z",
+                      "annotations": [
+                        {
+                          "type": "skip"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "62cda71af6f80f24b489-cffd504060a6c505a9cd",
+              "file": "favorites.spec.js",
+              "line": 112,
+              "column": 8
+            },
+            {
+              "title": "Favorites work from ad detail view",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3882,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:46.198Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "62cda71af6f80f24b489-159d14f18e5b55a4fef1",
+              "file": "favorites.spec.js",
+              "line": 135,
+              "column": 7
+            },
+            {
+              "title": "Favorite status persists across page reloads",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip"
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:50.085Z",
+                      "annotations": [
+                        {
+                          "type": "skip"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "62cda71af6f80f24b489-28f268a9888cc3f50731",
+              "file": "favorites.spec.js",
+              "line": 165,
+              "column": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "home-ui.spec.js",
+      "file": "home-ui.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Home Page UI State Management E2E",
+          "file": "home-ui.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Initial home page state shows categories and hides search results",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 682,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:50.091Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "12aef13dc609177d47d8-55665a7129ad8a964568",
+              "file": "home-ui.spec.js",
+              "line": 18,
+              "column": 7
+            },
+            {
+              "title": "Search state correctly toggles UI elements",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2045,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:50.777Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "12aef13dc609177d47d8-2978d55dffde61bb4de8",
+              "file": "home-ui.spec.js",
+              "line": 45,
+              "column": 7
+            },
+            {
+              "title": "Category click triggers correct search and state change",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2150,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:52.825Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "12aef13dc609177d47d8-630a2ac4e96d0ca9542e",
+              "file": "home-ui.spec.js",
+              "line": 74,
+              "column": 7
+            },
+            {
+              "title": "All category images trigger correct searches",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5535,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:15:54.979Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "12aef13dc609177d47d8-df513c424cf08fdfb27b",
+              "file": "home-ui.spec.js",
+              "line": 105,
+              "column": 7
+            },
+            {
+              "title": "Search loading state works correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1704,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:00.518Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "12aef13dc609177d47d8-2a3ffb1437ef69f95af9",
+              "file": "home-ui.spec.js",
+              "line": 141,
+              "column": 7
+            },
+            {
+              "title": "Menu overlap fix works on small screens",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1337,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:02.226Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "12aef13dc609177d47d8-3be8bcf207fdea6b6596",
+              "file": "home-ui.spec.js",
+              "line": 155,
+              "column": 7
+            },
+            {
+              "title": "Category grid layout adapts to screen size",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip"
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:03.566Z",
+                      "annotations": [
+                        {
+                          "type": "skip"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "12aef13dc609177d47d8-052c60b8202526672146",
+              "file": "home-ui.spec.js",
+              "line": 192,
+              "column": 8
+            },
+            {
+              "title": "Background color consistency across sections",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1325,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:03.566Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "12aef13dc609177d47d8-9d6b4eee5132a438ddea",
+              "file": "home-ui.spec.js",
+              "line": 227,
+              "column": 7
+            },
+            {
+              "title": "Image quality and cropping works correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip"
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:04.894Z",
+                      "annotations": [
+                        {
+                          "type": "skip"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "12aef13dc609177d47d8-65bd7069dc34ece7df77",
+              "file": "home-ui.spec.js",
+              "line": 255,
+              "column": 8
+            },
+            {
+              "title": "Search info message is discrete and well-positioned",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip"
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:04.895Z",
+                      "annotations": [
+                        {
+                          "type": "skip"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "12aef13dc609177d47d8-bc0f6b616b5c68b9c9d1",
+              "file": "home-ui.spec.js",
+              "line": 282,
+              "column": 8
             }
           ]
         }
@@ -123,7 +1630,7 @@
           "specs": [
             {
               "title": "Complete user journey: search, view ad, favorite, comment",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -136,134 +1643,18 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 4106,
-                      "error": {
-                        "message": "Error: expect.toBeVisible: Error: strict mode violation: locator('.comments-section, .comment-form, form') resolved to 2 elements:\n    1) <div class=\"comments-section\" data-testid=\"comments-section\">…</div> aka getByTestId('comments-section')\n    2) <form class=\"\">…</form> aka locator('form')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.comments-section, .comment-form, form')\u001b[22m\n",
-                        "stack": "Error: expect.toBeVisible: Error: strict mode violation: locator('.comments-section, .comment-form, form') resolved to 2 elements:\n    1) <div class=\"comments-section\" data-testid=\"comments-section\">…</div> aka getByTestId('comments-section')\n    2) <form class=\"\">…</form> aka locator('form')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.comments-section, .comment-form, form')\u001b[22m\n\n    at C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js:87:7",
-                        "location": {
-                          "file": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js",
-                          "column": 7,
-                          "line": 87
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 85 |\u001b[39m     \u001b[36mawait\u001b[39m expect(\n \u001b[90m 86 |\u001b[39m       page\u001b[33m.\u001b[39mlocator(\u001b[32m\".comments-section, .comment-form, form\"\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 87 |\u001b[39m     )\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 88 |\u001b[39m\n \u001b[90m 89 |\u001b[39m     \u001b[90m// Step 8: Remove from favorites\u001b[39m\n \u001b[90m 90 |\u001b[39m     \u001b[36mawait\u001b[39m detailFavoriteButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js",
-                            "column": 7,
-                            "line": 87
-                          },
-                          "message": "Error: expect.toBeVisible: Error: strict mode violation: locator('.comments-section, .comment-form, form') resolved to 2 elements:\n    1) <div class=\"comments-section\" data-testid=\"comments-section\">…</div> aka getByTestId('comments-section')\n    2) <form class=\"\">…</form> aka locator('form')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.comments-section, .comment-form, form')\u001b[22m\n\n\n\u001b[0m \u001b[90m 85 |\u001b[39m     \u001b[36mawait\u001b[39m expect(\n \u001b[90m 86 |\u001b[39m       page\u001b[33m.\u001b[39mlocator(\u001b[32m\".comments-section, .comment-form, form\"\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 87 |\u001b[39m     )\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 88 |\u001b[39m\n \u001b[90m 89 |\u001b[39m     \u001b[90m// Step 8: Remove from favorites\u001b[39m\n \u001b[90m 90 |\u001b[39m     \u001b[36mawait\u001b[39m detailFavoriteButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js:87:7\u001b[22m"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 4480,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-06-26T19:29:13.126Z",
+                      "startTime": "2025-06-26T20:16:04.901Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\test-results\\integration-Feature-Integr-2f492-ch-view-ad-favorite-comment\\error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js",
-                        "column": 7,
-                        "line": 87
-                      }
-                    },
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 4481,
-                      "error": {
-                        "message": "Error: expect.toBeVisible: Error: strict mode violation: locator('.comments-section, .comment-form, form') resolved to 2 elements:\n    1) <div class=\"comments-section\" data-testid=\"comments-section\">…</div> aka getByTestId('comments-section')\n    2) <form class=\"\">…</form> aka locator('form')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.comments-section, .comment-form, form')\u001b[22m\n",
-                        "stack": "Error: expect.toBeVisible: Error: strict mode violation: locator('.comments-section, .comment-form, form') resolved to 2 elements:\n    1) <div class=\"comments-section\" data-testid=\"comments-section\">…</div> aka getByTestId('comments-section')\n    2) <form class=\"\">…</form> aka locator('form')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.comments-section, .comment-form, form')\u001b[22m\n\n    at C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js:87:7",
-                        "location": {
-                          "file": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js",
-                          "column": 7,
-                          "line": 87
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 85 |\u001b[39m     \u001b[36mawait\u001b[39m expect(\n \u001b[90m 86 |\u001b[39m       page\u001b[33m.\u001b[39mlocator(\u001b[32m\".comments-section, .comment-form, form\"\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 87 |\u001b[39m     )\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 88 |\u001b[39m\n \u001b[90m 89 |\u001b[39m     \u001b[90m// Step 8: Remove from favorites\u001b[39m\n \u001b[90m 90 |\u001b[39m     \u001b[36mawait\u001b[39m detailFavoriteButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js",
-                            "column": 7,
-                            "line": 87
-                          },
-                          "message": "Error: expect.toBeVisible: Error: strict mode violation: locator('.comments-section, .comment-form, form') resolved to 2 elements:\n    1) <div class=\"comments-section\" data-testid=\"comments-section\">…</div> aka getByTestId('comments-section')\n    2) <form class=\"\">…</form> aka locator('form')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.comments-section, .comment-form, form')\u001b[22m\n\n\n\u001b[0m \u001b[90m 85 |\u001b[39m     \u001b[36mawait\u001b[39m expect(\n \u001b[90m 86 |\u001b[39m       page\u001b[33m.\u001b[39mlocator(\u001b[32m\".comments-section, .comment-form, form\"\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 87 |\u001b[39m     )\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 88 |\u001b[39m\n \u001b[90m 89 |\u001b[39m     \u001b[90m// Step 8: Remove from favorites\u001b[39m\n \u001b[90m 90 |\u001b[39m     \u001b[36mawait\u001b[39m detailFavoriteButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js:87:7\u001b[22m"
-                        }
-                      ],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 1,
-                      "startTime": "2025-06-26T19:29:19.274Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\test-results\\integration-Feature-Integr-2f492-ch-view-ad-favorite-comment-retry1\\error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js",
-                        "column": 7,
-                        "line": 87
-                      }
-                    },
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 4971,
-                      "error": {
-                        "message": "Error: expect.toBeVisible: Error: strict mode violation: locator('.comments-section, .comment-form, form') resolved to 2 elements:\n    1) <div class=\"comments-section\" data-testid=\"comments-section\">…</div> aka getByTestId('comments-section')\n    2) <form class=\"\">…</form> aka locator('form')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.comments-section, .comment-form, form')\u001b[22m\n",
-                        "stack": "Error: expect.toBeVisible: Error: strict mode violation: locator('.comments-section, .comment-form, form') resolved to 2 elements:\n    1) <div class=\"comments-section\" data-testid=\"comments-section\">…</div> aka getByTestId('comments-section')\n    2) <form class=\"\">…</form> aka locator('form')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.comments-section, .comment-form, form')\u001b[22m\n\n    at C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js:87:7",
-                        "location": {
-                          "file": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js",
-                          "column": 7,
-                          "line": 87
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 85 |\u001b[39m     \u001b[36mawait\u001b[39m expect(\n \u001b[90m 86 |\u001b[39m       page\u001b[33m.\u001b[39mlocator(\u001b[32m\".comments-section, .comment-form, form\"\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 87 |\u001b[39m     )\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 88 |\u001b[39m\n \u001b[90m 89 |\u001b[39m     \u001b[90m// Step 8: Remove from favorites\u001b[39m\n \u001b[90m 90 |\u001b[39m     \u001b[36mawait\u001b[39m detailFavoriteButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js",
-                            "column": 7,
-                            "line": 87
-                          },
-                          "message": "Error: expect.toBeVisible: Error: strict mode violation: locator('.comments-section, .comment-form, form') resolved to 2 elements:\n    1) <div class=\"comments-section\" data-testid=\"comments-section\">…</div> aka getByTestId('comments-section')\n    2) <form class=\"\">…</form> aka locator('form')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.comments-section, .comment-form, form')\u001b[22m\n\n\n\u001b[0m \u001b[90m 85 |\u001b[39m     \u001b[36mawait\u001b[39m expect(\n \u001b[90m 86 |\u001b[39m       page\u001b[33m.\u001b[39mlocator(\u001b[32m\".comments-section, .comment-form, form\"\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 87 |\u001b[39m     )\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 88 |\u001b[39m\n \u001b[90m 89 |\u001b[39m     \u001b[90m// Step 8: Remove from favorites\u001b[39m\n \u001b[90m 90 |\u001b[39m     \u001b[36mawait\u001b[39m detailFavoriteButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js:87:7\u001b[22m"
-                        }
-                      ],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 2,
-                      "startTime": "2025-06-26T19:29:25.630Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\test-results\\integration-Feature-Integr-2f492-ch-view-ad-favorite-comment-retry2\\error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\flavi\\OneDrive\\jscodes\\ondetem\\frontend\\tests-e2e\\integration.spec.js",
-                        "column": 7,
-                        "line": 87
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "2cc1944cd770ce0e0997-6e5e3ce6fe947bb57775",
@@ -284,15 +1675,15 @@
                   "projectName": "",
                   "results": [
                     {
-                      "workerIndex": 3,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6401,
+                      "duration": 5101,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-06-26T19:29:32.436Z",
+                      "startTime": "2025-06-26T20:16:09.384Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -302,7 +1693,797 @@
               ],
               "id": "2cc1944cd770ce0e0997-283af14c80193257988d",
               "file": "integration.spec.js",
+              "line": 103,
+              "column": 7
+            },
+            {
+              "title": "Anonymous user experience with login prompts",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip"
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:14.489Z",
+                      "annotations": [
+                        {
+                          "type": "skip"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "2cc1944cd770ce0e0997-f7b24e2c864f5778a040",
+              "file": "integration.spec.js",
+              "line": 185,
+              "column": 8
+            },
+            {
+              "title": "Responsive behavior across all features",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11162,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:14.489Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2cc1944cd770ce0e0997-3a65d9c5e348c71f8d04",
+              "file": "integration.spec.js",
+              "line": 225,
+              "column": 7
+            },
+            {
+              "title": "Performance and debouncing work correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2222,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:25.655Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2cc1944cd770ce0e0997-37ffb45a72f1ed1b381a",
+              "file": "integration.spec.js",
+              "line": 302,
+              "column": 7
+            },
+            {
+              "title": "Error handling and edge cases",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3169,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:27.881Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2cc1944cd770ce0e0997-73d37101b2f4b93f080c",
+              "file": "integration.spec.js",
+              "line": 328,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "login.spec.js",
+      "file": "login.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Login Form",
+          "file": "login.spec.js",
+          "line": 9,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should login successfully with valid credentials",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 533,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:31.058Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "badc1754af1944f68b2b-74d07b9dcf665fbd2c7a",
+              "file": "login.spec.js",
+              "line": 10,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Login Form - Invalid Credentials",
+          "file": "login.spec.js",
+          "line": 19,
+          "column": 6,
+          "specs": [
+            {
+              "title": "shows error notification for wrong email",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 452,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:31.594Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "badc1754af1944f68b2b-5d1e82f5a59bb4245a7e",
+              "file": "login.spec.js",
+              "line": 20,
+              "column": 7
+            },
+            {
+              "title": "shows error notification for wrong password",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 526,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:32.050Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "badc1754af1944f68b2b-5f28fccd9450de7964bb",
+              "file": "login.spec.js",
+              "line": 34,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "search.spec.js",
+      "file": "search.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Search Functionality E2E",
+          "file": "search.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Home page displays search bar and category grid initially",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 700,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:32.587Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9e6ea2b6d72fedbaa223-fe545edb0285d8271326",
+              "file": "search.spec.js",
+              "line": 18,
+              "column": 7
+            },
+            {
+              "title": "Category image click triggers search",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1738,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:33.291Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9e6ea2b6d72fedbaa223-40b417a01133235d94b5",
+              "file": "search.spec.js",
+              "line": 45,
+              "column": 7
+            },
+            {
+              "title": "Text search functionality works",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1696,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:35.033Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9e6ea2b6d72fedbaa223-d347d0180df5f5a4da74",
+              "file": "search.spec.js",
+              "line": 71,
+              "column": 7
+            },
+            {
+              "title": "Clearing search shows categories again",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2730,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:36.733Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9e6ea2b6d72fedbaa223-f7694a96ae50a9b5adbb",
+              "file": "search.spec.js",
+              "line": 92,
+              "column": 7
+            },
+            {
+              "title": "Search shows 'no results' message when appropriate",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1698,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:39.468Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9e6ea2b6d72fedbaa223-b5f07ac4092c0207dd6d",
+              "file": "search.spec.js",
+              "line": 116,
+              "column": 7
+            },
+            {
+              "title": "Search results display correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1682,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:41.170Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9e6ea2b6d72fedbaa223-c686d15639d257dd3455",
+              "file": "search.spec.js",
+              "line": 135,
+              "column": 7
+            },
+            {
+              "title": "Search works on mobile viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1713,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:42.856Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9e6ea2b6d72fedbaa223-e72e4662673509fb24ab",
+              "file": "search.spec.js",
+              "line": 149,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "user-manage.spec.js",
+      "file": "user-manage.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "User Management",
+          "file": "user-manage.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should update user with token",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Creating test user: e2euser1750969004576@test.com\n"
+                        },
+                        {
+                          "text": "✅ Created test user with ID: 1d4b175a-8011-4256-9755-c44f8744a07f\n"
+                        },
+                        {
+                          "text": "✅ Login successful, got token\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:44.577Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8b0c62bcf47145c07a63-c26a87922ecac83fb378",
+              "file": "user-manage.spec.js",
+              "line": 72,
+              "column": 7
+            },
+            {
+              "title": "should not update user without token",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:44.725Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8b0c62bcf47145c07a63-8cdf55e54eae40efc0af",
+              "file": "user-manage.spec.js",
+              "line": 83,
+              "column": 7
+            },
+            {
+              "title": "should delete user with token",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:44.732Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8b0c62bcf47145c07a63-2c2bcc19376618a8fad0",
+              "file": "user-manage.spec.js",
+              "line": 90,
+              "column": 7
+            },
+            {
+              "title": "should not delete user without token",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip"
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 2,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:44.741Z",
+                      "annotations": [
+                        {
+                          "type": "skip"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8b0c62bcf47145c07a63-3c920bb953f88cb8d032",
+              "file": "user-manage.spec.js",
               "line": 105,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "user-signup.spec.js",
+      "file": "user-signup.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "User Signup",
+          "file": "user-signup.spec.js",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should allow a new user to register",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 730,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:44.752Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4c451524a376e5bc4a16-c8a0d2d0113993a8d860",
+              "file": "user-signup.spec.js",
+              "line": 4,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "User Signup Required Fields",
+          "file": "user-signup.spec.js",
+          "line": 31,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should show required field errors when submitting empty form",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 463,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-26T20:16:45.485Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4c451524a376e5bc4a16-e0d3f523cd97ec1c2019",
+              "file": "user-signup.spec.js",
+              "line": 32,
               "column": 7
             }
           ]
@@ -312,11 +2493,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-06-26T19:29:02.150Z",
-    "duration": 55877.797999999995,
-    "expected": 2,
-    "skipped": 0,
-    "unexpected": 1,
+    "startTime": "2025-06-26T20:14:32.871Z",
+    "duration": 151941.46300000002,
+    "expected": 52,
+    "skipped": 9,
+    "unexpected": 0,
     "flaky": 0
   }
 }

@@ -44,7 +44,10 @@ const userExtractor = async (request, response, next) => {
 
 // ///////////////////////////////////////////////////// unknown Endpoint
 const unknownEndpoint = (request, response) => {
-  response.status(404).send({ error: "unknown endpoint" });
+  response.status(404).json({
+    error: "unknown endpoint",
+    message: "A página ou recurso solicitado não foi encontrado no servidor.",
+  });
 };
 
 // ///////////////////////////////////////////////////// error handler

@@ -4,7 +4,7 @@ This directory contains end-to-end tests for the Onde Tem application using Play
 
 ## 🎯 Test Coverage Summary
 
-**✅ Fully Covered (46 tests passing):**
+**✅ Fully Covered (52 tests passing):**
 
 - Authentication (login, signup, logout)
 - Search functionality (text search, category search, UI states)
@@ -14,6 +14,7 @@ This directory contains end-to-end tests for the Onde Tem application using Play
 - Home page UI state management
 - Responsive design across all features
 - Integration workflows and edge cases
+- **Error handling (404 pages, API errors, user-friendly messages)**
 
 **⚠️ Areas Not Covered:**
 
@@ -21,7 +22,6 @@ This directory contains end-to-end tests for the Onde Tem application using Play
 - My ads listing (`/my-ads` detailed functionality)
 - User comments management (`/my-comments` route)
 - Navigation/menu comprehensive testing
-- Error pages (404, network errors)
 - Advanced performance metrics
 
 ## Test Files Overview
@@ -47,6 +47,10 @@ This directory contains end-to-end tests for the Onde Tem application using Play
 ### Performance Tests
 
 - **`performance.spec.js`** - Performance optimization tests (mostly skipped, requires manual testing)
+
+### Error Handling Tests
+
+- **`404-errors.spec.js`** - Frontend 404 pages, backend API errors, user-friendly messaging (7 tests)
 
 ## Detailed Test Coverage
 
@@ -166,8 +170,9 @@ This directory contains end-to-end tests for the Onde Tem application using Play
 
 **Current Status:**
 
-- **46 tests passing, 11 skipped, 0 failed**
+- **52 tests passing, 9 skipped, 0 failed**
 - **All critical user journeys covered**
+- **Comprehensive error handling implemented**
 - **Test suite is stable and reliable**
 - **Pre-seeded data eliminates flakiness**
 
@@ -193,6 +198,48 @@ Tests use **pre-seeded data only**:
 This approach eliminates flakiness and ensures consistent test results.
 
 ## Running Tests
+
+### 🛡️ Safety First!
+
+**IMPORTANT:** E2E tests completely reset the database and delete all data!
+
+#### Quick Safety Guide
+
+```bash
+# View the complete safety guide
+npm run test:pw:guide
+
+# Check if it's safe to run E2E tests
+node tests-e2e/utils/safety-check.js
+```
+
+#### Safe E2E Testing Workflow
+
+1. **Stop all development servers:**
+
+   - Frontend: Ctrl+C in terminal running `npm run dev`
+   - Backend: Ctrl+C in terminal running backend dev server
+
+2. **Run E2E tests with built-in safety checks:**
+
+   ```bash
+   npm run test:pw          # All tests with safety checks
+   npm run test:pw:ui       # UI mode with safety checks
+   npm run test:pw:html     # HTML report with safety checks
+   ```
+
+3. **Emergency override (use with extreme caution):**
+   ```bash
+   npm run test:pw:force    # Skip safety checks - DANGEROUS!
+   ```
+
+### Safety Features Implemented
+
+- **🔍 Port Detection**: Automatically detects running development servers
+- **🗄️ Database Protection**: Ensures test database is used, not development
+- **⚠️ Multiple Warnings**: Clear warnings before destructive operations
+- **🚫 Automatic Abort**: Stops execution if unsafe conditions detected
+- **🤖 CI Bypass**: Automatically allows tests in CI/CD environments
 
 ### Quick Start
 
@@ -264,6 +311,7 @@ tests-e2e/
 - **`user-signup.spec.js`** - User registration (2 tests)
 - **`user-manage.spec.js`** - User management APIs (4 tests)
 - **`performance.spec.js`** - Performance tests (1 test, others skipped)
+- **`404-errors.spec.js`** - Error handling and 404 pages (7 tests)
 
 ### Test Data Management
 
@@ -296,6 +344,68 @@ Test configuration is in `playwright.config.js`:
 - **Backend**: Must be manually started in test mode
 - **Database**: PostgreSQL test database (`ondetemdb_test`)
 - **File Uploads**: Test images cleaned up automatically
+
+## 🛡️ Error Handling & 404 Testing
+
+### Error Handling Features Implemented
+
+#### Frontend 404 Handling (6 tests)
+
+- ✅ **Custom 404 Page**: User-friendly page with clear messaging and action buttons
+- ✅ **React Router Catch-all**: `*` route captures all unmatched paths
+- ✅ **Navigation Buttons**: "Voltar ao início" and "Criar anúncio" options
+- ✅ **Responsive Design**: 404 page works across all device sizes
+- ✅ **Non-existent Routes**: /admin, /dashboard, /invalid-paths properly handled
+- ✅ **Deep Links**: Direct navigation to invalid URLs shows 404 page
+
+#### Backend API Error Handling (10 tests)
+
+- ✅ **Input Validation**: UUID format validation before database queries
+- ✅ **User-Friendly Messages**: All errors include Portuguese messages for end users
+- ✅ **Proper Status Codes**: 404 for not found, not 500 for invalid IDs
+- ✅ **Unknown Endpoints**: Express middleware catches undefined routes
+- ✅ **Invalid Resource IDs**: Non-existent ads/users return 404 with helpful messages
+- ✅ **Malformed Requests**: Invalid UUID formats return 404, not server errors
+
+#### Error Messages Examples
+
+**Frontend 404 Page:**
+
+```
+404
+Página não encontrada
+Desculpe, a página que você está procurando não existe ou foi movida.
+```
+
+**Backend API Errors:**
+
+- Invalid UUID: "O anúncio solicitado não foi encontrado. Verifique se o link está correto."
+- Unknown endpoint: "A página ou recurso solicitado não foi encontrado no servidor."
+- Resource not found: "O usuário solicitado não foi encontrado."
+
+#### Error Handling Components
+
+- **`NotFound.jsx`**: Beautiful 404 page with suggestions and navigation
+- **`ErrorBoundary.jsx`**: Catches JavaScript errors gracefully
+- **`apiErrorHandler.js`**: Utility for consistent API error handling
+- **Backend validation**: Input sanitization and format checking
+
+### Error Testing Strategy
+
+The `404-errors.spec.js` test file comprehensively tests:
+
+1. **Frontend Route Handling**: All invalid routes show custom 404 page
+2. **API Error Responses**: Backend returns proper 404s with user messages
+3. **Navigation**: 404 page buttons work correctly
+4. **User Experience**: Errors are handled gracefully without crashes
+
+### Error Demo (Development Only)
+
+In development mode, visit `/error-demo` to see interactive demonstrations of:
+
+- Frontend 404 page behavior
+- API error handling with user-friendly messages
+- All implemented error handling features
 
 ## Best Practices Implemented
 

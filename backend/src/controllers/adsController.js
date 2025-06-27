@@ -2,6 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const adsModel = require("../models/adModel");
 const logger = require("../utils/logger");
+const { isValidUUID } = require("../utils/validation");
 
 // Get all ads
 exports.getAllAds = async (req, res) => {
@@ -39,16 +40,33 @@ exports.searchAds = async (req, res) => {
 exports.getAdById = async (req, res) => {
   try {
     const adId = req.params.id;
+
+    // Validate UUID format
+    if (!isValidUUID(adId)) {
+      logger.warn(`Invalid ad ID format: ${adId}`);
+      return res.status(404).json({
+        error: "Ad not found",
+        message:
+          "O anúncio solicitado não foi encontrado. Verifique se o link está correto.",
+      });
+    }
+
     const ad = await adsModel.getAdById(adId);
     if (!ad) {
       logger.warn(`Ad not found: ${adId}`);
-      return res.status(404).json({ error: "Ad not found" });
+      return res.status(404).json({
+        error: "Ad not found",
+        message: "O anúncio solicitado não foi encontrado ou foi removido.",
+      });
     }
     logger.info(`Fetched ad: ${adId}`);
     res.status(200).json(ad);
   } catch (err) {
     logger.error(`Error fetching ad: ${err.message}`);
-    res.status(500).json({ error: "Failed to fetch ad" });
+    res.status(500).json({
+      error: "Failed to fetch ad",
+      message: "Erro interno do servidor. Tente novamente mais tarde.",
+    });
   }
 };
 

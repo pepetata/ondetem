@@ -3,6 +3,7 @@ const logger = require("../utils/logger");
 const userModel = require("../models/userModel");
 const { buildJoiSchema } = require("./buildJoiSchema");
 const { userFormFields } = require("../formfields/userFieldsValidation");
+const { isValidUUID, isValidEmail } = require("../utils/validation");
 const e = require("express");
 const { token } = require("morgan");
 
@@ -20,10 +21,24 @@ exports.getAllUsers = async (req, res) => {
 exports.getUserById = async (req, res) => {
   try {
     const userId = req.params.id;
+
+    // Validate UUID format
+    if (!isValidUUID(userId)) {
+      logger.warn(`Invalid user ID format: ${userId}`);
+      return res.status(404).json({
+        error: "User not found",
+        message:
+          "O usuário solicitado não foi encontrado. Verifique se o link está correto.",
+      });
+    }
+
     const user = await userModel.getUserById(userId);
 
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({
+        error: "User not found",
+        message: "O usuário solicitado não foi encontrado.",
+      });
     }
 
     logger.info(`Fetched user: ${user.email}`);
@@ -31,22 +46,42 @@ exports.getUserById = async (req, res) => {
   } catch (err) {
     console.log(`Error fetching user: ${err}`);
     logger.error(`Error fetching user: ${err.message}`);
-    res.status(500).json({ error: "Failed to fetch user" });
+    res.status(500).json({
+      error: "Failed to fetch user",
+      message: "Erro interno do servidor. Tente novamente mais tarde.",
+    });
   }
 };
 
 exports.getUserByEmail = async (req, res) => {
   try {
     const { email } = req.params;
+
+    // Validate email format
+    if (!isValidEmail(email)) {
+      logger.warn(`Invalid email format: ${email}`);
+      return res.status(404).json({
+        error: "User not found",
+        message:
+          "O usuário solicitado não foi encontrado. Verifique se o email está correto.",
+      });
+    }
+
     const user = await userModel.getUserByEmail(email);
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({
+        error: "User not found",
+        message: "O usuário solicitado não foi encontrado.",
+      });
     }
     logger.info(`Fetched user by email: ${email}`);
     res.status(200).json(user);
   } catch (err) {
     logger.error(`Error fetching user by email: ${err.message}`);
-    res.status(500).json({ error: "Failed to fetch user by email" });
+    res.status(500).json({
+      error: "Failed to fetch user by email",
+      message: "Erro interno do servidor. Tente novamente mais tarde.",
+    });
   }
 };
 

@@ -2,11 +2,25 @@ const { exec } = require("child_process");
 const { promisify } = require("util");
 const axios = require("axios");
 const path = require("path");
+const { main: runSafetyCheck } = require("./utils/safety-check");
 
 const execAsync = promisify(exec);
 
 async function globalSetup() {
   console.log("🚀 Starting global E2E test setup...");
+
+  // SAFETY CHECK: Prevent running against development environment
+  console.log("🔐 Running safety checks...");
+  try {
+    await runSafetyCheck();
+  } catch (error) {
+    console.error("🚨 Safety check failed - aborting E2E tests");
+    throw error;
+  }
+
+  // Ensure we're in test mode
+  process.env.NODE_ENV = "test";
+  console.log("✅ Safety checks passed - proceeding with test setup");
 
   try {
     // Step 1: Initialize and clear the test database

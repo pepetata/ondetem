@@ -20,7 +20,7 @@
     "test": "cross-env NODE_ENV=test jest",
     "testonly": "cross-env NODE_ENV=test npm test -- --test-only",
     "lint": "eslint .",
-    "start:test": "cross-env NODE_ENV=test node src/app.js"
+    "start:test": "node scripts/validate-test-env.js && cross-env NODE_ENV=test node src/app.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

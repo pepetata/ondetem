@@ -12,16 +12,17 @@ module.exports = defineConfig({
       port: 5173,
       cwd: __dirname,
       timeout: 120 * 1000,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false, // Always start fresh servers for E2E tests
     },
     {
       command: "npm run start:test",
       port: 3000,
       cwd: path.join(__dirname, "../backend"),
       timeout: 120 * 1000,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false, // Always start fresh servers for E2E tests
       env: {
         ...process.env,
+        NODE_ENV: "test", // Force test environment
         E2E: "true",
       },
     },

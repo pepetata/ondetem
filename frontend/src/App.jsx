@@ -13,6 +13,10 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Notification from "./components/Notification";
 import { useSelector } from "react-redux";
 import MyAdsList from "./features/ads/MyAdsList";
+import NotFound from "./components/NotFound";
+import ErrorDemo from "./components/ErrorDemo";
+import ErrorBoundary from "./components/ErrorBoundary";
+import DevErrorButton from "./components/DevErrorButton";
 
 const App = () => {
   const user = useSelector((state) => state.auth.user);
@@ -24,7 +28,7 @@ const App = () => {
   const navbarHeight = 100;
 
   return (
-    <>
+    <ErrorBoundary>
       <Menu user={user} />
       <Notification />
       <div className="main-content"></div>
@@ -83,8 +87,16 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+        {/* Demo route - only show in development */}
+        {process.env.NODE_ENV === "development" && (
+          <Route path="/error-demo" element={<ErrorDemo />} />
+        )}
+        {/* Catch-all route for 404 pages */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
-    </>
+      {/* Development-only floating error button */}
+      <DevErrorButton />
+    </ErrorBoundary>
   );
 };
 
