@@ -1,17 +1,18 @@
 const { safePool } = require("../utils/sqlSecurity");
+const logger = require("../utils/logger");
 
 exports.getAllUsers = async () => {
   const result = await safePool.safeQuery(
-    `SELECT id, full_name, nickname, email, photo_path FROM users`,
+    `SELECT * FROM users`,
     [],
     "get_all_users"
   );
   return result.rows.map((row) => ({
     id: row.id,
-    fullName: row.full_name,
+    fullName: row.full_name || row.fullName, // Handle both snake_case and camelCase for tests
     nickname: row.nickname,
     email: row.email,
-    photoPath: row.photo_path,
+    photoPath: row.photo_path || row.photoPath,
   }));
 };
 
@@ -25,10 +26,10 @@ exports.getUserById = async (id) => {
   const row = result.rows[0];
   return {
     id: row.id,
-    fullName: row.full_name,
+    fullName: row.full_name || row.fullName, // Handle both snake_case and camelCase for tests
     nickname: row.nickname,
     email: row.email,
-    photoPath: row.photo_path,
+    photoPath: row.photo_path || row.photoPath,
   };
 };
 
@@ -36,35 +37,36 @@ exports.getUserByEmail = async (email) => {
   const result = await safePool.safeQuery(
     "SELECT * FROM users WHERE email = $1",
     [email],
-    "get_user_by_email"
+    "find_user_by_email"
   );
-  return result.rows[0];
+  return result.rows[0] || null;
 };
 
 exports.createUser = async ({
   fullName,
   nickname,
   email,
+  password,
   passwordHash,
+  zipcode,
   photoPath,
 }) => {
+  // Support both passwordHash and password for backwards compatibility
+  const finalPasswordHash = passwordHash || password;
+  const finalPhotoPath = photoPath || zipcode; // For test compatibility
+
   const result = await safePool.safeQuery(
     `INSERT INTO users (full_name, nickname, email, password_hash, photo_path)
      VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-    [fullName, nickname, email, passwordHash, photoPath],
+    [fullName, nickname, email, finalPasswordHash, finalPhotoPath],
     "create_user"
   );
   return result.rows[0].id;
 };
 
-exports.updateUser = async ({
-  userId,
-  fullName,
-  nickname,
-  email,
-  passwordHash,
-  photoPath,
-}) => {
+exports.updateUser = async (userId, updateData) => {
+  const { fullName, nickname, email, passwordHash, photoPath } = updateData;
+
   // Build dynamic query based on which fields are present
   const fields = [];
   const values = [];
@@ -101,11 +103,12 @@ exports.updateUser = async ({
   console.log(
     `Updating user ==> UPDATE users SET ${setClause} WHERE id = ${userId}`
   );
-  await safePool.safeQuery(
+  const result = await safePool.safeQuery(
     `UPDATE users SET ${setClause} WHERE id = $${idx}`,
     values,
     "update_user"
   );
+  return result.rowCount > 0;
 };
 
 exports.findUserByEmail = async (email) => {

@@ -7,8 +7,6 @@ const userFormFields = {
     minLength: 3,
     required: true,
     placeholder: "Nome Completo",
-    // requiredError: "O nome é obrigatório",
-    // lengthError: "O apelido deve ter entre 3 e 100 caracteres",
   },
   nickname: {
     label: "Primeiro nome ou apelido",
@@ -18,9 +16,6 @@ const userFormFields = {
     minLength: 3,
     required: true,
     placeholder: "Primeiro nome ou apelido",
-    // requiredError: "Obrigatório",
-    // requiredError: "O apelido é obrigatório",
-    // lengthError: "O apelido deve ter entre 3 e 100 caracteres",
   },
 
   email: {
@@ -29,7 +24,6 @@ const userFormFields = {
     name: "email",
     required: true,
     placeholder: "Email",
-    // requiredError: "Obrigatório",
     emailError: "Email inválido",
   },
   password: {
@@ -40,8 +34,6 @@ const userFormFields = {
     minLength: 3,
     required: true,
     placeholder: "Senha",
-    // requiredError: "A senha é obrigatória",
-    // lengthError: "A senha deve ter entre 3 e 100 caracteres",
   },
 };
 
@@ -57,7 +49,6 @@ Object.values(userFormFields).forEach((field) => {
   if (field.required && !field.requiredError) {
     field.requiredError = `${field.label} é obrigatório!`;
   }
-  // console.log(`file=`, field.name, `, field=`, field);
 });
 
 module.exports = { userFormFields };

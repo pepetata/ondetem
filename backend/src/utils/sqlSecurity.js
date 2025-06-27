@@ -11,29 +11,37 @@
 const { Pool } = require("pg");
 const winston = require("winston");
 
-// Create logger for SQL operations
-const sqlLogger = winston.createLogger({
-  level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({ filename: "logs/sql-queries.log" }),
-    ...(process.env.NODE_ENV !== "production"
-      ? [new winston.transports.Console()]
-      : []),
-  ],
-});
+// Create logger for SQL operations (created as a function to support testing)
+const createSqlLogger = () =>
+  winston.createLogger({
+    level: "info",
+    format: winston.format.combine(
+      winston.format.timestamp(),
+      winston.format.json()
+    ),
+    transports: [
+      new winston.transports.File({ filename: "logs/sql-queries.log" }),
+      ...(process.env.NODE_ENV !== "production"
+        ? [new winston.transports.Console()]
+        : []),
+    ],
+  });
+
+let sqlLogger = createSqlLogger();
 
 /**
  * Safe Database Pool with SQL Injection Protection
  */
 class SafePool {
-  constructor(connectionString) {
+  constructor(connectionString, options = {}) {
     this.pool = new Pool({ connectionString });
     this.queryCount = 0;
     this.suspiciousQueries = [];
+    this.slowQueryThreshold =
+      options.slowQueryThreshold ||
+      (process.env.NODE_ENV === "test" ? 50 : 1000);
+    // Create logger to pick up any mocks
+    this.logger = createSqlLogger();
   }
 
   /**
@@ -44,29 +52,41 @@ class SafePool {
    * @returns {Promise} Query result
    */
   async safeQuery(text, params = [], operation = "unknown") {
-    // Validate that query uses parameterized format
-    this.validateQuery(text, params);
-
-    // Log query for monitoring
-    this.logQuery(text, params, operation);
+    const startTime = Date.now();
 
     try {
-      const startTime = Date.now();
+      // Validate that query uses parameterized format
+      this.validateQuery(text, params, operation);
+
+      // Log query for monitoring
+      this.logQuery(text, params, operation);
+
       const result = await this.pool.query(text, params);
       const duration = Date.now() - startTime;
 
       // Log successful query
-      sqlLogger.info({
+      this.logger.info({
         operation,
         duration,
         rowCount: result.rowCount,
         queryId: ++this.queryCount,
       });
 
+      // Check for slow queries (warn if > threshold)
+      if (duration > this.slowQueryThreshold) {
+        this.logger.warn({
+          type: "SLOW_QUERY",
+          operation,
+          duration,
+          query: this.sanitizeQueryForLog(text),
+        });
+      }
+
       return result;
     } catch (error) {
+      const duration = Date.now() - startTime;
       // Log failed query
-      sqlLogger.error({
+      this.logger.error({
         operation,
         error: error.message,
         query: this.sanitizeQueryForLog(text),
@@ -80,15 +100,17 @@ class SafePool {
    * Validate query to ensure it uses parameterized format
    * @param {string} text - SQL query
    * @param {Array} params - Parameters
+   * @param {string} operation - Operation name for logging
    */
-  validateQuery(text, params) {
+  validateQuery(text, params, operation = "unknown") {
     // Check for potential SQL injection patterns
     const dangerousPatterns = [
       /;\s*(DROP|DELETE|INSERT|UPDATE|CREATE|ALTER)\s/i,
       /UNION\s+SELECT/i,
       /'\s*OR\s*'1'\s*=\s*'1/i,
       /'\s*OR\s*1\s*=\s*1/i,
-      /--\s*$|\/\*|\*\//,
+      /--.*$/m, // SQL comments (including end of line)
+      /\/\*[\s\S]*?\*\//, // Block comments
       /\${.*}/, // Template literal injection
       /\+.*\+/, // String concatenation
     ];
@@ -105,28 +127,78 @@ class SafePool {
 
         this.suspiciousQueries.push(suspiciousQuery);
 
-        sqlLogger.error({
-          type: "SUSPICIOUS_QUERY",
+        this.logger.error({
+          type: "DANGEROUS_QUERY_BLOCKED",
+          operation,
           ...suspiciousQuery,
         });
 
-        throw new Error("Potentially unsafe query detected");
+        throw new Error("Potentially dangerous query pattern detected");
       }
     }
 
-    // Ensure parameters are properly used
-    const placeholderCount = (text.match(/\$\d+/g) || []).length;
-    if (placeholderCount !== params.length) {
-      sqlLogger.error({
-        type: "PARAMETER_MISMATCH",
+    // Additional check: queries with string literals instead of parameters
+    // This helps catch queries that were built with string concatenation
+    if (
+      params.length === 0 &&
+      (/WHERE\s+\w+\s*=\s*'[^']*'/i.test(text) || // String literal in WHERE
+        /WHERE\s+\w+\s*=\s*\d+/i.test(text)) // Number literal in WHERE
+    ) {
+      const suspiciousQuery = {
         query: this.sanitizeQueryForLog(text),
-        expectedParams: placeholderCount,
-        actualParams: params.length,
+        pattern: "unparameterized_query",
+        timestamp: new Date(),
+        params: params.length,
+      };
+
+      this.suspiciousQueries.push(suspiciousQuery);
+
+      this.logger.error({
+        type: "DANGEROUS_QUERY_BLOCKED",
+        operation,
+        ...suspiciousQuery,
       });
 
-      throw new Error(
-        `Parameter count mismatch: expected ${placeholderCount}, got ${params.length}`
-      );
+      throw new Error("Potentially dangerous query pattern detected");
+    }
+
+    // Validate parameter placeholders are sequential starting from $1
+    const placeholders = text.match(/\$\d+/g) || [];
+    const uniquePlaceholders = [...new Set(placeholders)];
+
+    if (uniquePlaceholders.length > 0) {
+      const numbers = uniquePlaceholders
+        .map((p) => parseInt(p.substring(1)))
+        .sort((a, b) => a - b);
+
+      // Check if placeholders start from 1 and are sequential
+      for (let i = 0; i < numbers.length; i++) {
+        if (numbers[i] !== i + 1) {
+          this.logger.error({
+            type: "INVALID_PARAMETER_SEQUENCE",
+            query: this.sanitizeQueryForLog(text),
+            expectedSequence: Array.from(
+              { length: numbers.length },
+              (_, i) => i + 1
+            ),
+            actualSequence: numbers,
+          });
+          throw new Error("Invalid parameter sequence");
+        }
+      }
+
+      // Ensure parameter count matches
+      if (numbers.length !== params.length) {
+        this.logger.error({
+          type: "PARAMETER_MISMATCH",
+          query: this.sanitizeQueryForLog(text),
+          expectedParams: numbers.length,
+          actualParams: params.length,
+        });
+        throw new Error(
+          `Parameter count mismatch: expected ${numbers.length}, got ${params.length}`
+        );
+      }
     }
   }
 
@@ -138,7 +210,7 @@ class SafePool {
    */
   logQuery(text, params, operation) {
     if (process.env.NODE_ENV === "development") {
-      sqlLogger.debug({
+      this.logger.debug({
         operation,
         query: this.sanitizeQueryForLog(text),
         paramCount: params.length,
@@ -254,6 +326,42 @@ class SafeQueryBuilder {
   }
 
   /**
+   * Add SELECT clause safely
+   * @param {string[]} fields - Field names
+   * @returns {SafeQueryBuilder} this
+   */
+  select(fields) {
+    if (!Array.isArray(fields)) {
+      throw new Error("Fields must be an array");
+    }
+
+    // Validate each field name
+    for (const field of fields) {
+      if (field !== "*" && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(field)) {
+        throw new Error(`Invalid column name: ${field}`);
+      }
+    }
+
+    this.query = `SELECT ${fields.join(", ")}`;
+    return this;
+  }
+
+  /**
+   * Add FROM clause safely
+   * @param {string} table - Table name
+   * @returns {SafeQueryBuilder} this
+   */
+  from(table) {
+    // Validate table name (only allow alphanumeric and underscore)
+    if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(table)) {
+      throw new Error(`Invalid table name: ${table}`);
+    }
+
+    this.query += ` FROM ${table}`;
+    return this;
+  }
+
+  /**
    * Add WHERE clause safely
    * @param {string} field - Field name
    * @param {string} operator - Operator (=, LIKE, etc.)
@@ -263,7 +371,7 @@ class SafeQueryBuilder {
   where(field, operator, value) {
     // Validate field name (only allow alphanumeric and underscore)
     if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(field)) {
-      throw new Error(`Invalid field name: ${field}`);
+      throw new Error(`Invalid column name: ${field}`);
     }
 
     // Validate operator
@@ -283,8 +391,18 @@ class SafeQueryBuilder {
     }
 
     this.query += this.query.includes("WHERE") ? " AND " : " WHERE ";
-    this.query += `${field} ${operator} $${this.paramIndex++}`;
-    this.params.push(value);
+
+    // Handle special cases
+    if (value === null) {
+      this.query += `${field} IS NULL`;
+    } else if (operator.toUpperCase() === "IN" && Array.isArray(value)) {
+      const placeholders = value.map(() => `$${this.paramIndex++}`).join(", ");
+      this.query += `${field} IN (${placeholders})`;
+      this.params.push(...value);
+    } else {
+      this.query += `${field} ${operator} $${this.paramIndex++}`;
+      this.params.push(value);
+    }
 
     return this;
   }
@@ -298,7 +416,7 @@ class SafeQueryBuilder {
   orderBy(field, direction = "ASC") {
     // Validate field name
     if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(field)) {
-      throw new Error(`Invalid field name: ${field}`);
+      throw new Error(`Invalid column name: ${field}`);
     }
 
     // Validate direction
@@ -327,13 +445,29 @@ class SafeQueryBuilder {
   }
 
   /**
+   * Add OFFSET clause safely
+   * @param {number} offset - Offset number
+   * @returns {SafeQueryBuilder} this
+   */
+  offset(offset) {
+    const numOffset = parseInt(offset);
+    if (isNaN(numOffset) || numOffset < 0) {
+      throw new Error(`Invalid offset: ${offset}`);
+    }
+
+    this.query += ` OFFSET $${this.paramIndex++}`;
+    this.params.push(numOffset);
+    return this;
+  }
+
+  /**
    * Get the built query and parameters
-   * @returns {Object} {text, params}
+   * @returns {Object} {text, values}
    */
   build() {
     return {
       text: this.query,
-      params: this.params,
+      values: this.params,
     };
   }
 }

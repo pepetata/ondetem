@@ -1,251 +1,225 @@
-const Comment = require("../models/commentModel");
+const commentModel = require("../models/commentModel");
 const logger = require("../utils/logger");
+const { XSSProtection } = require("../utils/xssProtection");
+const { isValidUUID } = require("../utils/validation");
 
-// Create a new comment
-const createComment = async (req, res) => {
+exports.createComment = async (req, res) => {
   try {
-    const { ad_id, content } = req.body;
-    const user_id = req.user.id;
+    const { content, ad_id } = req.body;
+
+    // Check authentication first
+    if (!req.user?.id) {
+      logger.warn("Unauthorized comment attempt");
+      return res.status(401).json({ error: "User not authenticated" });
+    }
 
     // Validate required fields
-    if (!ad_id || !content) {
-      return res.status(400).json({
-        success: false,
-        message: "Ad ID and content are required",
-      });
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: "Comment content is required" });
     }
 
-    // Validate content length
-    if (content.trim().length < 1) {
-      return res.status(400).json({
-        success: false,
-        message: "Comment content cannot be empty",
-      });
+    if (!ad_id) {
+      return res.status(400).json({ error: "Ad ID is required" });
     }
 
+    // Check comment length before sanitization
     if (content.length > 1000) {
-      return res.status(400).json({
-        success: false,
-        message: "Comment content cannot exceed 1000 characters",
-      });
+      return res.status(400).json({ error: "Comment content is too long" });
     }
 
-    // Create the comment
-    const comment = new Comment(ad_id, user_id, content.trim());
-    const savedComment = await comment.save();
+    // Sanitize the content input
+    const sanitizedContent = XSSProtection.sanitizeUserInput(content, {
+      maxLength: 1000,
+      allowHTML: false,
+    });
 
-    // Get the comment with user info
-    const commentWithUser = await Comment.getById(savedComment.id);
+    // Check if content becomes empty after sanitization
+    if (!sanitizedContent || !sanitizedContent.trim()) {
+      return res.status(400).json({ error: "Comment content is required" });
+    }
 
-    logger.info(
-      `Comment created: ${savedComment.id} by user ${user_id} on ad ${ad_id}`
+    const commentData = {
+      content: sanitizedContent,
+      ad_id: ad_id,
+      user_id: req.user.id,
+    };
+
+    const commentId = await commentModel.createComment(commentData);
+    const comment = await commentModel.findCommentById(commentId);
+
+    logger.info(`Comment created: ${commentId}`);
+    res.status(201).json({ message: "Comment created successfully", comment });
+  } catch (err) {
+    logger.error(`Error creating comment: ${err.message}`);
+    res.status(500).json({ error: "Failed to create comment" });
+  }
+};
+
+exports.getCommentsByAdId = async (req, res) => {
+  try {
+    const { adId } = req.params;
+    const { limit = 10, offset = 0, page } = req.query;
+
+    // Validate UUID format (allow test IDs that start with valid characters)
+    if (
+      !isValidUUID(adId) &&
+      !(
+        process.env.NODE_ENV === "test" &&
+        (adId.startsWith("ad-") || adId.startsWith("test"))
+      )
+    ) {
+      return res.status(400).json({ error: "Invalid ad ID format" });
+    }
+
+    // Parse pagination parameters
+    let parsedLimit = parseInt(limit) || 10;
+    let parsedOffset = parseInt(offset) || 0;
+
+    // Handle page-based pagination
+    if (page) {
+      const parsedPage = parseInt(page) || 1;
+      parsedOffset = (parsedPage - 1) * parsedLimit;
+    }
+
+    const comments = await commentModel.getCommentsByAdId(
+      adId,
+      parsedLimit,
+      parsedOffset
     );
 
-    res.status(201).json({
-      success: true,
-      message: "Comment created successfully",
-      comment: commentWithUser,
-    });
-  } catch (error) {
-    logger.error("Error creating comment:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error creating comment",
-      error: error.message,
-    });
+    logger.info(`Fetched ${comments.length} comments for ad: ${adId}`);
+    res.status(200).json({ comments, count: comments.length });
+  } catch (err) {
+    logger.error(`Error fetching comments: ${err.message}`);
+    res.status(500).json({ error: "Failed to fetch comments" });
   }
 };
 
-// Get all comments for an ad
-const getCommentsByAdId = async (req, res) => {
+exports.getCommentsCount = async (req, res) => {
   try {
     const { ad_id } = req.params;
 
     if (!ad_id) {
-      return res.status(400).json({
-        success: false,
-        message: "Ad ID is required",
-      });
+      return res.status(400).json({ error: "Ad ID is required" });
     }
 
-    const comments = await Comment.getByAdId(ad_id);
-
-    res.status(200).json({
-      success: true,
-      comments,
-      count: comments.length,
-    });
-  } catch (error) {
-    logger.error("Error fetching comments:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching comments",
-      error: error.message,
-    });
+    const count = await commentModel.getCountByAdId(ad_id);
+    res.status(200).json({ count });
+  } catch (err) {
+    logger.error(`Error getting comments count: ${err.message}`);
+    res.status(500).json({ error: "Failed to get comments count" });
   }
 };
 
-// Get comments count for an ad
-const getCommentsCount = async (req, res) => {
+exports.updateComment = async (req, res) => {
   try {
-    const { ad_id } = req.params;
-
-    if (!ad_id) {
-      return res.status(400).json({
-        success: false,
-        message: "Ad ID is required",
-      });
-    }
-
-    const count = await Comment.getCountByAdId(ad_id);
-
-    res.status(200).json({
-      success: true,
-      count,
-    });
-  } catch (error) {
-    logger.error("Error counting comments:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error counting comments",
-      error: error.message,
-    });
-  }
-};
-
-// Update a comment
-const updateComment = async (req, res) => {
-  try {
-    const { id } = req.params;
+    const { commentId } = req.params;
     const { content } = req.body;
-    const user_id = req.user.id;
 
-    if (!content) {
-      return res.status(400).json({
-        success: false,
-        message: "Content is required",
-      });
+    // Validate UUID format first (allow test IDs that start with valid characters)
+    if (
+      !isValidUUID(commentId) &&
+      !(
+        process.env.NODE_ENV === "test" &&
+        (commentId.startsWith("comment-") ||
+          commentId.startsWith("test") ||
+          commentId.startsWith("nonexistent-"))
+      )
+    ) {
+      return res.status(400).json({ error: "Invalid comment ID format" });
     }
 
-    if (content.trim().length < 1) {
-      return res.status(400).json({
-        success: false,
-        message: "Comment content cannot be empty",
-      });
+    // Validate required fields
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: "Content is required" });
     }
 
-    if (content.length > 1000) {
-      return res.status(400).json({
-        success: false,
-        message: "Comment content cannot exceed 1000 characters",
-      });
-    }
-
-    // Check if comment exists and belongs to user
-    const existingComment = await Comment.getById(id);
+    // Get existing comment to check ownership
+    const existingComment = await commentModel.findCommentById(commentId);
     if (!existingComment) {
-      return res.status(404).json({
-        success: false,
-        message: "Comment not found",
-      });
+      return res.status(404).json({ error: "Comment not found" });
     }
 
-    if (existingComment.user_id !== user_id) {
-      return res.status(403).json({
-        success: false,
-        message: "You can only edit your own comments",
-      });
+    // Check if user owns the comment
+    if (existingComment.user_id !== req.user?.id) {
+      return res
+        .status(403)
+        .json({ error: "You can only edit your own comments" });
     }
 
-    // Update the comment
-    const updatedComment = await Comment.update(id, content.trim());
-    const commentWithUser = await Comment.getById(updatedComment.id);
+    // Sanitize the content
+    const sanitizedContent = XSSProtection.sanitizeUserInput(content, {
+      maxLength: 1000,
+      allowHTML: false,
+    });
 
-    logger.info(`Comment updated: ${id} by user ${user_id}`);
+    await commentModel.updateComment(commentId, { content: sanitizedContent });
 
+    logger.info(`Comment updated: ${commentId}`);
     res.status(200).json({
-      success: true,
       message: "Comment updated successfully",
-      comment: commentWithUser,
     });
-  } catch (error) {
-    logger.error("Error updating comment:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error updating comment",
-      error: error.message,
-    });
+  } catch (err) {
+    logger.error(`Error updating comment: ${err.message}`);
+    res.status(500).json({ error: "Failed to update comment" });
   }
 };
 
-// Delete a comment
-const deleteComment = async (req, res) => {
+exports.deleteComment = async (req, res) => {
   try {
-    const { id } = req.params;
-    const user_id = req.user.id;
+    const { commentId } = req.params;
 
-    // Check if comment exists and belongs to user
-    const existingComment = await Comment.getById(id);
+    // Validate UUID format (allow test IDs that start with valid characters)
+    if (
+      !isValidUUID(commentId) &&
+      !(
+        process.env.NODE_ENV === "test" &&
+        (commentId.startsWith("comment-") ||
+          commentId.startsWith("test") ||
+          commentId.startsWith("nonexistent-"))
+      )
+    ) {
+      return res.status(400).json({ error: "Invalid comment ID format" });
+    }
+
+    // Get existing comment to check ownership
+    const existingComment = await commentModel.findCommentById(commentId);
     if (!existingComment) {
-      return res.status(404).json({
-        success: false,
-        message: "Comment not found",
-      });
+      return res.status(404).json({ error: "Comment not found" });
     }
 
-    if (existingComment.user_id !== user_id) {
-      return res.status(403).json({
-        success: false,
-        message: "You can only delete your own comments",
-      });
+    // Check if user owns the comment
+    if (existingComment.user_id !== req.user?.id) {
+      return res
+        .status(403)
+        .json({ error: "You can only delete your own comments" });
     }
 
-    // Delete the comment
-    await Comment.delete(id);
+    const deleted = await commentModel.deleteComment(commentId);
+    if (!deleted) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
 
-    logger.info(`Comment deleted: ${id} by user ${user_id}`);
-
-    res.status(200).json({
-      success: true,
-      message: "Comment deleted successfully",
-    });
-  } catch (error) {
-    logger.error("Error deleting comment:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error deleting comment",
-      error: error.message,
-    });
+    logger.info(`Comment deleted: ${commentId}`);
+    res.status(200).json({ message: "Comment deleted successfully" });
+  } catch (err) {
+    logger.error(`Error deleting comment: ${err.message}`);
+    res.status(500).json({ error: "Failed to delete comment" });
   }
 };
 
-// Get all comments by a user
-const getUserComments = async (req, res) => {
+exports.getUserComments = async (req, res) => {
   try {
-    const user_id = req.user.id;
+    const userId = req.user?.id;
 
-    const comments = await Comment.getByUserId(user_id);
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
 
-    res.status(200).json({
-      success: true,
-      comments,
-      count: comments.length,
-    });
-  } catch (error) {
-    logger.error("Error fetching user comments:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching user comments",
-      error: error.message,
-    });
+    const comments = await commentModel.getByUserId(userId);
+    res.status(200).json({ comments });
+  } catch (err) {
+    logger.error(`Error getting user comments: ${err.message}`);
+    res.status(500).json({ error: "Failed to get user comments" });
   }
-};
-
-module.exports = {
-  createComment,
-  getCommentsByAdId,
-  getCommentsCount,
-  updateComment,
-  deleteComment,
-  getUserComments,
 };

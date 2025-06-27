@@ -1,9 +1,9 @@
 const { safePool } = require("../utils/sqlSecurity");
 
-exports.getAllAds = async () => {
+exports.getAllAds = async (offset = 0, limit = 50) => {
   const result = await safePool.safeQuery(
-    `SELECT * FROM ads ORDER BY created_at DESC`,
-    [],
+    `SELECT * FROM ads ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
+    [limit, offset],
     "get_all_ads"
   );
   const ads = result.rows;
@@ -22,22 +22,22 @@ exports.getAllAds = async () => {
 };
 
 exports.searchAds = async (searchTerm) => {
-  const searchPattern = `%${searchTerm.toLowerCase()}%`;
+  const searchPattern = `%${searchTerm}%`;
 
   const result = await safePool.safeQuery(
     `SELECT * FROM ads 
-     WHERE LOWER(title) LIKE $1 
-        OR LOWER(description) LIKE $1 
-        OR LOWER(short) LIKE $1 
-        OR LOWER(city) LIKE $1
-        OR LOWER(state) LIKE $1
-        OR LOWER(address1) LIKE $1
-        OR LOWER(tags) LIKE $1
+     WHERE title ILIKE $1 
+        OR description ILIKE $1 
+        OR short ILIKE $1 
+        OR city ILIKE $1
+        OR state ILIKE $1
+        OR address1 ILIKE $1
+        OR tags ILIKE $1
      ORDER BY 
        CASE 
-         WHEN LOWER(title) LIKE $1 THEN 1
-         WHEN LOWER(short) LIKE $1 THEN 2
-         WHEN LOWER(description) LIKE $1 THEN 3
+         WHEN title ILIKE $1 THEN 1
+         WHEN short ILIKE $1 THEN 2
+         WHEN description ILIKE $1 THEN 3
          ELSE 4
        END,
        created_at DESC`,
@@ -81,6 +81,30 @@ exports.getAdById = async (id) => {
   return ad;
 };
 
+exports.findAdById = async (id) => {
+  const result = await safePool.safeQuery(
+    `SELECT * FROM ads WHERE id = $1`,
+    [id],
+    "find_ad_by_id"
+  );
+
+  if (result.rows.length === 0) {
+    return null;
+  }
+
+  const ad = result.rows[0];
+
+  // Get images for the ad
+  const imagesResult = await safePool.safeQuery(
+    `SELECT filename FROM ad_images WHERE ad_id = $1`,
+    [ad.id],
+    "get_ad_images"
+  );
+  ad.images = imagesResult.rows.map((row) => row.filename);
+
+  return ad;
+};
+
 exports.getUserAds = async (userId) => {
   const result = await safePool.safeQuery(
     `SELECT * FROM ads WHERE user_id = $1 ORDER BY title`,
@@ -88,6 +112,50 @@ exports.getUserAds = async (userId) => {
     "get_user_ads"
   );
   return result.rows;
+};
+
+exports.getAdsByUserId = async (userId) => {
+  const result = await safePool.safeQuery(
+    `SELECT * FROM ads WHERE user_id = $1 ORDER BY created_at DESC`,
+    [userId],
+    "get_ads_by_user"
+  );
+
+  const ads = result.rows;
+
+  // Get images for each ad
+  for (const ad of ads) {
+    const imagesResult = await safePool.safeQuery(
+      `SELECT filename FROM ad_images WHERE ad_id = $1`,
+      [ad.id],
+      "get_ad_images"
+    );
+    ad.images = imagesResult.rows.map((row) => row.filename);
+  }
+
+  return ads;
+};
+
+exports.getAdsByLocation = async (city, state) => {
+  const result = await safePool.safeQuery(
+    `SELECT * FROM ads WHERE city = $1 AND state = $2 ORDER BY created_at DESC`,
+    [city, state],
+    "get_ads_by_location"
+  );
+
+  const ads = result.rows;
+
+  // Get images for each ad
+  for (const ad of ads) {
+    const imagesResult = await safePool.safeQuery(
+      `SELECT filename FROM ad_images WHERE ad_id = $1`,
+      [ad.id],
+      "get_ad_images"
+    );
+    ad.images = imagesResult.rows.map((row) => row.filename);
+  }
+
+  return ads;
 };
 
 exports.createAd = async (adData) => {

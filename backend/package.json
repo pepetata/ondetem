@@ -18,12 +18,19 @@
     "start": "cross-env NODE_ENV=production node src/app.js",
     "dev": "cross-env NODE_ENV=development node --watch src/app.js",
     "test": "cross-env NODE_ENV=test jest",
+    "test:unit": "cross-env NODE_ENV=test jest --config jest.unit.config.js",
+    "test:unit:coverage": "cross-env NODE_ENV=test jest --config jest.unit.config.js --coverage",
+    "test:unit:watch": "cross-env NODE_ENV=test jest --config jest.unit.config.js --watch",
+    "test:integration": "cross-env NODE_ENV=test jest tests/integration/",
+    "test:security": "cross-env NODE_ENV=test jest tests/security/",
+    "test:all": "cross-env NODE_ENV=test jest --coverage",
     "testonly": "cross-env NODE_ENV=test npm test -- --test-only",
     "lint": "eslint .",
     "start:test": "node scripts/validate-test-env.js && cross-env NODE_ENV=test node src/app.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
@@ -38,8 +45,11 @@
     "winston": "^3.17.0"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "cross-env": "^7.0.3",
     "jest": "^30.0.0",
+    "jest-mock": "^30.0.2",
+    "sinon": "^21.0.0",
     "supertest": "^7.1.1"
   }
 }

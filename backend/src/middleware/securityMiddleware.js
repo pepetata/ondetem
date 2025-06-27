@@ -96,6 +96,27 @@ class SecurityMiddleware {
    */
   static securityHeaders() {
     return (req, res, next) => {
+      // Content Security Policy
+      const isDevelopment = process.env.NODE_ENV === "development";
+      const csp = XSSProtection.generateCSP({
+        allowInlineStyles: isDevelopment,
+        allowInlineScripts: false,
+        allowEval: false,
+        additionalSources: {
+          "script-src": isDevelopment ? ["'unsafe-inline'"] : [],
+          "connect-src": ["ws:", "wss:"], // For development hot reload
+        },
+      });
+      res.setHeader("Content-Security-Policy", csp);
+
+      // HSTS header for HTTPS
+      if (req.secure || req.headers["x-forwarded-proto"] === "https") {
+        res.setHeader(
+          "Strict-Transport-Security",
+          "max-age=31536000; includeSubDomains"
+        );
+      }
+
       // XSS Protection
       res.setHeader("X-XSS-Protection", "1; mode=block");
 
@@ -300,6 +321,46 @@ class SecurityMiddleware {
   }
 
   /**
+   * Input sanitization middleware (combined)
+   * @returns {Function} Express middleware
+   */
+  static inputSanitization() {
+    return (req, res, next) => {
+      try {
+        // Sanitize body
+        if (req.body && typeof req.body === "object") {
+          req.body = XSSProtection.sanitizeObject(req.body);
+        }
+
+        // Sanitize query
+        if (req.query && typeof req.query === "object") {
+          req.query = XSSProtection.sanitizeObject(req.query);
+        }
+
+        // Sanitize params
+        if (req.params && typeof req.params === "object") {
+          req.params = XSSProtection.sanitizeObject(req.params);
+        }
+
+        next();
+      } catch (error) {
+        securityLogger.error({
+          type: "INPUT_SANITIZATION_ERROR",
+          error: error.message,
+          method: req.method,
+          url: req.originalUrl,
+          timestamp: new Date(),
+        });
+
+        return res.status(400).json({
+          error: "Invalid input data",
+          message: "Input validation failed",
+        });
+      }
+    };
+  }
+
+  /**
    * Request body sanitization middleware
    * @returns {Function} Express middleware
    */
@@ -361,7 +422,33 @@ class SecurityMiddleware {
             "image/svg+xml",
           ];
 
+          const allowedExtensions = [
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".gif",
+            ".webp",
+            ".svg",
+          ];
+
+          // Check MIME type first for clearly dangerous files
           if (!allowedMimeTypes.includes(file.mimetype)) {
+            // If it's a clearly dangerous extension, use extension error
+            const fileExtension = file.originalname
+              ? file.originalname
+                  .substring(file.originalname.lastIndexOf("."))
+                  .toLowerCase()
+              : "";
+
+            const dangerousExtensions = [".php", ".js", ".html", ".htm"];
+
+            if (fileExtension && dangerousExtensions.includes(fileExtension)) {
+              return res.status(400).json({
+                error: "File extension not allowed",
+                allowedExtensions: allowedExtensions,
+              });
+            }
+
             securityLogger.warn({
               type: "INVALID_FILE_TYPE",
               mimetype: file.mimetype,
@@ -371,15 +458,16 @@ class SecurityMiddleware {
             });
 
             return res.status(400).json({
-              error:
-                "Tipo de arquivo não permitido. Apenas imagens são aceitas.",
+              error: "File type not allowed",
+              allowedTypes: allowedMimeTypes,
             });
           }
 
-          // Check file size (5MB max)
-          if (file.size > 5 * 1024 * 1024) {
+          // Check file size (10MB max)
+          if (file.size > 10 * 1024 * 1024) {
             return res.status(400).json({
-              error: "Arquivo muito grande. Máximo 5MB permitido.",
+              error: "File too large",
+              maxSize: "10.00 MB",
             });
           }
 
@@ -489,16 +577,73 @@ class SecurityMiddleware {
   }
 
   /**
+   * Rate limiter alias for consistency with tests
+   * @param {Object} options - Rate limiting options
+   * @returns {Function} Express middleware
+   */
+  static rateLimiter(options = {}) {
+    return this.rateLimit(options);
+  }
+
+  /**
    * Error handling middleware for security errors
    * @returns {Function} Express error middleware
    */
   static errorHandler() {
     return (err, req, res, next) => {
-      // Log security-related errors
+      const timestamp = new Date().toISOString();
+      const requestId = req.id || Math.random().toString(36).substr(2, 9);
+
+      // Handle security errors
+      if (err.type === "SECURITY_ERROR") {
+        securityLogger.error({
+          type: "SECURITY_ERROR",
+          error: err.message,
+          stack: err.stack,
+          method: req.method,
+          url: req.originalUrl,
+          ip: req.ip,
+          timestamp: new Date(),
+        });
+
+        return res.status(403).json({
+          error: "Security violation detected",
+          timestamp,
+          requestId,
+          ...(process.env.NODE_ENV === "development" && {
+            debug: {
+              message: err.message,
+              stack: err.stack,
+            },
+          }),
+        });
+      }
+
+      // Handle validation errors
+      if (err.type === "VALIDATION_ERROR" || err.name === "ValidationError") {
+        return res.status(400).json({
+          error: "Input validation failed",
+          details: err.message,
+          timestamp,
+          requestId,
+        });
+      }
+
+      // Handle rate limit errors
+      if (err.type === "RATE_LIMIT_ERROR") {
+        return res.status(429).json({
+          error: "Too many requests",
+          retryAfter: 60,
+          timestamp,
+          requestId,
+        });
+      }
+
+      // Log other security-related errors
       if (
-        err.name === "ValidationError" ||
         err.message.includes("XSS") ||
-        err.message.includes("injection")
+        err.message.includes("injection") ||
+        err.message.includes("security")
       ) {
         securityLogger.error({
           type: "SECURITY_ERROR",
@@ -512,6 +657,8 @@ class SecurityMiddleware {
 
         return res.status(400).json({
           error: "Invalid request data",
+          timestamp,
+          requestId,
         });
       }
 
