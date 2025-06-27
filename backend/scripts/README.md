@@ -282,3 +282,4 @@ psql -U admin -d ondetemdb -c "\d users"
 - **API Documentation**: `backend/src/README.md`
 - **Safety Guide**: `frontend/tests-e2e/utils/e2e-guide.js`
 - **Error Handling**: `ERROR_HANDLING_SUMMARY.md`
+- **SQL Security**: `SQL_INJECTION_PREVENTION.md` - Comprehensive SQL injection prevention implementation

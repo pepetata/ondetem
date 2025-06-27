@@ -1,13 +1,13 @@
-const { Pool } = require("pg");
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const { safePool } = require("../utils/sqlSecurity");
 
 exports.addFavorite = async (userId, adId) => {
   try {
-    const result = await pool.query(
+    const result = await safePool.safeQuery(
       `INSERT INTO favorites (user_id, ad_id) VALUES ($1, $2) 
        ON CONFLICT (user_id, ad_id) DO NOTHING 
        RETURNING id`,
-      [userId, adId]
+      [userId, adId],
+      "add_favorite"
     );
     return result.rows.length > 0;
   } catch (error) {
@@ -18,9 +18,10 @@ exports.addFavorite = async (userId, adId) => {
 
 exports.removeFavorite = async (userId, adId) => {
   try {
-    const result = await pool.query(
+    const result = await safePool.safeQuery(
       `DELETE FROM favorites WHERE user_id = $1 AND ad_id = $2`,
-      [userId, adId]
+      [userId, adId],
+      "remove_favorite"
     );
     return result.rowCount > 0;
   } catch (error) {
@@ -31,7 +32,7 @@ exports.removeFavorite = async (userId, adId) => {
 
 exports.getUserFavorites = async (userId) => {
   try {
-    const result = await pool.query(
+    const result = await safePool.safeQuery(
       `SELECT 
         ads.*,
         f.created_at as favorited_at
@@ -39,16 +40,18 @@ exports.getUserFavorites = async (userId) => {
        JOIN ads ON f.ad_id = ads.id
        WHERE f.user_id = $1
        ORDER BY f.created_at DESC`,
-      [userId]
+      [userId],
+      "get_user_favorites"
     );
 
     const favorites = result.rows;
 
     // Get images for each favorite ad
     for (const favorite of favorites) {
-      const imagesResult = await pool.query(
+      const imagesResult = await safePool.safeQuery(
         `SELECT filename FROM ad_images WHERE ad_id = $1`,
-        [favorite.id]
+        [favorite.id],
+        "get_favorite_ad_images"
       );
       favorite.images = imagesResult.rows.map((row) => row.filename);
     }
@@ -62,9 +65,10 @@ exports.getUserFavorites = async (userId) => {
 
 exports.isFavorite = async (userId, adId) => {
   try {
-    const result = await pool.query(
+    const result = await safePool.safeQuery(
       `SELECT 1 FROM favorites WHERE user_id = $1 AND ad_id = $2`,
-      [userId, adId]
+      [userId, adId],
+      "check_is_favorite"
     );
     return result.rows.length > 0;
   } catch (error) {
@@ -75,9 +79,10 @@ exports.isFavorite = async (userId, adId) => {
 
 exports.getFavoriteIds = async (userId) => {
   try {
-    const result = await pool.query(
+    const result = await safePool.safeQuery(
       `SELECT ad_id FROM favorites WHERE user_id = $1`,
-      [userId]
+      [userId],
+      "get_favorite_ids"
     );
     return result.rows.map((row) => row.ad_id);
   } catch (error) {

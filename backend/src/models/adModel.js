@@ -1,15 +1,19 @@
-const { Pool } = require("pg");
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const { safePool } = require("../utils/sqlSecurity");
 
 exports.getAllAds = async () => {
-  const result = await pool.query(`SELECT * FROM ads ORDER BY created_at DESC`);
+  const result = await safePool.safeQuery(
+    `SELECT * FROM ads ORDER BY created_at DESC`,
+    [],
+    "get_all_ads"
+  );
   const ads = result.rows;
 
   // Get images for each ad
   for (const ad of ads) {
-    const imagesResult = await pool.query(
+    const imagesResult = await safePool.safeQuery(
       `SELECT filename FROM ad_images WHERE ad_id = $1`,
-      [ad.id]
+      [ad.id],
+      "get_ad_images"
     );
     ad.images = imagesResult.rows.map((row) => row.filename);
   }
@@ -20,7 +24,7 @@ exports.getAllAds = async () => {
 exports.searchAds = async (searchTerm) => {
   const searchPattern = `%${searchTerm.toLowerCase()}%`;
 
-  const result = await pool.query(
+  const result = await safePool.safeQuery(
     `SELECT * FROM ads 
      WHERE LOWER(title) LIKE $1 
         OR LOWER(description) LIKE $1 
@@ -37,16 +41,18 @@ exports.searchAds = async (searchTerm) => {
          ELSE 4
        END,
        created_at DESC`,
-    [searchPattern]
+    [searchPattern],
+    "search_ads"
   );
 
   const ads = result.rows;
 
   // Get images for each ad
   for (const ad of ads) {
-    const imagesResult = await pool.query(
+    const imagesResult = await safePool.safeQuery(
       `SELECT filename FROM ad_images WHERE ad_id = $1`,
-      [ad.id]
+      [ad.id],
+      "get_ad_images"
     );
     ad.images = imagesResult.rows.map((row) => row.filename);
   }
@@ -55,14 +61,19 @@ exports.searchAds = async (searchTerm) => {
 };
 
 exports.getAdById = async (id) => {
-  const result = await pool.query(`SELECT * FROM ads WHERE id = $1`, [id]);
+  const result = await safePool.safeQuery(
+    `SELECT * FROM ads WHERE id = $1`,
+    [id],
+    "get_ad_by_id"
+  );
   const ad = result.rows[0] || null;
 
   if (ad) {
     // Get images for this ad
-    const imagesResult = await pool.query(
+    const imagesResult = await safePool.safeQuery(
       `SELECT filename FROM ad_images WHERE ad_id = $1`,
-      [ad.id]
+      [ad.id],
+      "get_ad_images"
     );
     ad.images = imagesResult.rows.map((row) => row.filename);
   }
@@ -71,9 +82,10 @@ exports.getAdById = async (id) => {
 };
 
 exports.getUserAds = async (userId) => {
-  const result = await pool.query(
+  const result = await safePool.safeQuery(
     `SELECT * FROM ads WHERE user_id = $1 ORDER BY title`,
-    [userId]
+    [userId],
+    "get_user_ads"
   );
   return result.rows;
 };
@@ -102,7 +114,7 @@ exports.createAd = async (adData) => {
     user_id,
   } = adData;
 
-  const result = await pool.query(
+  const result = await safePool.safeQuery(
     `INSERT INTO ads (
       title, short, description, tags, zipcode, city, state, address1, streetnumber, address2,
       radius, phone1, phone2, whatsapp, email, website, startdate, finishdate, timetext, user_id
@@ -131,7 +143,8 @@ exports.createAd = async (adData) => {
       finishdate,
       timetext,
       user_id,
-    ]
+    ],
+    "create_ad"
   );
   return result.rows[0].id;
 };
@@ -153,38 +166,46 @@ exports.updateAd = async (id, adData) => {
 
   const setClause = fields.join(", ");
   console.log(`adModel = Updating ad: ${id}`, adData);
-  const result = await pool.query(
+  const result = await safePool.safeQuery(
     `UPDATE ads SET ${setClause} WHERE id = $${idx}`,
-    values
+    values,
+    "update_ad"
   );
   return result.rowCount > 0;
 };
 
 exports.deleteAd = async (id) => {
-  const result = await pool.query(`DELETE FROM ads WHERE id = $1`, [id]);
+  const result = await safePool.safeQuery(
+    `DELETE FROM ads WHERE id = $1`,
+    [id],
+    "delete_ad"
+  );
   return result.rowCount > 0;
 };
 
 exports.addAdImage = async (adId, filename) => {
-  const result = await pool.query(
+  const result = await safePool.safeQuery(
     `INSERT INTO ad_images (ad_id, filename) VALUES ($1, $2) RETURNING id`,
-    [adId, filename]
+    [adId, filename],
+    "add_ad_image"
   );
   return result.rows[0].id;
 };
 
 exports.getAdImages = async (adId) => {
-  const result = await pool.query(
+  const result = await safePool.safeQuery(
     `SELECT filename FROM ad_images WHERE ad_id = $1`,
-    [adId]
+    [adId],
+    "get_ad_images"
   );
   return result.rows.map((row) => row.filename);
 };
 
 exports.deleteAdImage = async (adId, filename) => {
-  const result = await pool.query(
+  const result = await safePool.safeQuery(
     `DELETE FROM ad_images WHERE ad_id = $1 AND filename = $2`,
-    [adId, filename]
+    [adId, filename],
+    "delete_ad_image"
   );
   return result.rowCount > 0;
 };

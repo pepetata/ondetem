@@ -1,7 +1,5 @@
-const { Pool } = require("pg");
+const { safePool } = require("../utils/sqlSecurity");
 const { v4: uuidv4 } = require("uuid");
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 class Comment {
   constructor(ad_id, user_id, content, id = null) {
@@ -20,12 +18,11 @@ class Comment {
         RETURNING *
       `;
 
-      const result = await pool.query(query, [
-        this.id,
-        this.ad_id,
-        this.user_id,
-        this.content,
-      ]);
+      const result = await safePool.safeQuery(
+        query,
+        [this.id, this.ad_id, this.user_id, this.content],
+        "create_comment"
+      );
 
       return result.rows[0];
     } catch (error) {
@@ -48,7 +45,11 @@ class Comment {
         ORDER BY c.created_at DESC
       `;
 
-      const result = await pool.query(query, [ad_id]);
+      const result = await safePool.safeQuery(
+        query,
+        [ad_id],
+        "get_comments_by_ad"
+      );
       return result.rows;
     } catch (error) {
       throw new Error(`Error fetching comments: ${error.message}`);
@@ -69,7 +70,7 @@ class Comment {
         WHERE c.id = $1
       `;
 
-      const result = await pool.query(query, [id]);
+      const result = await safePool.safeQuery(query, [id], "get_comment_by_id");
       return result.rows[0] || null;
     } catch (error) {
       throw new Error(`Error fetching comment: ${error.message}`);
@@ -86,7 +87,11 @@ class Comment {
         RETURNING *
       `;
 
-      const result = await pool.query(query, [content, id]);
+      const result = await safePool.safeQuery(
+        query,
+        [content, id],
+        "update_comment"
+      );
       return result.rows[0];
     } catch (error) {
       throw new Error(`Error updating comment: ${error.message}`);
@@ -97,7 +102,7 @@ class Comment {
   static async delete(id) {
     try {
       const query = "DELETE FROM comments WHERE id = $1 RETURNING *";
-      const result = await pool.query(query, [id]);
+      const result = await safePool.safeQuery(query, [id], "delete_comment");
       return result.rows[0];
     } catch (error) {
       throw new Error(`Error deleting comment: ${error.message}`);
@@ -108,7 +113,11 @@ class Comment {
   static async getCountByAdId(ad_id) {
     try {
       const query = "SELECT COUNT(*) as count FROM comments WHERE ad_id = $1";
-      const result = await pool.query(query, [ad_id]);
+      const result = await safePool.safeQuery(
+        query,
+        [ad_id],
+        "get_comments_count"
+      );
       return parseInt(result.rows[0].count);
     } catch (error) {
       throw new Error(`Error counting comments: ${error.message}`);
@@ -128,7 +137,11 @@ class Comment {
         ORDER BY c.created_at DESC
       `;
 
-      const result = await pool.query(query, [user_id]);
+      const result = await safePool.safeQuery(
+        query,
+        [user_id],
+        "get_comments_by_user"
+      );
       return result.rows;
     } catch (error) {
       throw new Error(`Error fetching user comments: ${error.message}`);

@@ -1,9 +1,10 @@
-const { Pool } = require("pg");
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const { safePool } = require("../utils/sqlSecurity");
 
 exports.getAllUsers = async () => {
-  const result = await pool.query(
-    `SELECT id, full_name, nickname, email, photo_path FROM users`
+  const result = await safePool.safeQuery(
+    `SELECT id, full_name, nickname, email, photo_path FROM users`,
+    [],
+    "get_all_users"
   );
   return result.rows.map((row) => ({
     id: row.id,
@@ -15,9 +16,10 @@ exports.getAllUsers = async () => {
 };
 
 exports.getUserById = async (id) => {
-  const result = await pool.query(
+  const result = await safePool.safeQuery(
     `SELECT id, full_name, nickname, email, photo_path FROM users WHERE id = $1`,
-    [id]
+    [id],
+    "get_user_by_id"
   );
   if (result.rows.length === 0) return null;
   const row = result.rows[0];
@@ -31,9 +33,11 @@ exports.getUserById = async (id) => {
 };
 
 exports.getUserByEmail = async (email) => {
-  const result = await pool.query("SELECT * FROM users WHERE email = $1", [
-    email,
-  ]);
+  const result = await safePool.safeQuery(
+    "SELECT * FROM users WHERE email = $1",
+    [email],
+    "get_user_by_email"
+  );
   return result.rows[0];
 };
 
@@ -44,10 +48,11 @@ exports.createUser = async ({
   passwordHash,
   photoPath,
 }) => {
-  const result = await pool.query(
+  const result = await safePool.safeQuery(
     `INSERT INTO users (full_name, nickname, email, password_hash, photo_path)
      VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-    [fullName, nickname, email, passwordHash, photoPath]
+    [fullName, nickname, email, passwordHash, photoPath],
+    "create_user"
   );
   return result.rows[0].id;
 };
@@ -96,20 +101,27 @@ exports.updateUser = async ({
   console.log(
     `Updating user ==> UPDATE users SET ${setClause} WHERE id = ${userId}`
   );
-  await pool.query(`UPDATE users SET ${setClause} WHERE id = $${idx}`, values);
+  await safePool.safeQuery(
+    `UPDATE users SET ${setClause} WHERE id = $${idx}`,
+    values,
+    "update_user"
+  );
 };
 
 exports.findUserByEmail = async (email) => {
-  const result = await pool.query("SELECT * FROM users WHERE email = $1", [
-    email,
-  ]);
+  const result = await safePool.safeQuery(
+    "SELECT * FROM users WHERE email = $1",
+    [email],
+    "find_user_by_email"
+  );
   return result.rows[0];
 };
 
 exports.deleteUser = async (id) => {
-  const result = await pool.query(
+  const result = await safePool.safeQuery(
     "DELETE FROM users WHERE id = $1 RETURNING id",
-    [id]
+    [id],
+    "delete_user"
   );
   return result.rowCount > 0;
 };
