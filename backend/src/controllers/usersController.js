@@ -4,6 +4,7 @@ const userModel = require("../models/userModel");
 const { buildJoiSchema } = require("./buildJoiSchema");
 const { userFormFields } = require("../formfields/userFieldsValidation");
 const { isValidUUID, isValidEmail } = require("../utils/validation");
+const { XSSProtection } = require("../utils/xssProtection");
 const e = require("express");
 const { token } = require("morgan");
 
@@ -106,18 +107,40 @@ exports.createUser = async (req, res) => {
     return res.status(400).json({ error: "No data received" });
   }
 
+  // Sanitize input before validation
+  const sanitizedBody = {
+    fullName: XSSProtection.sanitizeUserInput(req.body.fullName, {
+      maxLength: 100,
+      allowHTML: false,
+    }),
+    nickname: XSSProtection.sanitizeUserInput(req.body.nickname, {
+      maxLength: 50,
+      allowHTML: false,
+    }),
+    email: XSSProtection.sanitizeUserInput(req.body.email, {
+      maxLength: 100,
+      allowHTML: false,
+    }),
+    password: req.body.password, // Don't sanitize password, just validate length
+  };
+
   const userSchema = buildJoiSchema(userFormFields);
-  const { error } = userSchema.validate(req.body);
+  const { error } = userSchema.validate(sanitizedBody);
   if (error) {
     return res.status(400).json({ error: error.details[0].message });
   }
 
   try {
-    const { fullName, nickname, email, password } = req.body;
+    const { fullName, nickname, email, password } = sanitizedBody;
     const photoPath = req.file ? req.file.path : null;
 
+    // Additional email validation
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: "Formato de email inválido" });
+    }
+
     // Check if user already exists
-    const existingUser = await userModel.findUserByEmail(email);
+    const existingUser = await userModel.findUserByEmail(email.toLowerCase());
     if (existingUser) {
       logger.warn(`Attempt to register existing email: ${email}`);
       return res.status(409).json({ error: "E-mail já cadastrado." });
@@ -131,7 +154,7 @@ exports.createUser = async (req, res) => {
     const userId = await userModel.createUser({
       fullName,
       nickname,
-      email,
+      email: email.toLowerCase(),
       passwordHash,
       photoPath,
     });

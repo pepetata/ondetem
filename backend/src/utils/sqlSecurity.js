@@ -180,24 +180,24 @@ class SafePool {
 }
 
 /**
- * Input Sanitization Utilities
+ * Input Sanitization Utilities for SQL Safety
+ * Note: Use XSSProtection from xssProtection.js for comprehensive XSS prevention
  */
 class InputSanitizer {
   /**
-   * Sanitize string input to prevent injection
+   * Sanitize string input to prevent SQL injection (lighter approach)
    * @param {string} input - Input string
    * @returns {string} Sanitized string
    */
   static sanitizeString(input) {
     if (typeof input !== "string") return input;
 
+    // Only remove SQL-specific dangerous patterns, preserve user content
     return input
-      .replace(/[<>]/g, "") // Remove HTML tags
-      .replace(/['"]/g, "") // Remove quotes
-      .replace(/;/g, "") // Remove semicolons
-      .replace(/--/g, "") // Remove SQL comments
-      .replace(/\/\*/g, "") // Remove block comments
-      .replace(/\*\//g, "")
+      .replace(/;\s*(DROP|DELETE|INSERT|UPDATE|CREATE|ALTER)/gi, "") // Remove dangerous SQL commands
+      .replace(/--\s*$/gm, "") // Remove end-of-line SQL comments
+      .replace(/\/\*[\s\S]*?\*\//g, "") // Remove block comments
+      .replace(/\bUNION\s+SELECT\b/gi, "") // Remove UNION SELECT
       .trim();
   }
 
@@ -207,6 +207,8 @@ class InputSanitizer {
    * @returns {string|null} Valid UUID or null
    */
   static sanitizeUUID(uuid) {
+    if (typeof uuid !== "string") return null;
+
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     return uuidRegex.test(uuid) ? uuid : null;

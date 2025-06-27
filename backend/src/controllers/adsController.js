@@ -3,6 +3,7 @@ const fs = require("fs");
 const adsModel = require("../models/adModel");
 const logger = require("../utils/logger");
 const { isValidUUID } = require("../utils/validation");
+const { XSSProtection } = require("../utils/xssProtection");
 
 // Get all ads
 exports.getAllAds = async (req, res) => {
@@ -73,27 +74,97 @@ exports.getAdById = async (req, res) => {
 // Create a new ad
 exports.createAd = async (req, res) => {
   try {
-    const adData = Object.assign({}, req.body);
-    // console.log(`Creating ad with data:`, adData);
-    // console.log(`User from token:`, req.user);
+    // Sanitize all input fields to prevent XSS
+    const sanitizedData = {
+      title: XSSProtection.sanitizeUserInput(req.body.title, {
+        maxLength: 100,
+        allowHTML: false,
+      }),
+      description: XSSProtection.sanitizeUserInput(req.body.description, {
+        maxLength: 2000,
+        allowHTML: false,
+      }),
+      short: XSSProtection.sanitizeUserInput(req.body.short, {
+        maxLength: 255,
+        allowHTML: false,
+      }),
+      tags: XSSProtection.sanitizeUserInput(req.body.tags, {
+        maxLength: 255,
+        allowHTML: false,
+      }),
+      zipcode: XSSProtection.sanitizeUserInput(req.body.zipcode, {
+        maxLength: 10,
+        allowHTML: false,
+      }),
+      city: XSSProtection.sanitizeUserInput(req.body.city, {
+        maxLength: 50,
+        allowHTML: false,
+      }),
+      state: XSSProtection.sanitizeUserInput(req.body.state, {
+        maxLength: 50,
+        allowHTML: false,
+      }),
+      address1: XSSProtection.sanitizeUserInput(req.body.address1, {
+        maxLength: 100,
+        allowHTML: false,
+      }),
+      streetnumber: XSSProtection.sanitizeUserInput(req.body.streetnumber, {
+        maxLength: 20,
+        allowHTML: false,
+      }),
+      address2: XSSProtection.sanitizeUserInput(req.body.address2, {
+        maxLength: 100,
+        allowHTML: false,
+      }),
+      phone1: XSSProtection.sanitizeUserInput(req.body.phone1, {
+        maxLength: 20,
+        allowHTML: false,
+      }),
+      phone2: XSSProtection.sanitizeUserInput(req.body.phone2, {
+        maxLength: 20,
+        allowHTML: false,
+      }),
+      whatsapp: XSSProtection.sanitizeUserInput(req.body.whatsapp, {
+        maxLength: 20,
+        allowHTML: false,
+      }),
+      email: XSSProtection.sanitizeUserInput(req.body.email, {
+        maxLength: 100,
+        allowHTML: false,
+      }),
+      website: XSSProtection.sanitizeURL(req.body.website),
+      timetext: XSSProtection.sanitizeUserInput(req.body.timetext, {
+        maxLength: 500,
+        allowHTML: false,
+      }),
+      radius: +req.body.radius || 0,
+      startdate: req.body.startdate || null,
+      finishdate: req.body.finishdate || null,
+    };
+
+    // Validate required fields after sanitization
+    if (!sanitizedData.title || !sanitizedData.description) {
+      return res.status(400).json({
+        error: "Título e descrição são obrigatórios",
+      });
+    }
+
     // get user from token
     if (!req.user || !req.user.id) {
       logger.error("User not authenticated");
       return res.status(401).json({ error: "User not authenticated" });
     }
 
-    adData.user_id = req.user.id;
-    adData.radius = +adData.radius || 0;
-    adData.created_at = new Date();
-    // Convert empty strings to null for date fields
-    if (adData.startdate === "") adData.startdate = null;
-    if (adData.finishdate === "") adData.finishdate = null;
-    // console.log(`Creating ad with data:`, adData);
+    sanitizedData.user_id = req.user.id;
+    sanitizedData.created_at = new Date();
 
-    adData.id = await adsModel.createAd(adData);
-    // console.log(`Created ad with data:`, adData);
-    logger.info(`Ad created: ${adData.id}`);
-    res.status(201).json(adData);
+    // Convert empty strings to null for date fields
+    if (sanitizedData.startdate === "") sanitizedData.startdate = null;
+    if (sanitizedData.finishdate === "") sanitizedData.finishdate = null;
+
+    sanitizedData.id = await adsModel.createAd(sanitizedData);
+    logger.info(`Ad created: ${sanitizedData.id}`);
+    res.status(201).json(sanitizedData);
   } catch (err) {
     console.log(`Error creating ad: ${err}`);
     logger.error(`Error creating ad: ${err.message}`);
@@ -110,16 +181,61 @@ exports.updateAd = async (req, res) => {
       logger.error("No ad ID provided for update");
       return res.status(400).json({ error: "Ad ID is required" });
     }
-    const adData = req.body;
-    adData.user_id = req.user.id;
-    adData.radius = +adData.radius || 0;
-    adData.created_at = new Date();
-    // Convert empty strings to null for date fields
-    if (adData.startdate === "") adData.startdate = null;
-    if (adData.finishdate === "") adData.finishdate = null;
-    // console.log(`Updating ad with data:`, adData);
 
-    const updated = await adsModel.updateAd(adId, adData);
+    // Sanitize update data - only include fields that are provided
+    const sanitizedData = {};
+    const allowedFields = [
+      "title",
+      "description",
+      "short",
+      "tags",
+      "zipcode",
+      "city",
+      "state",
+      "address1",
+      "streetnumber",
+      "address2",
+      "phone1",
+      "phone2",
+      "whatsapp",
+      "email",
+      "website",
+      "timetext",
+      "radius",
+      "startdate",
+      "finishdate",
+    ];
+
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        if (field === "website") {
+          sanitizedData[field] = XSSProtection.sanitizeURL(req.body[field]);
+        } else if (field === "radius") {
+          sanitizedData[field] = +req.body[field] || 0;
+        } else if (field === "startdate" || field === "finishdate") {
+          sanitizedData[field] =
+            req.body[field] === "" ? null : req.body[field];
+        } else {
+          const maxLength =
+            field === "description"
+              ? 2000
+              : field === "timetext"
+              ? 500
+              : field === "short" || field === "tags"
+              ? 255
+              : 100;
+
+          sanitizedData[field] = XSSProtection.sanitizeUserInput(
+            req.body[field],
+            { maxLength, allowHTML: false }
+          );
+        }
+      }
+    });
+
+    sanitizedData.user_id = req.user.id;
+
+    const updated = await adsModel.updateAd(adId, sanitizedData);
     if (!updated) {
       logger.warn(`Ad not found for update: ${adId}`);
       return res.status(404).json({ error: "Ad not found" });

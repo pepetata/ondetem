@@ -11,6 +11,7 @@ const path = require("path");
 const morgan = require("morgan");
 
 const middleware = require("./utils/middleware");
+const SecurityMiddleware = require("./middleware/securityMiddleware");
 const usersRouter = require("./routes/users");
 const authRouter = require("./routes/auth");
 const adsRouter = require("./routes/ads");
@@ -18,9 +19,13 @@ const favoritesRouter = require("./routes/favorites");
 const commentsRouter = require("./routes/comments");
 
 const app = express();
+
+// Apply comprehensive security middleware FIRST
+SecurityMiddleware.applyAll(app);
+
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "10mb" })); // Limit payload size
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(middleware.requestLogger);
 // app.use(middleware.tokenExtractor);
 // app.use(middleware.userExtractor);
@@ -35,6 +40,7 @@ app.use("/api/favorites", favoritesRouter);
 app.use("/api/comments", commentsRouter);
 
 app.use(middleware.unknownEndpoint);
+app.use(SecurityMiddleware.errorHandler()); // Security error handler BEFORE general error handler
 app.use(middleware.errorHandler);
 
 if (process.env.NODE_ENV !== "test" || process.env.E2E === "true") {
