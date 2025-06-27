@@ -7,7 +7,6 @@ const upload = multer({ dest: "uploads/" });
 const router = express.Router();
 
 router.get("/", usersController.getAllUsers);
-router.get("/:id", usersController.getUserById);
 router.get("/email/:email", usersController.getUserByEmail);
 router.get(
   "/me",
@@ -15,6 +14,7 @@ router.get(
   middleware.userExtractor,
   usersController.getCurrentUser
 );
+router.get("/:id", usersController.getUserById);
 
 // Use multer for multipart/form-data
 router.post("/", upload.single("photo"), usersController.createUser);
