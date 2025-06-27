@@ -17,6 +17,7 @@ const authRouter = require("./routes/auth");
 const adsRouter = require("./routes/ads");
 const favoritesRouter = require("./routes/favorites");
 const commentsRouter = require("./routes/comments");
+const healthRouter = require("./routes/health");
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/ads", adsRouter);
 app.use("/api/favorites", favoritesRouter);
 app.use("/api/comments", commentsRouter);
+app.use("/api", healthRouter);
 
 app.use(middleware.unknownEndpoint);
 app.use(SecurityMiddleware.errorHandler()); // Security error handler BEFORE general error handler
