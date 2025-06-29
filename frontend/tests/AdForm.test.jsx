@@ -96,7 +96,12 @@ vi.mock("../src/scss/AdForm.scss", () => ({}));
 vi.mock("../src/components/helper", () => ({
   showNotification: vi.fn(),
   clearNotification: vi.fn(),
-  buildValidationSchema: vi.fn(() => ({})),
+  buildValidationSchema: vi.fn(() => ({
+    validate: vi.fn().mockResolvedValue({}),
+    validateSync: vi.fn().mockReturnValue({}),
+    isValid: vi.fn(() => true),
+    cast: vi.fn((value) => value),
+  })),
 }));
 
 // Mock form fields
@@ -156,6 +161,129 @@ describe("AdForm", () => {
       expect(
         screen.getByText(/Registre as informações de seus anúncios/i)
       ).toBeInTheDocument();
+    });
+  });
+
+  // Add more comprehensive AdForm tests
+  test("renders all form tabs", async () => {
+    const testState = {
+      auth: { user: { id: 1 }, isAuthenticated: true },
+      ads: { currentAd: null, loading: false, error: null },
+      adImages: { images: [], loading: false },
+    };
+
+    renderWithProviders(<AdForm />, {
+      preloadedState: testState,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("tab-description")).toBeInTheDocument();
+      expect(screen.getByTestId("tab-contact")).toBeInTheDocument();
+      expect(screen.getByTestId("tab-photos")).toBeInTheDocument();
+      expect(screen.getByTestId("tab-calendar")).toBeInTheDocument();
+      expect(screen.getByTestId("tab-publicity")).toBeInTheDocument();
+    });
+  });
+
+  test("renders form buttons in correct states", async () => {
+    const testState = {
+      auth: { user: { id: 1 }, isAuthenticated: true },
+      ads: { currentAd: null, loading: false, error: null },
+      adImages: { images: [], loading: false },
+    };
+
+    renderWithProviders(<AdForm />, {
+      preloadedState: testState,
+    });
+
+    await waitFor(() => {
+      // Check that buttons exist
+      expect(
+        screen.getByRole("button", { name: /Gravar/i })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Voltar/i })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Novo Anúncio/i })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Remover Anúncio/i })
+      ).toBeInTheDocument();
+
+      // Check disabled state for buttons that require currentAd
+      expect(
+        screen.getByRole("button", { name: /Novo Anúncio/i })
+      ).toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: /Remover Anúncio/i })
+      ).toBeDisabled();
+    });
+  });
+
+  test("renders with existing ad data", async () => {
+    const currentAd = {
+      id: 1,
+      title: "Test Ad Title",
+      description: "Test description",
+    };
+
+    const testState = {
+      auth: { user: { id: 1 }, isAuthenticated: true },
+      ads: { currentAd, loading: false, error: null },
+      adImages: { images: [], loading: false },
+    };
+
+    renderWithProviders(<AdForm />, {
+      preloadedState: testState,
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Registre as informações de seus anúncios/i)
+      ).toBeInTheDocument();
+      // Buttons should be enabled when currentAd exists
+      expect(
+        screen.getByRole("button", { name: /Novo Anúncio/i })
+      ).toBeEnabled();
+      expect(
+        screen.getByRole("button", { name: /Remover Anúncio/i })
+      ).toBeEnabled();
+    });
+  });
+
+  test("shows notification component", async () => {
+    const testState = {
+      auth: { user: { id: 1 }, isAuthenticated: true },
+      ads: { currentAd: null, loading: false, error: null },
+      adImages: { images: [], loading: false },
+    };
+
+    renderWithProviders(<AdForm />, {
+      preloadedState: testState,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("notification")).toBeInTheDocument();
+    });
+  });
+
+  test("handles form submission", async () => {
+    const testState = {
+      auth: { user: { id: 1 }, isAuthenticated: true },
+      ads: { currentAd: null, loading: false, error: null },
+      adImages: { images: [], loading: false },
+    };
+
+    renderWithProviders(<AdForm />, {
+      preloadedState: testState,
+    });
+
+    await waitFor(() => {
+      const submitButton = screen.getByRole("button", { name: /Gravar/i });
+      fireEvent.click(submitButton);
+      // Form submission should trigger without errors
+      expect(submitButton).toBeInTheDocument();
     });
   });
 });
