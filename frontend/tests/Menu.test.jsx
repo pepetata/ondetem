@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
-import Menu from "../src/components/Menu";
+import Menu from "../src/features/menu/Menu";
 import { store } from "../src/redux/store";
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "../src/redux/authSlice";

@@ -1,3 +1,46 @@
+import { useRef, useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, useParams } from "react-router-dom";
+import { Container, Row, Col, Form, Tabs, Tab, Modal } from "react-bootstrap";
+import { Formik, Form as FormikForm, Field } from "formik";
+
+import Notification from "../../components/Notification";
+import OTButton from "../../components/OTButton";
+import FormInput from "../../components/FormInput";
+import AdFormDescriptionTab from "./AdFormDescriptionTab";
+import AdFormContactTab from "./AdFormContactTab";
+import AdFormImageTab from "./AdFormImageTab";
+import AdFormCalendarTab from "./AdFormCalendarTab";
+import AdFormPublicityTab from "./AdFormPublicityTab";
+import ModalButton, {
+  ModalCancelButton,
+  ModalConfirmarButton,
+} from "../../components/ModalButton";
+
+import { adFormFields } from "../../formfields/adFormFiels.js";
+// import { buildValidationSchema } from "../../components/validationHelper.js";
+import {
+  showNotification,
+  clearNotification,
+  buildValidationSchema,
+} from "../../components/helper";
+
+import {
+  createAdThunk,
+  updateAdThunk,
+  deleteAdThunk,
+  getAdThunk,
+  clearCurrentAd,
+  setCurrentAd,
+} from "../../redux/adSlice";
+import {
+  uploadAdImage,
+  clearAdImages,
+  deleteAdImage,
+} from "../../redux/adImagesSlice";
+
+import "../../scss/AdForm.scss";
+
 export default function AdForm() {
   const { id } = useParams();
   const dispatch = useDispatch();
@@ -333,46 +376,3 @@ export default function AdForm() {
     </Container>
   );
 }
-
-import { useRef, useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useParams } from "react-router-dom";
-import { Container, Row, Col, Form, Tabs, Tab, Modal } from "react-bootstrap";
-import { Formik, Form as FormikForm, Field } from "formik";
-
-import Notification from "../../components/Notification";
-import OTButton from "../../components/OTButton";
-import FormInput from "../../components/FormInput";
-import AdFormDescriptionTab from "./AdFormDescriptionTab";
-import AdFormContactTab from "./AdFormContactTab";
-import AdFormImageTab from "./AdFormImageTab";
-import AdFormCalendarTab from "./AdFormCalendarTab";
-import AdFormPublicityTab from "./AdFormPublicityTab";
-import ModalButton, {
-  ModalCancelButton,
-  ModalConfirmarButton,
-} from "../../components/ModalButton";
-
-import { adFormFields } from "../../formfields/adFormFiels.js";
-// import { buildValidationSchema } from "../../components/validationHelper.js";
-import {
-  showNotification,
-  clearNotification,
-  buildValidationSchema,
-} from "../../components/helper";
-
-import {
-  createAdThunk,
-  updateAdThunk,
-  deleteAdThunk,
-  getAdThunk,
-  clearCurrentAd,
-  setCurrentAd,
-} from "../../redux/adSlice";
-import {
-  uploadAdImage,
-  clearAdImages,
-  deleteAdImage,
-} from "../../redux/adImagesSlice";
-
-import "../../scss/AdForm.scss";
