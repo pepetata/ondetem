@@ -1,38 +1,12 @@
 import "@testing-library/jest-dom";
-import { MemoryRouter } from "react-router-dom";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { Provider } from "react-redux";
-import { BrowserRouter } from "react-router-dom";
+import { renderWithProviders, mockStoreStates } from "./utils";
 import Menu from "../src/features/menu/Menu";
-import { store } from "../src/redux/store";
-import { configureStore } from "@reduxjs/toolkit";
-import authReducer from "../src/redux/authSlice";
-
-// Helper to render with custom store
-function renderWithProviders(ui, { preloadedState, route = "/" } = {}) {
-  const store = configureStore({
-    reducer: { auth: authReducer },
-    preloadedState,
-  });
-  return render(
-    <Provider store={store}>
-      <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
-    </Provider>
-  );
-}
 
 describe("Menu component (logged in)", () => {
-  const user = {
-    id: 1,
-    fullName: "Test User",
-    nickname: "Test",
-    email: "test@example.com",
-    photoPath: "uploads/testphoto.jpg",
-  };
-
   test("shows logged-in user buttons/icons", () => {
     renderWithProviders(<Menu />, {
-      preloadedState: { auth: { user, token: "fake-token" } },
+      preloadedState: mockStoreStates.loggedIn,
     });
 
     // Small screen: should show text+icon links
@@ -58,7 +32,7 @@ describe("Menu component (logged in)", () => {
     window.dispatchEvent(new Event("resize"));
 
     renderWithProviders(<Menu />, {
-      preloadedState: { auth: { user, token: "fake-token" } },
+      preloadedState: mockStoreStates.loggedIn,
     });
 
     // Open the collapsed menu
