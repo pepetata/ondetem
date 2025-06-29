@@ -1,5 +1,11 @@
 import "@testing-library/jest-dom";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  act,
+} from "@testing-library/react";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import { vi } from "vitest";
@@ -109,7 +115,9 @@ describe("UserForm - Form Validation", () => {
     renderWithProviders(<UserForm />);
 
     const submitButton = screen.getByRole("button", { name: /Gravar/i });
-    fireEvent.click(submitButton);
+    await act(async () => {
+      fireEvent.click(submitButton);
+    });
 
     // Wait for validation errors to appear
     await waitFor(
@@ -125,8 +133,10 @@ describe("UserForm - Form Validation", () => {
     renderWithProviders(<UserForm />);
 
     const emailInput = screen.getByLabelText(/Email/i);
-    fireEvent.change(emailInput, { target: { value: "invalid-email" } });
-    fireEvent.blur(emailInput);
+    await act(async () => {
+      fireEvent.change(emailInput, { target: { value: "invalid-email" } });
+      fireEvent.blur(emailInput);
+    });
 
     await waitFor(() => {
       expect(screen.getByText(/Email inválido/i)).toBeInTheDocument();
@@ -139,11 +149,13 @@ describe("UserForm - Form Validation", () => {
     const passwordInput = screen.getByLabelText(/^Senha/i);
     const confirmPasswordInput = screen.getByLabelText(/Confirme a senha/i);
 
-    fireEvent.change(passwordInput, { target: { value: "password123" } });
-    fireEvent.change(confirmPasswordInput, {
-      target: { value: "differentPassword" },
+    await act(async () => {
+      fireEvent.change(passwordInput, { target: { value: "password123" } });
+      fireEvent.change(confirmPasswordInput, {
+        target: { value: "differentPassword" },
+      });
+      fireEvent.blur(confirmPasswordInput);
     });
-    fireEvent.blur(confirmPasswordInput);
 
     await waitFor(() => {
       expect(screen.getByText(/Senhas não coincidem/i)).toBeInTheDocument();
@@ -157,29 +169,35 @@ describe("UserForm - User Interactions", () => {
     renderWithProviders(<UserForm onSubmit={mockSubmit} />);
 
     // Fill out form
-    fireEvent.change(screen.getByLabelText(/Nome Completo/i), {
-      target: { value: "João Silva" },
-    });
-    fireEvent.change(screen.getByLabelText(/Primeiro nome ou apelido/i), {
-      target: { value: "João" },
-    });
-    fireEvent.change(screen.getByLabelText(/Email/i), {
-      target: { value: "joao@email.com" },
-    });
-    fireEvent.change(screen.getByLabelText(/^Senha/i), {
-      target: { value: "password123" },
-    });
-    fireEvent.change(screen.getByLabelText(/Confirme a senha/i), {
-      target: { value: "password123" },
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText(/Nome Completo/i), {
+        target: { value: "João Silva" },
+      });
+      fireEvent.change(screen.getByLabelText(/Primeiro nome ou apelido/i), {
+        target: { value: "João" },
+      });
+      fireEvent.change(screen.getByLabelText(/Email/i), {
+        target: { value: "joao@email.com" },
+      });
+      fireEvent.change(screen.getByLabelText(/^Senha/i), {
+        target: { value: "password123" },
+      });
+      fireEvent.change(screen.getByLabelText(/Confirme a senha/i), {
+        target: { value: "password123" },
+      });
     });
 
     // Check user agreement
     const checkbox = screen.getByRole("checkbox");
-    fireEvent.click(checkbox);
+    await act(async () => {
+      fireEvent.click(checkbox);
+    });
 
     // Submit form
     const submitButton = screen.getByRole("button", { name: /Gravar/i });
-    fireEvent.click(submitButton);
+    await act(async () => {
+      fireEvent.click(submitButton);
+    });
 
     // Add assertions based on expected behavior
     expect(submitButton).toBeInTheDocument();
@@ -191,17 +209,21 @@ describe("UserForm - User Interactions", () => {
     const fileInput = screen.getByLabelText(/Selecione sua foto/i);
     const file = new File(["test"], "test.jpg", { type: "image/jpeg" });
 
-    fireEvent.change(fileInput, { target: { files: [file] } });
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [file] } });
+    });
 
     expect(fileInput.files[0]).toBe(file);
     expect(fileInput.files).toHaveLength(1);
   });
 
-  test("navigates back when cancel button is clicked", () => {
+  test("navigates back when cancel button is clicked", async () => {
     renderWithProviders(<UserForm />);
 
     const cancelButton = screen.getByRole("button", { name: /Voltar/i });
-    fireEvent.click(cancelButton);
+    await act(async () => {
+      fireEvent.click(cancelButton);
+    });
 
     // Since navigation is mocked, just verify the button exists and can be clicked
     expect(cancelButton).toBeInTheDocument();

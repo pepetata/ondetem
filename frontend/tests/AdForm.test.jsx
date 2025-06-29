@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom";
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { screen, fireEvent, waitFor } from "@testing-library/react";
+import { screen, fireEvent, waitFor, act } from "@testing-library/react";
 import {
   renderWithProviders,
   mockStoreStates,
@@ -281,7 +281,9 @@ describe("AdForm", () => {
 
     await waitFor(() => {
       const submitButton = screen.getByRole("button", { name: /Gravar/i });
-      fireEvent.click(submitButton);
+      act(() => {
+        fireEvent.click(submitButton);
+      });
       // Form submission should trigger without errors
       expect(submitButton).toBeInTheDocument();
     });

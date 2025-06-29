@@ -45,11 +45,13 @@ describe("authAPI", () => {
 
     test("should handle login errors", async () => {
       const mockAxios = await import("axios");
-      const errorResponse = { response: { data: { message: "Invalid credentials" } } };
+      const errorResponse = {
+        response: { data: { message: "Invalid credentials" } },
+      };
       mockAxios.default.post.mockRejectedValue(errorResponse);
 
       const credentials = { email: "test@test.com", password: "wrongpass" };
-      
+
       await expect(authAPI.login(credentials)).rejects.toThrow();
     });
   });

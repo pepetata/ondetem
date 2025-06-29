@@ -1,5 +1,11 @@
 import "@testing-library/jest-dom";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from "@testing-library/react";
 import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
 import { configureStore } from "@reduxjs/toolkit";
@@ -47,7 +53,9 @@ describe("LoginForm - Form Validation", () => {
     const submitButton = screen.getByRole("button", { name: /entrar/i });
 
     // Form should allow submission even with empty fields (server-side validation)
-    fireEvent.click(submitButton);
+    await act(async () => {
+      fireEvent.click(submitButton);
+    });
 
     // Form should still be rendered (no client-side validation prevents submission)
     expect(emailInput).toBeInTheDocument();
@@ -61,8 +69,10 @@ describe("LoginForm - Form Validation", () => {
     const passwordInput = screen.getByLabelText(/senha/i);
 
     // Test that form fields accept input
-    fireEvent.change(emailInput, { target: { value: "user@email.com" } });
-    fireEvent.change(passwordInput, { target: { value: "password123" } });
+    await act(async () => {
+      fireEvent.change(emailInput, { target: { value: "user@email.com" } });
+      fireEvent.change(passwordInput, { target: { value: "password123" } });
+    });
 
     expect(emailInput.value).toBe("user@email.com");
     expect(passwordInput.value).toBe("password123");
@@ -86,9 +96,11 @@ describe("LoginForm - User Interactions", () => {
     const passwordInput = screen.getByLabelText(/Senha/i);
     const submitButton = screen.getByRole("button", { name: /Entrar/i });
 
-    fireEvent.change(emailInput, { target: { value: "user@email.com" } });
-    fireEvent.change(passwordInput, { target: { value: "password123" } });
-    fireEvent.click(submitButton);
+    await act(async () => {
+      fireEvent.change(emailInput, { target: { value: "user@email.com" } });
+      fireEvent.change(passwordInput, { target: { value: "password123" } });
+      fireEvent.click(submitButton);
+    });
 
     // Add assertions based on expected behavior after successful login
     expect(submitButton).toBeInTheDocument();
@@ -101,9 +113,11 @@ describe("LoginForm - User Interactions", () => {
     const passwordInput = screen.getByLabelText(/Senha/i);
     const submitButton = screen.getByRole("button", { name: /Entrar/i });
 
-    fireEvent.change(emailInput, { target: { value: "wrong@email.com" } });
-    fireEvent.change(passwordInput, { target: { value: "wrongpassword" } });
-    fireEvent.click(submitButton);
+    await act(async () => {
+      fireEvent.change(emailInput, { target: { value: "wrong@email.com" } });
+      fireEvent.change(passwordInput, { target: { value: "wrongpassword" } });
+      fireEvent.click(submitButton);
+    });
 
     // Since API is mocked and will fail, just verify form is still present
     // In a real scenario, this would check for actual error messages from the Redux store
