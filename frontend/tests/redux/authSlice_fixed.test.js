@@ -37,8 +37,6 @@ describe("authSlice", () => {
       expect(state.loading).toBe(false);
       expect(state.error).toBeNull();
     });
-
-
   });
 
   describe("reducers", () => {

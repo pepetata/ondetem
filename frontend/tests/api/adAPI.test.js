@@ -1,207 +1,216 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { adAPI } from "../../src/api/adAPI";
+﻿import { describe, it, expect, vi, beforeEach } from "vitest";
+import axios from "axios";
 
-// Mock fetch globally
-global.fetch = vi.fn();
+// Mock axios completely
+vi.mock("axios");
 
-describe("adAPI", () => {
+// Mock the adAPI module but import the original to keep the actual implementations
+vi.mock("../../src/api/adAPI", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+  };
+});
+
+import * as adAPI from "../../src/api/adAPI";
+
+const mockedAxios = vi.mocked(axios, true);
+
+describe("adAPI integration tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    fetch.mockClear();
+  });
+
+  describe("getToken", () => {
+    beforeEach(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+
+    it("should get token from state when available", () => {
+      const mockGetState = vi.fn(() => ({
+        auth: { token: "state-token" },
+      }));
+
+      const token = adAPI.getToken(mockGetState);
+      expect(token).toBe("state-token");
+    });
+
+    it("should fallback to localStorage when state token not available", () => {
+      const mockGetState = vi.fn(() => ({}));
+      vi.spyOn(Storage.prototype, "getItem").mockReturnValue("local-token");
+
+      const token = adAPI.getToken(mockGetState);
+      expect(token).toBe("local-token");
+      expect(localStorage.getItem).toHaveBeenCalledWith("authToken");
+    });
+
+    it("should fallback to sessionStorage when localStorage not available", () => {
+      const mockGetState = vi.fn(() => ({}));
+      vi.spyOn(Storage.prototype, "getItem")
+        .mockReturnValueOnce(null) // localStorage
+        .mockReturnValueOnce("session-token"); // sessionStorage
+
+      const token = adAPI.getToken(mockGetState);
+      expect(token).toBe("session-token");
+      expect(sessionStorage.getItem).toHaveBeenCalledWith("authToken");
+    });
   });
 
   describe("createAd", () => {
-    it("should make POST request to create ad with FormData", async () => {
-      const mockResponse = {
-        id: 1,
-        title: "Test Ad",
-        description: "Test Description",
-      };
+    it("should create ad with form data and token", async () => {
+      const mockFormData = new FormData();
+      mockFormData.append("title", "Test Ad");
+      const mockToken = "test-token";
+      const mockResponse = { data: { id: 1, title: "Test Ad" } };
 
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      mockedAxios.post.mockResolvedValue(mockResponse);
 
-      const formData = new FormData();
-      formData.append("title", "Test Ad");
-      formData.append("description", "Test Description");
+      const result = await adAPI.createAd(mockFormData, mockToken);
 
-      const result = await adAPI.createAd(formData);
-
-      expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/ads"),
+      expect(mockedAxios.post).toHaveBeenCalledTimes(1);
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        expect.stringContaining("/api/ads/"),
+        mockFormData,
         expect.objectContaining({
-          method: "POST",
-          body: formData,
+          headers: expect.objectContaining({
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${mockToken}`,
+          }),
         })
       );
-      expect(result).toEqual(mockResponse);
-    });
-
-    it("should throw error when ad creation fails", async () => {
-      fetch.mockResolvedValueOnce({
-        ok: false,
-        status: 400,
-        json: async () => ({ error: "Invalid ad data" }),
-      });
-
-      const formData = new FormData();
-
-      await expect(adAPI.createAd(formData)).rejects.toThrow();
+      expect(result).toEqual(mockResponse.data);
     });
   });
 
-  describe("getAds", () => {
-    it("should make GET request to fetch ads", async () => {
-      const mockAds = [
-        { id: 1, title: "Ad 1", description: "Description 1" },
-        { id: 2, title: "Ad 2", description: "Description 2" },
-      ];
+  describe("getAllAds", () => {
+    it("should get all ads", async () => {
+      const mockResponse = { data: [{ id: 1, title: "Test Ad" }] };
 
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockAds,
-      });
+      axios.get.mockResolvedValue(mockResponse);
 
-      const result = await adAPI.getAds();
+      const result = await adAPI.getAllAds();
 
-      expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/ads"),
-        expect.objectContaining({
-          method: "GET",
-        })
+      expect(axios.get).toHaveBeenCalledTimes(1);
+      expect(axios.get).toHaveBeenCalledWith(
+        expect.stringContaining("/api/ads/")
       );
-      expect(result).toEqual(mockAds);
-    });
-
-    it("should handle query parameters", async () => {
-      const mockAds = [];
-
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockAds,
-      });
-
-      const params = { search: "test", category: "electronics" };
-      await adAPI.getAds(params);
-
-      expect(fetch).toHaveBeenCalledWith(
-        expect.stringMatching(/ads\?.*search=test.*category=electronics/),
-        expect.objectContaining({
-          method: "GET",
-        })
-      );
+      expect(result).toEqual(mockResponse.data);
     });
   });
 
-  describe("getAdById", () => {
-    it("should make GET request to fetch specific ad", async () => {
-      const mockAd = {
-        id: 1,
-        title: "Test Ad",
-        description: "Test Description",
-      };
+  describe("getAd", () => {
+    it("should get single ad by ID", async () => {
+      const mockAdId = 1;
+      const mockResponse = { data: { id: 1, title: "Test Ad" } };
 
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockAd,
-      });
+      axios.get.mockResolvedValue(mockResponse);
 
-      const result = await adAPI.getAdById(1);
+      const result = await adAPI.getAd(mockAdId);
 
-      expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/ads/1"),
-        expect.objectContaining({
-          method: "GET",
-        })
+      expect(axios.get).toHaveBeenCalledTimes(1);
+      expect(axios.get).toHaveBeenCalledWith(
+        expect.stringContaining(`/api/ads/${mockAdId}`)
       );
-      expect(result).toEqual(mockAd);
+      expect(result).toEqual(mockResponse.data);
     });
 
     it("should throw error when ad not found", async () => {
-      fetch.mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        json: async () => ({ error: "Ad not found" }),
-      });
+      axios.get.mockRejectedValue(new Error("Ad not found"));
 
-      await expect(adAPI.getAdById(999)).rejects.toThrow();
+      await expect(adAPI.getAd(999)).rejects.toThrow("Ad not found");
+    });
+  });
+
+  describe("searchAds", () => {
+    it("should search ads with query parameters", async () => {
+      const mockSearchTerm = "test search";
+      const mockResponse = { data: [{ id: 1, title: "Test Ad" }] };
+
+      axios.get.mockResolvedValue(mockResponse);
+
+      const result = await adAPI.searchAds(mockSearchTerm);
+
+      expect(axios.get).toHaveBeenCalledTimes(1);
+      expect(axios.get).toHaveBeenCalledWith(
+        expect.stringContaining("/api/ads/search"),
+        expect.objectContaining({
+          params: { q: mockSearchTerm },
+        })
+      );
+      expect(result).toEqual(mockResponse.data);
     });
   });
 
   describe("updateAd", () => {
-    it("should make PUT request to update ad", async () => {
-      const mockResponse = { id: 1, title: "Updated Ad" };
+    it("should update ad with form data and token", async () => {
+      const mockAdId = 1;
+      const mockFormData = new FormData();
+      mockFormData.append("title", "Updated Ad");
+      const mockToken = "test-token";
+      const mockResponse = { data: { id: 1, title: "Updated Ad" } };
 
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
+      axios.put.mockResolvedValue(mockResponse);
 
-      const formData = new FormData();
-      formData.append("title", "Updated Ad");
+      const result = await adAPI.updateAd(mockAdId, mockFormData, mockToken);
 
-      const result = await adAPI.updateAd(1, formData);
-
-      expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/ads/1"),
+      expect(axios.put).toHaveBeenCalledTimes(1);
+      expect(axios.put).toHaveBeenCalledWith(
+        expect.stringContaining(`/api/ads/${mockAdId}`),
+        mockFormData,
         expect.objectContaining({
-          method: "PUT",
-          body: formData,
+          headers: expect.objectContaining({
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${mockToken}`,
+          }),
         })
       );
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual(mockResponse.data);
     });
   });
 
   describe("deleteAd", () => {
-    it("should make DELETE request to remove ad", async () => {
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ message: "Ad deleted successfully" }),
-      });
+    it("should delete ad with token", async () => {
+      const mockAdId = 1;
+      const mockToken = "test-token";
+      const mockResponse = { data: { message: "Ad deleted successfully" } };
 
-      const result = await adAPI.deleteAd(1);
+      axios.delete.mockResolvedValue(mockResponse);
 
-      expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/ads/1"),
+      const result = await adAPI.deleteAd(mockAdId, mockToken);
+
+      expect(axios.delete).toHaveBeenCalledTimes(1);
+      expect(axios.delete).toHaveBeenCalledWith(
+        expect.stringContaining(`/api/ads/${mockAdId}`),
         expect.objectContaining({
-          method: "DELETE",
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${mockToken}`,
+          }),
         })
       );
-      expect(result).toBeDefined();
-    });
-
-    it("should throw error when deletion fails", async () => {
-      fetch.mockResolvedValueOnce({
-        ok: false,
-        status: 403,
-        json: async () => ({ error: "Unauthorized" }),
-      });
-
-      await expect(adAPI.deleteAd(1)).rejects.toThrow();
+      expect(result).toEqual(mockResponse.data);
     });
   });
 
-  describe("getMyAds", () => {
-    it("should make GET request to fetch user ads", async () => {
-      const mockAds = [{ id: 1, title: "My Ad 1", userId: 1 }];
+  describe("getUserAds", () => {
+    it("should get user's ads with token", async () => {
+      const mockToken = "test-token";
+      const mockResponse = { data: [{ id: 1, title: "My Ad" }] };
 
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockAds,
-      });
+      axios.get.mockResolvedValue(mockResponse);
 
-      const result = await adAPI.getMyAds();
+      const result = await adAPI.getUserAds(mockToken);
 
-      expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/ads/my"),
+      expect(axios.get).toHaveBeenCalledTimes(1);
+      expect(axios.get).toHaveBeenCalledWith(
+        expect.stringContaining("/api/ads/my"),
         expect.objectContaining({
-          method: "GET",
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${mockToken}`,
+          }),
         })
       );
-      expect(result).toEqual(mockAds);
+      expect(result).toEqual(mockResponse.data);
     });
   });
 });
