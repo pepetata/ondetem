@@ -68,6 +68,8 @@ exports.getAdById = async (req, res) => {
       logger.warn(`Ad not found: ${adId}`);
       return res.status(404).json({
         error: "Ad not found",
+        message:
+          "O anúncio solicitado não foi encontrado. Verifique se o ID está correto.",
       });
     }
     logger.info(`Fetched ad: ${adId}`);
@@ -82,6 +84,56 @@ exports.getAdById = async (req, res) => {
 
 // Create a new ad
 exports.createAd = async (req, res) => {
+  try {
+    console.log(
+      `createAd - Request user:`,
+      req.user ? `User ${req.user.email}` : "No user"
+    );
+    console.log(`createAd - Request body:`, Object.keys(req.body));
+
+    // Sanitize the entire request body
+    const sanitizedData = XSSProtection.sanitizeObject(req.body);
+
+    // Validate required fields after sanitization
+    if (!sanitizedData.title || !sanitizedData.description) {
+      console.log(`createAd - Missing required fields:`, {
+        title: sanitizedData.title,
+        description: sanitizedData.description,
+      });
+      return res.status(400).json({
+        error: "Required fields missing",
+      });
+    }
+
+    // get user from token
+    if (!req.user || !req.user.id) {
+      console.log(`createAd - User not authenticated. req.user:`, req.user);
+      logger.error("User not authenticated");
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    sanitizedData.user_id = req.user.id;
+    const files = req.files || [];
+
+    const adId = await adsModel.createAd(sanitizedData, files);
+    logger.info(`Ad created: ${adId}`);
+
+    // Fetch the created ad to return the full object
+    const createdAd = await adsModel.getAdById(adId);
+
+    res.status(201).json({
+      message: "Ad created successfully",
+      ...createdAd, // Include all ad properties, including id
+    });
+  } catch (err) {
+    console.log(`Error creating ad: ${err}`);
+    logger.error(`Error creating ad: ${err.message}`);
+    res.status(500).json({ error: "Error creating ad" });
+  }
+};
+
+// Create a new ad for testing (without file upload)
+exports.createAdForTesting = async (req, res) => {
   try {
     // Sanitize the entire request body
     const sanitizedData = XSSProtection.sanitizeObject(req.body);
@@ -99,19 +151,20 @@ exports.createAd = async (req, res) => {
       return res.status(401).json({ error: "User not authenticated" });
     }
 
-    sanitizedData.userId = req.user.id;
-    const files = req.files || [];
+    sanitizedData.user_id = req.user.id;
+    const files = []; // No files for testing
 
     const adId = await adsModel.createAd(sanitizedData, files);
-    logger.info(`Ad created: ${adId}`);
+    logger.info(`Test ad created: ${adId}`);
     res.status(201).json({
-      message: "Ad created successfully",
+      message: "Test ad created successfully",
       adId: adId,
+      id: adId, // Add id for compatibility
     });
   } catch (err) {
-    console.log(`Error creating ad: ${err}`);
-    logger.error(`Error creating ad: ${err.message}`);
-    res.status(500).json({ error: "Error creating ad" });
+    console.log(`Error creating test ad: ${err}`);
+    logger.error(`Error creating test ad: ${err.message}`);
+    res.status(500).json({ error: "Error creating test ad" });
   }
 };
 

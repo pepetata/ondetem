@@ -15,20 +15,43 @@ export function getToken(getState) {
 
 export const createAd = async (formData, token) => {
   console.log(`Creating ad with data:`, formData);
-  const response = await axios.post(`${baseUrl}/`, formData, {
+
+  // Convert to FormData if it's not already
+  let data = formData;
+  if (!(formData instanceof FormData)) {
+    data = new FormData();
+    Object.keys(formData).forEach((key) => {
+      if (formData[key] !== null && formData[key] !== undefined) {
+        data.append(key, formData[key]);
+      }
+    });
+  }
+
+  const response = await axios.post(`${baseUrl}/`, data, {
     headers: {
-      "Content-Type": "multipart/form-data",
       Authorization: `Bearer ${token}`,
+      // Don't set Content-Type manually for FormData - let browser set it with boundary
     },
   });
   return response.data;
 };
 
 export const updateAd = async (adId, formData, token) => {
-  const response = await axios.put(`${baseUrl}/${adId}`, formData, {
+  // Convert to FormData if it's not already
+  let data = formData;
+  if (!(formData instanceof FormData)) {
+    data = new FormData();
+    Object.keys(formData).forEach((key) => {
+      if (formData[key] !== null && formData[key] !== undefined) {
+        data.append(key, formData[key]);
+      }
+    });
+  }
+
+  const response = await axios.put(`${baseUrl}/${adId}`, data, {
     headers: {
-      "Content-Type": "multipart/form-data",
       Authorization: `Bearer ${token}`,
+      // Don't set Content-Type manually for FormData - let browser set it with boundary
     },
   });
   return response.data;

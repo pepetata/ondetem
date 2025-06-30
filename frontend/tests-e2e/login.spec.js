@@ -23,10 +23,8 @@ test.describe("Login Form - Invalid Credentials", () => {
     await page.getByLabel("Senha").fill(TEST_USER.password);
     await page.getByRole("button", { name: /Entrar/i }).click();
 
-    // Expect notification with "Credenciais inválidas"
-    await expect(
-      page.getByText(/Credenciais inválidas/i).first()
-    ).toBeVisible();
+    // Expect notification with "Invalid credentials"
+    await expect(page.getByText(/Invalid credentials/i).first()).toBeVisible();
     // Optionally, ensure we are still on the login page
     await expect(page).toHaveURL(/\/login$/);
   });
@@ -37,10 +35,8 @@ test.describe("Login Form - Invalid Credentials", () => {
     await page.getByLabel("Senha").fill("wrongpassword");
     await page.getByRole("button", { name: /Entrar/i }).click();
 
-    // Expect notification with "Credenciais inválidas"
-    await expect(
-      page.getByText(/Credenciais inválidas/i).first()
-    ).toBeVisible();
+    // Expect notification with "Invalid credentials"
+    await expect(page.getByText(/Invalid credentials/i).first()).toBeVisible();
     // Optionally, ensure we are still on the login page
     await expect(page).toHaveURL(/\/login$/);
   });

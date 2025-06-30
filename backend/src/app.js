@@ -24,7 +24,19 @@ const app = express();
 // Apply comprehensive security middleware FIRST
 SecurityMiddleware.applyAll(app);
 
-app.use(cors());
+// Configure CORS with explicit origins for testing
+const corsOptions = {
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+  ],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: "10mb" })); // Limit payload size
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(middleware.requestLogger);

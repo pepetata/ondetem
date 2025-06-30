@@ -7,7 +7,7 @@ console.log("🔧 Setting up test environment...");
 
 try {
   // Change to backend directory
-  const backendDir = path.join(__dirname, "..", "..", "backend");
+  const backendDir = path.join(__dirname, "..", "..", "..", "backend");
 
   console.log("📂 Navigating to backend directory...");
   process.chdir(backendDir);
@@ -15,9 +15,7 @@ try {
   // Run database initialization for test environment
   console.log("🗄️ Initializing test database...");
   const isWindows = process.platform === "win32";
-  const nodeCommand = isWindows
-    ? "cross-env NODE_ENV=test node scripts/init_test_db.js"
-    : "NODE_ENV=test node scripts/init_test_db.js";
+  const nodeCommand = "node scripts/init_test_db.js";
 
   execSync(nodeCommand, {
     stdio: "inherit",

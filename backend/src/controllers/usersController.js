@@ -38,8 +38,20 @@ exports.getUserById = async (req, res) => {
     // Validate UUID format (allow test IDs in test environment)
     if (process.env.NODE_ENV !== "test" && !isValidUUID(userId)) {
       logger.warn(`Invalid user ID format: ${userId}`);
-      return res.status(400).json({
-        error: "Invalid user ID",
+      return res.status(404).json({
+        error: "User not found",
+        message:
+          "O usuário solicitado não foi encontrado. Verifique se o ID está correto.",
+      });
+    }
+
+    // Handle non-UUID IDs (like 999999) gracefully
+    if (!isValidUUID(userId)) {
+      logger.warn(`Invalid UUID format: ${userId}`);
+      return res.status(404).json({
+        error: "User not found",
+        message:
+          "O usuário solicitado não foi encontrado. Verifique se o ID está correto.",
       });
     }
 
@@ -48,6 +60,8 @@ exports.getUserById = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         error: "User not found",
+        message:
+          "O usuário solicitado não foi encontrado. Verifique se o ID está correto.",
       });
     }
 
@@ -178,8 +192,18 @@ exports.updateUser = async (req, res) => {
     const userId = XSSProtection.sanitizeUserInput(req.params.id);
     const sanitizedBody = XSSProtection.sanitizeObject(req.body);
 
-    // pw can be empty if updating other fields
-    // Clone userFormFields and set password.required = false
+    // Check if user is authenticated
+    if (!req.user) {
+      logger.warn("User not authenticated for update");
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    // Users can only update their own profile
+    if (req.user.id !== userId) {
+      logger.warn(`User ${req.user.id} attempted to update user ${userId}`);
+      return res.status(403).json({ error: "Access denied" });
+    }
+
     console.log(`updateUser`);
 
     if (!req.params.id) {
@@ -223,7 +247,7 @@ exports.updateUser = async (req, res) => {
 
     console.log(`User updated:`, updatedUser);
     logger.info(`User updated: ${email}`);
-    res.status(200).json({ message: "User updated successfully" });
+    res.status(200).json(updatedUser);
   } catch (err) {
     console.log(`Error updating user:`, err);
     logger.error(`Error updating user: ${err.message}`);
@@ -234,6 +258,18 @@ exports.updateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   try {
     const userId = XSSProtection.sanitizeUserInput(req.params.id);
+
+    // Check if user is authenticated
+    if (!req.user) {
+      logger.warn("User not authenticated for deletion");
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    // Users can only delete their own profile
+    if (req.user.id !== userId) {
+      logger.warn(`User ${req.user.id} attempted to delete user ${userId}`);
+      return res.status(403).json({ error: "Access denied" });
+    }
 
     if (!userId) {
       logger.warn("User ID not provided for deletion");

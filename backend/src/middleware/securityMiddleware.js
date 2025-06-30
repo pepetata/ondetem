@@ -65,11 +65,15 @@ class SecurityMiddleware {
     app.use("/api", this.sanitizeBody());
 
     // Rate limiting for sensitive endpoints
+    // Be more lenient in test environment
+    const isTestEnv =
+      process.env.NODE_ENV === "test" || process.env.E2E === "true";
+
     app.use(
       "/api/auth",
       this.rateLimit({
         windowMs: 15 * 60 * 1000, // 15 minutes
-        maxRequests: 5,
+        maxRequests: isTestEnv ? 1000 : 5, // Allow many more requests in test
         message: "Muitas tentativas de login. Tente novamente em 15 minutos.",
       })
     );
@@ -78,7 +82,7 @@ class SecurityMiddleware {
       "/api/users",
       this.rateLimit({
         windowMs: 10 * 60 * 1000, // 10 minutes
-        maxRequests: 20,
+        maxRequests: isTestEnv ? 1000 : 20, // Allow many more requests in test
         message: "Muitas operações de usuário. Tente novamente em 10 minutos.",
       })
     );

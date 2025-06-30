@@ -62,13 +62,19 @@ async function globalSetup() {
     const frontendPath = path.join(__dirname, "..");
 
     try {
-      await execAsync("node scripts/seed-minimal-data.js", {
+      const result = await execAsync("node scripts/seed-minimal-data.js", {
         cwd: frontendPath,
         env: { ...process.env, NODE_ENV: "test" },
       });
       console.log("✅ Database seeded with minimal test data");
+      console.log("Seeding output:", result.stdout);
+      if (result.stderr) {
+        console.log("Seeding stderr:", result.stderr);
+      }
     } catch (error) {
-      console.log("⚠️ Seeding warning:", error.message);
+      console.log("⚠️ Seeding error:", error.message);
+      console.log("Seeding stdout:", error.stdout);
+      console.log("Seeding stderr:", error.stderr);
       // Continue even if seeding has warnings
     }
 

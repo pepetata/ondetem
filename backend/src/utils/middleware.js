@@ -23,17 +23,22 @@ const tokenExtractor = (request, response, next) => {
 };
 
 const userExtractor = async (request, response, next) => {
-  // console.log(`---- middleware userExtractor`, request.token);
+  console.log(`---- middleware userExtractor token:`, request.token);
   try {
     if (request.token) {
       const decodedToken = jwt.verify(request.token, process.env.JWT_SECRET);
-      // console.log(`---- middleware userExtractor decodedToken`, decodedToken);
+      console.log(`---- middleware userExtractor decodedToken:`, decodedToken);
       if (decodedToken.userId) {
         const user = await User.getUserById(decodedToken.userId);
-        // console.log(`---- middleware userExtractor user`, user);
+        console.log(
+          `---- middleware userExtractor user:`,
+          user ? `Found user ${user.email}` : "User not found"
+        );
 
         request.user = user;
       }
+    } else {
+      console.log(`---- middleware userExtractor: No token provided`);
     }
   } catch (error) {
     console.error(`Error in userExtractor: ${error}`);

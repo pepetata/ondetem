@@ -171,36 +171,52 @@ const testAds = [
 
 async function createTestUser(userData) {
   try {
+    console.log(`  Creating user: ${userData.email}`);
     const response = await appApi.post("/users", userData);
+    console.log(`  ✅ User created: ${userData.email}`);
     return response.data;
   } catch (error) {
     if (error.response?.status === 409) {
       // User already exists, try to get user info by logging in
       try {
+        console.log(`  User already exists, logging in: ${userData.email}`);
         const loginResponse = await appApi.post("/auth/login", {
           email: userData.email,
           password: userData.password,
         });
+        console.log(`  ✅ User login successful: ${userData.email}`);
         return { id: "existing", token: loginResponse.data.token };
       } catch (loginError) {
-        console.log(`⚠️ User ${userData.email} exists but login failed`);
+        console.log(
+          `⚠️ User ${userData.email} exists but login failed:`,
+          loginError.response?.data || loginError.message
+        );
         return null;
       }
     }
+    console.error(
+      `❌ Error creating user ${userData.email}:`,
+      error.response?.data || error.message
+    );
     throw error;
   }
 }
 
 async function createTestAd(adData, userToken) {
   try {
-    const response = await appApi.post("/ads", adData, {
+    console.log(`    Creating ad: ${adData.title}`);
+
+    const response = await appApi.post("/ads/test-seed", adData, {
       headers: { Authorization: `Bearer ${userToken}` },
     });
+    console.log(`    ✅ Ad created with ID: ${response.data.adId}`);
     return response.data;
   } catch (error) {
+    const errorDetails = error.response?.data || error.message;
+    const statusCode = error.response?.status;
     console.error(
-      `Error creating ad ${adData.title}:`,
-      error.response?.data?.error || error.message
+      `❌ Error creating ad ${adData.title} (${statusCode}):`,
+      JSON.stringify(errorDetails, null, 2)
     );
     return null;
   }

@@ -182,6 +182,20 @@ exports.createAd = async (adData) => {
     user_id,
   } = adData;
 
+  // Handle integer fields - convert empty strings to null, and strings to integers
+  const cleanStreetnumber =
+    streetnumber === "" || streetnumber === undefined ? null : streetnumber;
+  const cleanRadius =
+    radius === "" || radius === undefined || radius === "0"
+      ? null
+      : parseInt(radius, 10);
+
+  // Handle date fields - convert empty strings to null
+  const cleanStartdate =
+    startdate === "" || startdate === undefined ? null : startdate;
+  const cleanFinishdate =
+    finishdate === "" || finishdate === undefined ? null : finishdate;
+
   const result = await safePool.safeQuery(
     `INSERT INTO ads (
       title, short, description, tags, zipcode, city, state, address1, streetnumber, address2,
@@ -199,16 +213,16 @@ exports.createAd = async (adData) => {
       city,
       state,
       address1,
-      streetnumber,
+      cleanStreetnumber,
       address2,
-      radius,
+      cleanRadius,
       phone1,
       phone2,
       whatsapp,
       email,
       website,
-      startdate,
-      finishdate,
+      cleanStartdate,
+      cleanFinishdate,
       timetext,
       user_id,
     ],

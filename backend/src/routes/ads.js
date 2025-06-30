@@ -45,6 +45,16 @@ router.post(
   adsController.createAd
 );
 
+// Test-only endpoint for seeding data without file uploads
+if (process.env.NODE_ENV === "test") {
+  router.post(
+    "/test-seed",
+    middleware.tokenExtractor,
+    middleware.userExtractor,
+    adsController.createAdForTesting
+  );
+}
+
 router.put(
   "/:id",
   upload.single("image"),
