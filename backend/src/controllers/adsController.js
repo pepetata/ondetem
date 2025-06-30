@@ -62,6 +62,16 @@ exports.getAdById = async (req, res) => {
       });
     }
 
+    // Validate UUID format
+    if (!isValidUUID(adId)) {
+      logger.warn(`Invalid ad ID format: ${adId}`);
+      return res.status(404).json({
+        error: "Ad not found",
+        message:
+          "O anúncio solicitado não foi encontrado. Verifique se o ID está correto.",
+      });
+    }
+
     const ad = await adsModel.getAdById(adId);
 
     if (!ad) {

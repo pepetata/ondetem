@@ -35,19 +35,9 @@ exports.getUserById = async (req, res) => {
   try {
     const userId = XSSProtection.sanitizeUserInput(req.params.id);
 
-    // Validate UUID format (allow test IDs in test environment)
-    if (process.env.NODE_ENV !== "test" && !isValidUUID(userId)) {
+    // Validate UUID format
+    if (!isValidUUID(userId)) {
       logger.warn(`Invalid user ID format: ${userId}`);
-      return res.status(404).json({
-        error: "User not found",
-        message:
-          "O usuário solicitado não foi encontrado. Verifique se o ID está correto.",
-      });
-    }
-
-    // Handle non-UUID IDs gracefully (only in non-test environment)
-    if (process.env.NODE_ENV !== "test" && !isValidUUID(userId)) {
-      logger.warn(`Invalid UUID format: ${userId}`);
       return res.status(404).json({
         error: "User not found",
         message:
