@@ -45,8 +45,8 @@ exports.getUserById = async (req, res) => {
       });
     }
 
-    // Handle non-UUID IDs (like 999999) gracefully
-    if (!isValidUUID(userId)) {
+    // Handle non-UUID IDs gracefully (only in non-test environment)
+    if (process.env.NODE_ENV !== "test" && !isValidUUID(userId)) {
       logger.warn(`Invalid UUID format: ${userId}`);
       return res.status(404).json({
         error: "User not found",

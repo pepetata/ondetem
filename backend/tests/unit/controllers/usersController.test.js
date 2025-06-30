@@ -53,7 +53,7 @@ describe("Users Controller", () => {
       file: null,
       headers: {},
       ip: "127.0.0.1",
-      user: { id: 1, email: "test@example.com" },
+      user: { id: "1", email: "test@example.com" },
     };
     res = {
       status: jest.fn().mockReturnThis(),
@@ -217,6 +217,8 @@ describe("Users Controller", () => {
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith({
         error: "User not found",
+        message:
+          "O usuário solicitado não foi encontrado. Verifique se o ID está correto.",
       });
     });
 
@@ -229,13 +231,15 @@ describe("Users Controller", () => {
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith({
         error: "User not found",
+        message:
+          "O usuário solicitado não foi encontrado. Verifique se o ID está correto.",
       });
     });
   });
 
   describe("updateUser", () => {
     beforeEach(() => {
-      req.params.id = "123";
+      req.params.id = "1"; // Match the authenticated user's id
       req.body = {
         fullName: "Updated Name",
         nickname: "updateduser",
@@ -245,18 +249,26 @@ describe("Users Controller", () => {
     it("should update user successfully", async () => {
       userModel.updateUser.mockResolvedValue(true);
       userModel.getUserById.mockResolvedValue({
-        id: "123",
+        id: "1",
         fullName: "Updated Name",
       });
 
       await usersController.updateUser(req, res, next);
 
-      expect(XSSProtection.sanitizeUserInput).toHaveBeenCalledWith("123");
+      expect(XSSProtection.sanitizeUserInput).toHaveBeenCalledWith("1");
       expect(XSSProtection.sanitizeObject).toHaveBeenCalledWith(req.body);
-      expect(userModel.updateUser).toHaveBeenCalledWith("123", req.body, null);
+      expect(userModel.updateUser).toHaveBeenCalledWith(
+        "1",
+        expect.objectContaining({
+          fullName: "Updated Name",
+          nickname: "updateduser",
+        }),
+        null
+      );
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
-        message: "User updated successfully",
+        id: "1",
+        fullName: "Updated Name",
       });
     });
 
@@ -280,15 +292,18 @@ describe("Users Controller", () => {
       req.file = mockFile;
       userModel.updateUser.mockResolvedValue(true);
       userModel.getUserById.mockResolvedValue({
-        id: "123",
+        id: "1",
         fullName: "Updated Name",
       });
 
       await usersController.updateUser(req, res, next);
 
       expect(userModel.updateUser).toHaveBeenCalledWith(
-        "123",
-        req.body,
+        "1",
+        expect.objectContaining({
+          fullName: "Updated Name",
+          nickname: "updateduser",
+        }),
         mockFile
       );
     });
@@ -297,7 +312,7 @@ describe("Users Controller", () => {
       req.body.password = "newpassword123";
       userModel.updateUser.mockResolvedValue(true);
       userModel.getUserById.mockResolvedValue({
-        id: "123",
+        id: "1",
         fullName: "Updated Name",
       });
 
@@ -305,7 +320,7 @@ describe("Users Controller", () => {
 
       expect(bcrypt.hash).toHaveBeenCalledWith("newpassword123", 10);
       expect(userModel.updateUser).toHaveBeenCalledWith(
-        "123",
+        "1",
         expect.objectContaining({
           password: "hashedPassword",
         }),
@@ -328,7 +343,7 @@ describe("Users Controller", () => {
 
   describe("deleteUser", () => {
     beforeEach(() => {
-      req.params.id = "123";
+      req.params.id = "1"; // Match the authenticated user's id
     });
 
     it("should delete user successfully", async () => {
@@ -336,8 +351,8 @@ describe("Users Controller", () => {
 
       await usersController.deleteUser(req, res, next);
 
-      expect(XSSProtection.sanitizeUserInput).toHaveBeenCalledWith("123");
-      expect(userModel.deleteUser).toHaveBeenCalledWith("123");
+      expect(XSSProtection.sanitizeUserInput).toHaveBeenCalledWith("1");
+      expect(userModel.deleteUser).toHaveBeenCalledWith("1");
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         message: "User deleted successfully",

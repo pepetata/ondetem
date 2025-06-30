@@ -80,7 +80,15 @@ describe("Ads Controller", () => {
 
     it("should create ad successfully with valid data", async () => {
       const mockAdId = 123;
+      const mockCreatedAd = {
+        id: mockAdId,
+        title: "Test Ad",
+        short: "Short description",
+        description: "Long description",
+        user_id: 1,
+      };
       adModel.createAd.mockResolvedValue(mockAdId);
+      adModel.getAdById.mockResolvedValue(mockCreatedAd);
 
       await adsController.createAd(req, res, next);
 
@@ -89,14 +97,21 @@ describe("Ads Controller", () => {
         expect.objectContaining({
           title: "Test Ad",
           short: "Short description",
-          userId: 1,
+          description: "Long description",
+          category: "test-category",
+          subcategory: "test-subcategory",
+          country: "BR",
+          state: "SP",
+          city: "São Paulo",
+          price: "100.00",
+          user_id: 1,
         }),
         []
       );
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
         message: "Ad created successfully",
-        adId: mockAdId,
+        ...mockCreatedAd,
       });
     });
 
@@ -193,6 +208,8 @@ describe("Ads Controller", () => {
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith({
         error: "Ad not found",
+        message:
+          "O anúncio solicitado não foi encontrado. Verifique se o ID está correto.",
       });
     });
 
