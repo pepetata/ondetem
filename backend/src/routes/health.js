@@ -288,7 +288,10 @@ router.post("/health/shutdown", async (req, res) => {
 
     // Give time for the response to be sent
     setTimeout(() => {
-      process.exit(0);
+      // Don't actually exit during tests
+      if (process.env.NODE_ENV !== "test") {
+        process.exit(0);
+      }
     }, 1000);
   } catch (error) {
     res.status(500).json({

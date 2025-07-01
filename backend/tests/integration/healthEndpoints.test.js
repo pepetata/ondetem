@@ -159,6 +159,6 @@ describe("Health Check Endpoints", () => {
       expect(response.body).toHaveProperty("message");
       expect(response.body).toHaveProperty("timestamp");
       expect(response.body.message).toContain("shutdown");
-    });
+    }, 10000); // Increase timeout to 10 seconds to allow for 5s grace period + response time
   });
 });
