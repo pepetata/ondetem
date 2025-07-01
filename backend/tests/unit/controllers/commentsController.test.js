@@ -1726,6 +1726,565 @@ describe("Comments Controller", () => {
           );
         });
       });
+
+      describe("Concurrent User Operations", () => {
+        it("should handle concurrent comment creation on same ad", async () => {
+          const req1 = {
+            body: { content: "First comment", ad_id: "ad-123" },
+            user: { id: "user-1", email: "user1@example.com" },
+          };
+          const req2 = {
+            body: { content: "Second comment", ad_id: "ad-123" },
+            user: { id: "user-2", email: "user2@example.com" },
+          };
+          const res1 = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+          const res2 = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          // Mock both comments being created successfully
+          commentModel.createComment
+            .mockResolvedValueOnce("comment-1")
+            .mockResolvedValueOnce("comment-2");
+          commentModel.findCommentById
+            .mockResolvedValueOnce({
+              id: "comment-1",
+              content: "First comment",
+              ad_id: "ad-123",
+              user_id: "user-1",
+            })
+            .mockResolvedValueOnce({
+              id: "comment-2",
+              content: "Second comment",
+              ad_id: "ad-123",
+              user_id: "user-2",
+            });
+
+          // Simulate concurrent operations
+          await Promise.all([
+            commentsController.createComment(req1, res1),
+            commentsController.createComment(req2, res2),
+          ]);
+
+          expect(res1.status).toHaveBeenCalledWith(201);
+          expect(res2.status).toHaveBeenCalledWith(201);
+          expect(commentModel.createComment).toHaveBeenCalledTimes(2);
+        });
+
+        it("should handle concurrent comment updates by different users", async () => {
+          const mockComment1 = {
+            id: "comment-1",
+            content: "Original comment 1",
+            ad_id: "ad-123",
+            user_id: "user-1",
+          };
+          const mockComment2 = {
+            id: "comment-2",
+            content: "Original comment 2",
+            ad_id: "ad-123",
+            user_id: "user-2",
+          };
+
+          const req1 = {
+            params: { commentId: "comment-1" },
+            body: { content: "Updated comment 1" },
+            user: { id: "user-1", email: "user1@example.com" },
+          };
+          const req2 = {
+            params: { commentId: "comment-2" },
+            body: { content: "Updated comment 2" },
+            user: { id: "user-2", email: "user2@example.com" },
+          };
+          const res1 = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+          const res2 = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          commentModel.findCommentById
+            .mockResolvedValueOnce(mockComment1)
+            .mockResolvedValueOnce(mockComment2);
+          commentModel.updateComment
+            .mockResolvedValueOnce(true)
+            .mockResolvedValueOnce(true);
+
+          // Simulate concurrent updates
+          await Promise.all([
+            commentsController.updateComment(req1, res1),
+            commentsController.updateComment(req2, res2),
+          ]);
+
+          expect(res1.status).toHaveBeenCalledWith(200);
+          expect(res2.status).toHaveBeenCalledWith(200);
+          expect(commentModel.updateComment).toHaveBeenCalledTimes(2);
+        });
+
+        it("should handle concurrent read operations on same ad", async () => {
+          const mockComments = [
+            { id: "comment-1", content: "Comment 1", ad_id: "ad-123" },
+            { id: "comment-2", content: "Comment 2", ad_id: "ad-123" },
+          ];
+
+          const req1 = { params: { adId: "ad-123" }, query: {} };
+          const req2 = { params: { adId: "ad-123" }, query: {} };
+          const res1 = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+          const res2 = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          commentModel.getCommentsByAdId.mockResolvedValue(mockComments);
+
+          // Simulate concurrent read operations
+          await Promise.all([
+            commentsController.getCommentsByAdId(req1, res1),
+            commentsController.getCommentsByAdId(req2, res2),
+          ]);
+
+          expect(res1.status).toHaveBeenCalledWith(200);
+          expect(res2.status).toHaveBeenCalledWith(200);
+          expect(commentModel.getCommentsByAdId).toHaveBeenCalledTimes(2);
+        });
+
+        it("should handle concurrent comment deletion attempts", async () => {
+          const mockComment = {
+            id: "comment-123",
+            content: "Comment to delete",
+            ad_id: "ad-123",
+            user_id: "user-123",
+          };
+
+          const req1 = {
+            params: { commentId: "comment-123" },
+            user: { id: "user-123", email: "user@example.com" },
+          };
+          const req2 = {
+            params: { commentId: "comment-123" },
+            user: { id: "user-123", email: "user@example.com" },
+          };
+          const res1 = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+          const res2 = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          commentModel.findCommentById.mockResolvedValue(mockComment);
+          commentModel.deleteComment
+            .mockResolvedValueOnce(true)
+            .mockResolvedValueOnce(false); // Second deletion fails as comment already deleted
+
+          // Simulate concurrent deletion attempts
+          await Promise.all([
+            commentsController.deleteComment(req1, res1),
+            commentsController.deleteComment(req2, res2),
+          ]);
+
+          expect(res1.status).toHaveBeenCalledWith(200);
+          expect(res2.status).toHaveBeenCalledWith(404); // Second deletion fails
+        });
+
+        it("should handle race condition in comment creation with database constraints", async () => {
+          req.body = { content: "Test comment", ad_id: "ad-123" };
+
+          // Mock database constraint violation (e.g., duplicate key)
+          const constraintError = new Error("Duplicate key violation");
+          constraintError.code = "23505"; // PostgreSQL unique violation code
+          commentModel.createComment.mockRejectedValue(constraintError);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should handle concurrent access with optimistic locking conflicts", async () => {
+          const mockComment = {
+            id: "comment-123",
+            content: "Original content",
+            ad_id: "ad-123",
+            user_id: "user-123",
+            version: 1,
+          };
+
+          req.params = { commentId: "comment-123" };
+          req.body = { content: "Updated content" };
+
+          commentModel.findCommentById.mockResolvedValue(mockComment);
+
+          // Mock optimistic locking conflict
+          const lockingError = new Error(
+            "Version conflict - record was modified"
+          );
+          commentModel.updateComment.mockRejectedValue(lockingError);
+
+          await commentsController.updateComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to update comment",
+          });
+        });
+
+        it("should handle concurrent file uploads with same filename", async () => {
+          const req1 = {
+            body: { content: "Comment with file 1", ad_id: "ad-123" },
+            user: { id: "user-1", email: "user1@example.com" },
+            file: {
+              filename: "image.jpg",
+              size: 1024,
+              mimetype: "image/jpeg",
+              path: "/tmp/image.jpg",
+            },
+          };
+          const req2 = {
+            body: { content: "Comment with file 2", ad_id: "ad-123" },
+            user: { id: "user-2", email: "user2@example.com" },
+            file: {
+              filename: "image.jpg",
+              size: 1024,
+              mimetype: "image/jpeg",
+              path: "/tmp/image.jpg",
+            },
+          };
+          const res1 = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+          const res2 = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          // Mock file name conflict resolution
+          commentModel.createComment
+            .mockResolvedValueOnce("comment-1")
+            .mockRejectedValueOnce(new Error("File already exists"));
+          commentModel.findCommentById.mockResolvedValueOnce({
+            id: "comment-1",
+            content: "Comment with file 1",
+            ad_id: "ad-123",
+            user_id: "user-1",
+            attachment_url: "/uploads/image.jpg",
+          });
+
+          // Simulate concurrent file uploads
+          await Promise.all([
+            commentsController.createComment(req1, res1),
+            commentsController.createComment(req2, res2),
+          ]);
+
+          expect(res1.status).toHaveBeenCalledWith(201);
+          expect(res2.status).toHaveBeenCalledWith(500);
+        });
+
+        it("should handle concurrent user comment retrieval", async () => {
+          const mockComments = [
+            { id: "comment-1", content: "User comment 1", user_id: "user-123" },
+            { id: "comment-2", content: "User comment 2", user_id: "user-123" },
+          ];
+
+          const req1 = { user: { id: "user-123", email: "user@example.com" } };
+          const req2 = { user: { id: "user-123", email: "user@example.com" } };
+          const res1 = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+          const res2 = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          commentModel.getByUserId.mockResolvedValue(mockComments);
+
+          // Simulate concurrent user comment retrieval
+          await Promise.all([
+            commentsController.getUserComments(req1, res1),
+            commentsController.getUserComments(req2, res2),
+          ]);
+
+          expect(res1.status).toHaveBeenCalledWith(200);
+          expect(res2.status).toHaveBeenCalledWith(200);
+          expect(commentModel.getByUserId).toHaveBeenCalledTimes(2);
+        });
+
+        it("should handle concurrent comment count requests", async () => {
+          const req1 = { params: { ad_id: "ad-123" } };
+          const req2 = { params: { ad_id: "ad-123" } };
+          const res1 = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+          const res2 = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          commentModel.getCountByAdId.mockResolvedValue(5);
+
+          // Simulate concurrent count requests
+          await Promise.all([
+            commentsController.getCommentsCount(req1, res1),
+            commentsController.getCommentsCount(req2, res2),
+          ]);
+
+          expect(res1.status).toHaveBeenCalledWith(200);
+          expect(res2.status).toHaveBeenCalledWith(200);
+          expect(res1.json).toHaveBeenCalledWith({ count: 5 });
+          expect(res2.json).toHaveBeenCalledWith({ count: 5 });
+        });
+
+        it("should handle mixed concurrent operations (create, read, update, delete)", async () => {
+          const createReq = {
+            body: { content: "New comment", ad_id: "ad-123" },
+            user: { id: "user-1", email: "user1@example.com" },
+          };
+          const readReq = { params: { adId: "ad-123" }, query: {} };
+          const updateReq = {
+            params: { commentId: "comment-456" },
+            body: { content: "Updated content" },
+            user: { id: "user-2", email: "user2@example.com" },
+          };
+          const deleteReq = {
+            params: { commentId: "comment-789" },
+            user: { id: "user-3", email: "user3@example.com" },
+          };
+
+          const createRes = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+          const readRes = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+          const updateRes = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+          const deleteRes = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          // Mock all operations with proper sequencing for concurrent calls
+          commentModel.createComment.mockResolvedValue("comment-new");
+
+          // For concurrent operations, we need to mock findCommentById for each specific call
+          commentModel.findCommentById.mockImplementation((commentId) => {
+            if (commentId === "comment-new") {
+              return Promise.resolve({
+                id: "comment-new",
+                content: "New comment",
+                ad_id: "ad-123",
+                user_id: "user-1",
+              });
+            }
+            if (commentId === "comment-456") {
+              return Promise.resolve({
+                id: "comment-456",
+                content: "Original content",
+                ad_id: "ad-123",
+                user_id: "user-2",
+              });
+            }
+            if (commentId === "comment-789") {
+              return Promise.resolve({
+                id: "comment-789",
+                content: "Content to delete",
+                ad_id: "ad-123",
+                user_id: "user-3",
+              });
+            }
+            return Promise.resolve(null);
+          });
+
+          commentModel.getCommentsByAdId.mockResolvedValue([
+            { id: "comment-1", content: "Existing comment" },
+          ]);
+          commentModel.updateComment.mockResolvedValue(true);
+          commentModel.deleteComment.mockResolvedValue(true);
+
+          // Simulate mixed concurrent operations
+          await Promise.all([
+            commentsController.createComment(createReq, createRes),
+            commentsController.getCommentsByAdId(readReq, readRes),
+            commentsController.updateComment(updateReq, updateRes),
+            commentsController.deleteComment(deleteReq, deleteRes),
+          ]);
+
+          expect(createRes.status).toHaveBeenCalledWith(201);
+          expect(readRes.status).toHaveBeenCalledWith(200);
+          expect(updateRes.status).toHaveBeenCalledWith(200);
+          expect(deleteRes.status).toHaveBeenCalledWith(200);
+        });
+
+        it("should handle database connection pool exhaustion during concurrent operations", async () => {
+          const requests = Array.from({ length: 5 }, (_, i) => ({
+            body: { content: `Comment ${i + 1}`, ad_id: "ad-123" },
+            user: { id: `user-${i + 1}`, email: `user${i + 1}@example.com` },
+          }));
+          const responses = Array.from({ length: 5 }, () => ({
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          }));
+
+          // Mock connection pool exhaustion for some requests
+          commentModel.createComment
+            .mockResolvedValueOnce("comment-1")
+            .mockResolvedValueOnce("comment-2")
+            .mockRejectedValueOnce(new Error("Connection pool exhausted"))
+            .mockRejectedValueOnce(new Error("Connection pool exhausted"))
+            .mockResolvedValueOnce("comment-5");
+
+          commentModel.findCommentById
+            .mockResolvedValueOnce({
+              id: "comment-1",
+              content: "Comment 1",
+              ad_id: "ad-123",
+              user_id: "user-1",
+            })
+            .mockResolvedValueOnce({
+              id: "comment-2",
+              content: "Comment 2",
+              ad_id: "ad-123",
+              user_id: "user-2",
+            })
+            .mockResolvedValueOnce({
+              id: "comment-5",
+              content: "Comment 5",
+              ad_id: "ad-123",
+              user_id: "user-5",
+            });
+
+          // Simulate high concurrency
+          await Promise.all(
+            requests.map((req, i) =>
+              commentsController.createComment(req, responses[i])
+            )
+          );
+
+          expect(responses[0].status).toHaveBeenCalledWith(201);
+          expect(responses[1].status).toHaveBeenCalledWith(201);
+          expect(responses[2].status).toHaveBeenCalledWith(500);
+          expect(responses[3].status).toHaveBeenCalledWith(500);
+          expect(responses[4].status).toHaveBeenCalledWith(201);
+        });
+
+        it("should handle concurrent operations with proper error isolation", async () => {
+          const successReq = {
+            body: { content: "Success comment", ad_id: "ad-123" },
+            user: { id: "user-success", email: "success@example.com" },
+          };
+          const failReq = {
+            body: { content: "Fail comment", ad_id: "ad-123" },
+            user: { id: "user-fail", email: "fail@example.com" },
+          };
+          const successRes = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+          const failRes = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          commentModel.createComment
+            .mockResolvedValueOnce("comment-success")
+            .mockRejectedValueOnce(new Error("Specific database error"));
+          commentModel.findCommentById.mockResolvedValueOnce({
+            id: "comment-success",
+            content: "Success comment",
+            ad_id: "ad-123",
+            user_id: "user-success",
+          });
+
+          // Simulate concurrent operations with mixed success/failure
+          await Promise.all([
+            commentsController.createComment(successReq, successRes),
+            commentsController.createComment(failReq, failRes),
+          ]);
+
+          // Success operation should complete normally
+          expect(successRes.status).toHaveBeenCalledWith(201);
+          expect(successRes.json).toHaveBeenCalledWith({
+            message: "Comment created successfully",
+            comment: expect.objectContaining({
+              id: "comment-success",
+            }),
+          });
+
+          // Failed operation should not affect the successful one
+          expect(failRes.status).toHaveBeenCalledWith(500);
+          expect(failRes.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should log concurrent operation metrics appropriately", async () => {
+          const logger = require("../../../src/utils/logger");
+
+          const req1 = {
+            body: { content: "Concurrent comment 1", ad_id: "ad-123" },
+            user: { id: "user-1", email: "user1@example.com" },
+          };
+          const req2 = {
+            body: { content: "Concurrent comment 2", ad_id: "ad-123" },
+            user: { id: "user-2", email: "user2@example.com" },
+          };
+          const res1 = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+          const res2 = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          commentModel.createComment
+            .mockResolvedValueOnce("comment-1")
+            .mockResolvedValueOnce("comment-2");
+          commentModel.findCommentById
+            .mockResolvedValueOnce({
+              id: "comment-1",
+              content: "Concurrent comment 1",
+              ad_id: "ad-123",
+              user_id: "user-1",
+            })
+            .mockResolvedValueOnce({
+              id: "comment-2",
+              content: "Concurrent comment 2",
+              ad_id: "ad-123",
+              user_id: "user-2",
+            });
+
+          await Promise.all([
+            commentsController.createComment(req1, res1),
+            commentsController.createComment(req2, res2),
+          ]);
+
+          expect(logger.info).toHaveBeenCalledWith(
+            "Comment created: comment-1"
+          );
+          expect(logger.info).toHaveBeenCalledWith(
+            "Comment created: comment-2"
+          );
+        });
+      });
     });
   });
 });
