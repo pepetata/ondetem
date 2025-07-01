@@ -2286,5 +2286,789 @@ describe("Comments Controller", () => {
         });
       });
     });
+
+    // Complex Business Logic Path Tests
+    describe("Complex Business Logic Paths", () => {
+      describe("Content Sanitization and Validation Flow", () => {
+        it("should handle content that becomes empty after XSS sanitization in createComment", async () => {
+          const { XSSProtection } = require("../../../src/utils/xssProtection");
+          req.body = {
+            content: "<script>alert('xss')</script>",
+            ad_id: "ad-123",
+          };
+
+          XSSProtection.sanitizeUserInput.mockReturnValue("");
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(400);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Comment content is required",
+          });
+        });
+
+        it("should handle content that becomes whitespace-only after XSS sanitization in createComment", async () => {
+          const { XSSProtection } = require("../../../src/utils/xssProtection");
+          req.body = {
+            content: "<div>   </div>",
+            ad_id: "ad-123",
+          };
+
+          XSSProtection.sanitizeUserInput.mockReturnValue("   ");
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(400);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Comment content is required",
+          });
+        });
+
+        it("should handle content that reduces to valid text after sanitization in createComment", async () => {
+          const { XSSProtection } = require("../../../src/utils/xssProtection");
+          const mockComment = {
+            id: "comment-123",
+            content: "Clean content",
+            ad_id: "ad-123",
+            user_id: "user-123",
+          };
+
+          req.body = {
+            content: "<script>alert('xss')</script>Clean content",
+            ad_id: "ad-123",
+          };
+
+          XSSProtection.sanitizeUserInput.mockReturnValue("Clean content");
+          commentModel.createComment.mockResolvedValue("comment-123");
+          commentModel.findCommentById.mockResolvedValue(mockComment);
+
+          await commentsController.createComment(req, res);
+
+          expect(commentModel.createComment).toHaveBeenCalledWith({
+            content: "Clean content",
+            ad_id: "ad-123",
+            user_id: "user-123",
+          });
+          expect(res.status).toHaveBeenCalledWith(201);
+        });
+
+        it("should handle pre-sanitization length check vs post-sanitization emptiness", async () => {
+          const { XSSProtection } = require("../../../src/utils/xssProtection");
+          req.body = {
+            content: "a".repeat(999) + "<script>alert('xss')</script>",
+            ad_id: "ad-123",
+          };
+
+          // Content is over 1000 chars, so length check should fail first
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(400);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Comment content is too long",
+          });
+        });
+
+        it("should handle updateComment content sanitization flow", async () => {
+          const { XSSProtection } = require("../../../src/utils/xssProtection");
+          req.params = { commentId: "comment-123" };
+          req.body = { content: "<script>alert('xss')</script>Clean update" };
+
+          const existingComment = {
+            id: "comment-123",
+            content: "Original content",
+            user_id: "user-123",
+          };
+
+          isValidUUID.mockReturnValue(true);
+          commentModel.findCommentById.mockResolvedValue(existingComment);
+          XSSProtection.sanitizeUserInput.mockReturnValue("Clean update");
+          commentModel.updateComment.mockResolvedValue(true);
+
+          await commentsController.updateComment(req, res);
+
+          expect(XSSProtection.sanitizeUserInput).toHaveBeenCalledWith(
+            "<script>alert('xss')</script>Clean update",
+            {
+              maxLength: 1000,
+              allowHTML: false,
+            }
+          );
+          expect(commentModel.updateComment).toHaveBeenCalledWith(
+            "comment-123",
+            {
+              content: "Clean update",
+            }
+          );
+          expect(res.status).toHaveBeenCalledWith(200);
+        });
+      });
+
+      describe("Pagination Logic and Edge Cases", () => {
+        it("should handle page-based pagination with valid page number", async () => {
+          req.params = { adId: "ad-123" };
+          req.query = { page: "3", limit: "5" };
+
+          const mockComments = [
+            { id: "comment-1", content: "Comment 1" },
+            { id: "comment-2", content: "Comment 2" },
+          ];
+
+          isValidUUID.mockReturnValue(true);
+          commentModel.getCommentsByAdId.mockResolvedValue(mockComments);
+
+          await commentsController.getCommentsByAdId(req, res);
+
+          // Page 3 with limit 5 should have offset 10 (3-1)*5
+          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
+            "ad-123",
+            5,
+            10
+          );
+          expect(res.status).toHaveBeenCalledWith(200);
+        });
+
+        it("should handle page-based pagination with invalid page defaulting to 1", async () => {
+          req.params = { adId: "ad-123" };
+          req.query = { page: "invalid", limit: "5" };
+
+          const mockComments = [];
+
+          isValidUUID.mockReturnValue(true);
+          commentModel.getCommentsByAdId.mockResolvedValue(mockComments);
+
+          await commentsController.getCommentsByAdId(req, res);
+
+          // Invalid page defaults to 1, so offset should be 0
+          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
+            "ad-123",
+            5,
+            0
+          );
+          expect(res.status).toHaveBeenCalledWith(200);
+        });
+
+        it("should prioritize page-based pagination over offset", async () => {
+          req.params = { adId: "ad-123" };
+          req.query = { page: "2", offset: "50", limit: "10" };
+
+          const mockComments = [];
+
+          isValidUUID.mockReturnValue(true);
+          commentModel.getCommentsByAdId.mockResolvedValue(mockComments);
+
+          await commentsController.getCommentsByAdId(req, res);
+
+          // Page 2 with limit 10 should override offset and use 10
+          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
+            "ad-123",
+            10,
+            10
+          );
+        });
+
+        it("should handle zero page gracefully", async () => {
+          req.params = { adId: "ad-123" };
+          req.query = { page: "0", limit: "10" };
+
+          const mockComments = [];
+
+          isValidUUID.mockReturnValue(true);
+          commentModel.getCommentsByAdId.mockResolvedValue(mockComments);
+
+          await commentsController.getCommentsByAdId(req, res);
+
+          // Page 0 defaults to 1, so offset should be 0
+          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
+            "ad-123",
+            10,
+            0
+          );
+        });
+
+        it("should handle negative page gracefully", async () => {
+          req.params = { adId: "ad-123" };
+          req.query = { page: "-5", limit: "10" };
+
+          const mockComments = [];
+
+          isValidUUID.mockReturnValue(true);
+          commentModel.getCommentsByAdId.mockResolvedValue(mockComments);
+
+          await commentsController.getCommentsByAdId(req, res);
+
+          // Negative page parsed as -5, so offset becomes (-5-1)*10 = -60
+          // But the controller doesn't guard against negative offset
+          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
+            "ad-123",
+            10,
+            -60
+          );
+        });
+
+        it("should handle large page numbers without overflow", async () => {
+          req.params = { adId: "ad-123" };
+          req.query = { page: "999999", limit: "10" };
+
+          const mockComments = [];
+
+          isValidUUID.mockReturnValue(true);
+          commentModel.getCommentsByAdId.mockResolvedValue(mockComments);
+
+          await commentsController.getCommentsByAdId(req, res);
+
+          // Large page should calculate correct offset
+          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
+            "ad-123",
+            10,
+            9999980
+          );
+        });
+      });
+
+      describe("UUID Validation and Test Environment Logic", () => {
+        it("should allow test IDs in test environment for getCommentsByAdId", async () => {
+          process.env.NODE_ENV = "test";
+          req.params = { adId: "test-ad-123" };
+
+          const mockComments = [];
+
+          isValidUUID.mockReturnValue(false);
+          commentModel.getCommentsByAdId.mockResolvedValue(mockComments);
+
+          await commentsController.getCommentsByAdId(req, res);
+
+          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
+            "test-ad-123",
+            10,
+            0
+          );
+          expect(res.status).toHaveBeenCalledWith(200);
+        });
+
+        it("should allow ad- prefixed IDs in test environment", async () => {
+          process.env.NODE_ENV = "test";
+          req.params = { adId: "ad-special-123" };
+
+          const mockComments = [];
+
+          isValidUUID.mockReturnValue(false);
+          commentModel.getCommentsByAdId.mockResolvedValue(mockComments);
+
+          await commentsController.getCommentsByAdId(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(200);
+        });
+
+        it("should reject invalid IDs in production environment", async () => {
+          process.env.NODE_ENV = "production";
+          req.params = { adId: "test-ad-123" };
+
+          isValidUUID.mockReturnValue(false);
+
+          await commentsController.getCommentsByAdId(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(400);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Invalid ad ID format",
+          });
+        });
+
+        it("should handle test environment comment ID validation in updateComment", async () => {
+          process.env.NODE_ENV = "test";
+          req.params = { commentId: "test-comment-123" };
+          req.body = { content: "Updated content" };
+
+          const existingComment = {
+            id: "test-comment-123",
+            user_id: "user-123",
+          };
+
+          isValidUUID.mockReturnValue(false);
+          commentModel.findCommentById.mockResolvedValue(existingComment);
+          commentModel.updateComment.mockResolvedValue(true);
+
+          await commentsController.updateComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(200);
+        });
+
+        it("should handle test environment comment ID validation in deleteComment", async () => {
+          process.env.NODE_ENV = "test";
+          req.params = { commentId: "nonexistent-comment-123" };
+
+          const existingComment = {
+            id: "nonexistent-comment-123",
+            user_id: "user-123",
+          };
+
+          isValidUUID.mockReturnValue(false);
+          commentModel.findCommentById.mockResolvedValue(existingComment);
+          commentModel.deleteComment.mockResolvedValue(true);
+
+          await commentsController.deleteComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(200);
+        });
+      });
+
+      describe("Authentication and Authorization Flow", () => {
+        it("should handle missing user in authentication check for createComment", async () => {
+          req.user = null;
+          req.body = {
+            content: "Test comment",
+            ad_id: "ad-123",
+          };
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(401);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "User not authenticated",
+          });
+        });
+
+        it("should handle user object without ID for createComment", async () => {
+          req.user = { email: "test@example.com" };
+          req.body = {
+            content: "Test comment",
+            ad_id: "ad-123",
+          };
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(401);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "User not authenticated",
+          });
+        });
+
+        it("should handle user with empty ID for createComment", async () => {
+          req.user = { id: "", email: "test@example.com" };
+          req.body = {
+            content: "Test comment",
+            ad_id: "ad-123",
+          };
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(401);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "User not authenticated",
+          });
+        });
+
+        it("should handle ownership mismatch with detailed user comparison in updateComment", async () => {
+          req.params = { commentId: "comment-123" };
+          req.body = { content: "Updated content" };
+          req.user = { id: "user-123" };
+
+          const existingComment = {
+            id: "comment-123",
+            user_id: "different-user-456",
+            content: "Original content",
+          };
+
+          isValidUUID.mockReturnValue(true);
+          commentModel.findCommentById.mockResolvedValue(existingComment);
+
+          await commentsController.updateComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(403);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "You can only edit your own comments",
+          });
+        });
+
+        it("should handle ownership mismatch in deleteComment", async () => {
+          req.params = { commentId: "comment-123" };
+          req.user = { id: "user-123" };
+
+          const existingComment = {
+            id: "comment-123",
+            user_id: "different-user-456",
+          };
+
+          isValidUUID.mockReturnValue(true);
+          commentModel.findCommentById.mockResolvedValue(existingComment);
+
+          await commentsController.deleteComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(403);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "You can only delete your own comments",
+          });
+        });
+
+        it("should handle missing user authentication in getUserComments", async () => {
+          req.user = null;
+
+          await commentsController.getUserComments(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(401);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "User not authenticated",
+          });
+        });
+      });
+
+      describe("Model Integration and Data Flow", () => {
+        it("should handle createComment followed by findCommentById failure", async () => {
+          req.body = {
+            content: "Test comment",
+            ad_id: "ad-123",
+          };
+
+          commentModel.createComment.mockResolvedValue("comment-123");
+          commentModel.findCommentById.mockRejectedValue(
+            new Error("Database connection lost")
+          );
+
+          await commentsController.createComment(req, res);
+
+          expect(commentModel.createComment).toHaveBeenCalled();
+          expect(commentModel.findCommentById).toHaveBeenCalledWith(
+            "comment-123"
+          );
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should handle successful createComment with null findCommentById result", async () => {
+          req.body = {
+            content: "Test comment",
+            ad_id: "ad-123",
+          };
+
+          commentModel.createComment.mockResolvedValue("comment-123");
+          commentModel.findCommentById.mockResolvedValue(null);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(201);
+          expect(res.json).toHaveBeenCalledWith({
+            message: "Comment created successfully",
+            comment: null,
+          });
+        });
+
+        it("should handle updateComment when comment exists but update fails", async () => {
+          req.params = { commentId: "comment-123" };
+          req.body = { content: "Updated content" };
+
+          const existingComment = {
+            id: "comment-123",
+            user_id: "user-123",
+          };
+
+          isValidUUID.mockReturnValue(true);
+          commentModel.findCommentById.mockResolvedValue(existingComment);
+          commentModel.updateComment.mockRejectedValue(
+            new Error("Database update failed")
+          );
+
+          await commentsController.updateComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to update comment",
+          });
+        });
+
+        it("should handle deleteComment returning false (not found after ownership check)", async () => {
+          req.params = { commentId: "comment-123" };
+
+          const existingComment = {
+            id: "comment-123",
+            user_id: "user-123",
+          };
+
+          isValidUUID.mockReturnValue(true);
+          commentModel.findCommentById.mockResolvedValue(existingComment);
+          commentModel.deleteComment.mockResolvedValue(false);
+
+          await commentsController.deleteComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(404);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Comment not found",
+          });
+        });
+
+        it("should handle getCommentsByAdId with empty result set", async () => {
+          req.params = { adId: "ad-123" };
+
+          isValidUUID.mockReturnValue(true);
+          commentModel.getCommentsByAdId.mockResolvedValue([]);
+
+          await commentsController.getCommentsByAdId(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(200);
+          expect(res.json).toHaveBeenCalledWith({
+            comments: [],
+            count: 0,
+          });
+        });
+
+        it("should handle getUserComments with empty result set", async () => {
+          commentModel.getByUserId.mockResolvedValue([]);
+
+          await commentsController.getUserComments(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(200);
+          expect(res.json).toHaveBeenCalledWith({
+            comments: [],
+          });
+        });
+      });
+
+      describe("Error Handling and Recovery Patterns", () => {
+        it("should handle unexpected error types in createComment", async () => {
+          req.body = {
+            content: "Test comment",
+            ad_id: "ad-123",
+          };
+
+          commentModel.createComment.mockRejectedValue("String error");
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should handle unexpected error format in updateComment", async () => {
+          req.params = { commentId: "comment-123" };
+          req.body = { content: "Updated content" };
+
+          isValidUUID.mockReturnValue(true);
+
+          // Mock to throw an error with unusual properties
+          const unusualError = new Error("Database connection lost");
+          unusualError.code = "CONN_LOST";
+          unusualError.severity = "CRITICAL";
+          commentModel.findCommentById.mockRejectedValue(unusualError);
+
+          await commentsController.updateComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to update comment",
+          });
+        });
+
+        it("should handle circular reference error in deleteComment", async () => {
+          req.params = { commentId: "comment-123" };
+
+          const circularError = new Error("Circular reference");
+          circularError.circular = circularError;
+
+          isValidUUID.mockReturnValue(true);
+          commentModel.findCommentById.mockRejectedValue(circularError);
+
+          await commentsController.deleteComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to delete comment",
+          });
+        });
+
+        it("should handle timeout error in getCommentsByAdId", async () => {
+          req.params = { adId: "ad-123" };
+
+          const timeoutError = new Error("Query timeout");
+          timeoutError.code = "TIMEOUT";
+
+          isValidUUID.mockReturnValue(true);
+          commentModel.getCommentsByAdId.mockRejectedValue(timeoutError);
+
+          await commentsController.getCommentsByAdId(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to fetch comments",
+          });
+        });
+
+        it("should handle database connection error in getCommentsCount", async () => {
+          req.params = { ad_id: "ad-123" };
+
+          const connectionError = new Error("Connection refused");
+          connectionError.code = "ECONNREFUSED";
+
+          commentModel.getCountByAdId.mockRejectedValue(connectionError);
+
+          await commentsController.getCommentsCount(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to get comments count",
+          });
+        });
+      });
+
+      describe("Complex Input Validation Scenarios", () => {
+        it("should handle content with only special characters in createComment", async () => {
+          req.body = {
+            content: "!@#$%^&*()",
+            ad_id: "ad-123",
+          };
+
+          const mockComment = {
+            id: "comment-123",
+            content: "!@#$%^&*()",
+            ad_id: "ad-123",
+            user_id: "user-123",
+          };
+
+          commentModel.createComment.mockResolvedValue("comment-123");
+          commentModel.findCommentById.mockResolvedValue(mockComment);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(201);
+        });
+
+        it("should handle content with unicode characters in createComment", async () => {
+          req.body = {
+            content: "Comment with unicode: 🎉 émojis and àccénts",
+            ad_id: "ad-123",
+          };
+
+          const mockComment = {
+            id: "comment-123",
+            content: "Comment with unicode: 🎉 émojis and àccénts",
+            ad_id: "ad-123",
+            user_id: "user-123",
+          };
+
+          commentModel.createComment.mockResolvedValue("comment-123");
+          commentModel.findCommentById.mockResolvedValue(mockComment);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(201);
+        });
+
+        it("should handle exactly 1000 character content in createComment", async () => {
+          const content = "a".repeat(1000);
+          req.body = {
+            content: content,
+            ad_id: "ad-123",
+          };
+
+          const mockComment = {
+            id: "comment-123",
+            content: content,
+            ad_id: "ad-123",
+            user_id: "user-123",
+          };
+
+          commentModel.createComment.mockResolvedValue("comment-123");
+          commentModel.findCommentById.mockResolvedValue(mockComment);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(201);
+        });
+
+        it("should handle 1001 character content in createComment", async () => {
+          const content = "a".repeat(1001);
+          req.body = {
+            content: content,
+            ad_id: "ad-123",
+          };
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(400);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Comment content is too long",
+          });
+        });
+
+        it("should handle ad_id with special characters", async () => {
+          const { XSSProtection } = require("../../../src/utils/xssProtection");
+
+          // Clear previous mock implementations
+          XSSProtection.sanitizeUserInput.mockClear();
+          XSSProtection.sanitizeUserInput.mockReturnValue("Test comment");
+
+          req.body = {
+            content: "Test comment",
+            ad_id: "ad-123!@#",
+          };
+
+          const mockComment = {
+            id: "comment-123",
+            content: "Test comment",
+            ad_id: "ad-123!@#",
+            user_id: "user-123",
+          };
+
+          commentModel.createComment.mockResolvedValue("comment-123");
+          commentModel.findCommentById.mockResolvedValue(mockComment);
+
+          await commentsController.createComment(req, res);
+
+          expect(commentModel.createComment).toHaveBeenCalledWith({
+            content: "Test comment",
+            ad_id: "ad-123!@#",
+            user_id: "user-123",
+          });
+          expect(res.status).toHaveBeenCalledWith(201);
+        });
+
+        it("should handle numeric ad_id in createComment", async () => {
+          const { XSSProtection } = require("../../../src/utils/xssProtection");
+
+          // Clear previous mock implementations
+          XSSProtection.sanitizeUserInput.mockClear();
+          XSSProtection.sanitizeUserInput.mockReturnValue("Test comment");
+
+          req.body = {
+            content: "Test comment",
+            ad_id: 12345,
+          };
+
+          const mockComment = {
+            id: "comment-123",
+            content: "Test comment",
+            ad_id: 12345,
+            user_id: "user-123",
+          };
+
+          commentModel.createComment.mockResolvedValue("comment-123");
+          commentModel.findCommentById.mockResolvedValue(mockComment);
+
+          await commentsController.createComment(req, res);
+
+          expect(commentModel.createComment).toHaveBeenCalledWith({
+            content: "Test comment",
+            ad_id: 12345,
+            user_id: "user-123",
+          });
+          expect(res.status).toHaveBeenCalledWith(201);
+        });
+
+        it("should handle boolean ad_id in createComment", async () => {
+          req.body = {
+            content: "Test comment",
+            ad_id: false,
+          };
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(400);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Ad ID is required",
+          });
+        });
+      });
+    });
   });
 });
