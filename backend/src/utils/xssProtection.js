@@ -282,7 +282,6 @@ class XSSProtection {
       .replace(/[^a-zA-Z0-9.-]/g, "_") // Replace special chars with underscore
       .replace(/\.+/g, ".") // Multiple dots to single dot
       .replace(/^\.+|\.+$/g, "") // Remove leading/trailing dots
-      .replace(/_{2,}/g, "_") // Multiple underscores to single
       .substring(0, 100); // Limit length
 
     return sanitized || "file"; // Fallback name

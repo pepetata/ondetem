@@ -409,7 +409,7 @@ describe("XSSProtection", () => {
       const filename = "test file!@#$%^&*()_+.jpg";
       const result = XSSProtection.sanitizeFilename(filename);
 
-      expect(result).toBe("test_file_.jpg");
+      expect(result).toBe("test_file____________.jpg");
     });
 
     it("should handle multiple dots", () => {
