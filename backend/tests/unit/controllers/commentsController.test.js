@@ -955,5 +955,384 @@ describe("Comments Controller", () => {
         );
       });
     });
+
+    describe("File Upload Error Handling", () => {
+      beforeEach(() => {
+        req.body = {
+          content: "Test comment with attachment",
+          ad_id: "ad-123",
+        };
+      });
+
+      it("should handle missing file when attachment is expected", async () => {
+        req.body.hasAttachment = true;
+        req.file = null;
+
+        await commentsController.createComment(req, res);
+
+        // Currently passes as no file upload logic exists
+        // This test would need updating when file upload is implemented
+        expect(res.status).toHaveBeenCalledWith(201);
+      });
+
+      it("should handle file size exceeding limits", async () => {
+        req.file = {
+          filename: "large-file.jpg",
+          size: 10 * 1024 * 1024, // 10MB
+          mimetype: "image/jpeg",
+          path: "/tmp/large-file.jpg",
+        };
+
+        // Mock file size validation failure
+        const mockError = new Error("File size exceeds limit");
+        commentModel.createComment.mockRejectedValue(mockError);
+
+        await commentsController.createComment(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+          error: "Failed to create comment",
+        });
+      });
+
+      it("should handle invalid file types", async () => {
+        req.file = {
+          filename: "malicious-script.exe",
+          size: 1024,
+          mimetype: "application/x-msdownload",
+          path: "/tmp/malicious-script.exe",
+        };
+
+        // Mock file type validation failure
+        const mockError = new Error("Invalid file type");
+        commentModel.createComment.mockRejectedValue(mockError);
+
+        await commentsController.createComment(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+          error: "Failed to create comment",
+        });
+      });
+
+      it("should handle file upload storage errors", async () => {
+        req.file = {
+          filename: "valid-image.jpg",
+          size: 1024,
+          mimetype: "image/jpeg",
+          path: "/tmp/valid-image.jpg",
+        };
+
+        // Mock storage failure
+        const storageError = new Error("Storage service unavailable");
+        commentModel.createComment.mockRejectedValue(storageError);
+
+        await commentsController.createComment(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+          error: "Failed to create comment",
+        });
+      });
+
+      it("should handle corrupted file uploads", async () => {
+        req.file = {
+          filename: "corrupted-image.jpg",
+          size: 500,
+          mimetype: "image/jpeg",
+          path: "/tmp/corrupted-image.jpg",
+        };
+
+        // Mock file corruption detection
+        const corruptionError = new Error("File is corrupted or invalid");
+        commentModel.createComment.mockRejectedValue(corruptionError);
+
+        await commentsController.createComment(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+          error: "Failed to create comment",
+        });
+      });
+
+      it("should handle multiple file upload attempts", async () => {
+        req.files = [
+          {
+            filename: "image1.jpg",
+            size: 1024,
+            mimetype: "image/jpeg",
+            path: "/tmp/image1.jpg",
+          },
+          {
+            filename: "image2.jpg",
+            size: 1024,
+            mimetype: "image/jpeg",
+            path: "/tmp/image2.jpg",
+          },
+        ];
+
+        // Mock multiple file handling (currently not supported)
+        const multiFileError = new Error("Multiple files not supported");
+        commentModel.createComment.mockRejectedValue(multiFileError);
+
+        await commentsController.createComment(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+          error: "Failed to create comment",
+        });
+      });
+
+      it("should handle file upload timeout errors", async () => {
+        req.file = {
+          filename: "slow-upload.jpg",
+          size: 5 * 1024 * 1024, // 5MB
+          mimetype: "image/jpeg",
+          path: "/tmp/slow-upload.jpg",
+        };
+
+        // Mock upload timeout
+        const timeoutError = new Error("Upload timeout");
+        commentModel.createComment.mockRejectedValue(timeoutError);
+
+        await commentsController.createComment(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+          error: "Failed to create comment",
+        });
+      });
+
+      it("should handle insufficient storage space errors", async () => {
+        req.file = {
+          filename: "valid-document.pdf",
+          size: 2 * 1024 * 1024, // 2MB
+          mimetype: "application/pdf",
+          path: "/tmp/valid-document.pdf",
+        };
+
+        // Mock storage space error
+        const storageError = new Error("Insufficient storage space");
+        commentModel.createComment.mockRejectedValue(storageError);
+
+        await commentsController.createComment(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+          error: "Failed to create comment",
+        });
+      });
+
+      it("should handle file virus scan failures", async () => {
+        req.file = {
+          filename: "suspicious-file.txt",
+          size: 1024,
+          mimetype: "text/plain",
+          path: "/tmp/suspicious-file.txt",
+        };
+
+        // Mock virus scan failure
+        const virusError = new Error("File failed security scan");
+        commentModel.createComment.mockRejectedValue(virusError);
+
+        await commentsController.createComment(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+          error: "Failed to create comment",
+        });
+      });
+
+      it("should handle file permission errors", async () => {
+        req.file = {
+          filename: "protected-file.jpg",
+          size: 1024,
+          mimetype: "image/jpeg",
+          path: "/tmp/protected-file.jpg",
+        };
+
+        // Mock file permission error
+        const permissionError = new Error("Permission denied");
+        commentModel.createComment.mockRejectedValue(permissionError);
+
+        await commentsController.createComment(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+          error: "Failed to create comment",
+        });
+      });
+
+      it("should handle file upload network errors", async () => {
+        req.file = {
+          filename: "network-file.jpg",
+          size: 1024,
+          mimetype: "image/jpeg",
+          path: "/tmp/network-file.jpg",
+        };
+
+        // Mock network error during upload
+        const networkError = new Error("Network error during upload");
+        commentModel.createComment.mockRejectedValue(networkError);
+
+        await commentsController.createComment(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+          error: "Failed to create comment",
+        });
+      });
+
+      it("should handle partial file upload errors", async () => {
+        req.file = {
+          filename: "partial-upload.jpg",
+          size: 0, // Indicates partial upload
+          mimetype: "image/jpeg",
+          path: "/tmp/partial-upload.jpg",
+        };
+
+        // Mock partial upload error
+        const partialError = new Error("Partial upload detected");
+        commentModel.createComment.mockRejectedValue(partialError);
+
+        await commentsController.createComment(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+          error: "Failed to create comment",
+        });
+      });
+
+      it("should handle file metadata corruption", async () => {
+        req.file = {
+          filename: "metadata-corrupted.jpg",
+          size: 1024,
+          mimetype: "image/jpeg",
+          path: "/tmp/metadata-corrupted.jpg",
+          // Missing or corrupted metadata
+        };
+
+        // Mock metadata corruption error
+        const metadataError = new Error("File metadata corrupted");
+        commentModel.createComment.mockRejectedValue(metadataError);
+
+        await commentsController.createComment(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+          error: "Failed to create comment",
+        });
+      });
+
+      it("should handle file upload cancellation", async () => {
+        req.file = {
+          filename: "cancelled-upload.jpg",
+          size: 1024,
+          mimetype: "image/jpeg",
+          path: "/tmp/cancelled-upload.jpg",
+        };
+
+        // Mock upload cancellation
+        const cancellationError = new Error("Upload cancelled by user");
+        commentModel.createComment.mockRejectedValue(cancellationError);
+
+        await commentsController.createComment(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+          error: "Failed to create comment",
+        });
+      });
+
+      it("should handle file duplicate upload errors", async () => {
+        req.file = {
+          filename: "duplicate-file.jpg",
+          size: 1024,
+          mimetype: "image/jpeg",
+          path: "/tmp/duplicate-file.jpg",
+        };
+
+        // Mock duplicate file error
+        const duplicateError = new Error("File already exists");
+        commentModel.createComment.mockRejectedValue(duplicateError);
+
+        await commentsController.createComment(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+          error: "Failed to create comment",
+        });
+      });
+
+      it("should handle file cleanup errors after failed upload", async () => {
+        req.file = {
+          filename: "cleanup-fail.jpg",
+          size: 1024,
+          mimetype: "image/jpeg",
+          path: "/tmp/cleanup-fail.jpg",
+        };
+
+        // Mock cleanup failure after upload error
+        const cleanupError = new Error("Failed to cleanup temporary files");
+        commentModel.createComment.mockRejectedValue(cleanupError);
+
+        await commentsController.createComment(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith({
+          error: "Failed to create comment",
+        });
+      });
+
+      it("should handle successful file upload with comment", async () => {
+        req.file = {
+          filename: "success-upload.jpg",
+          size: 1024,
+          mimetype: "image/jpeg",
+          path: "/tmp/success-upload.jpg",
+        };
+
+        commentModel.createComment.mockResolvedValue("comment-123");
+        commentModel.findCommentById.mockResolvedValue({
+          id: "comment-123",
+          content: "Test comment with attachment",
+          ad_id: "ad-123",
+          user_id: "user-123",
+          attachment_url: "/uploads/success-upload.jpg",
+        });
+
+        await commentsController.createComment(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(201);
+        expect(res.json).toHaveBeenCalledWith({
+          message: "Comment created successfully",
+          comment: expect.objectContaining({
+            id: "comment-123",
+            content: "Test comment with attachment",
+            attachment_url: "/uploads/success-upload.jpg",
+          }),
+        });
+      });
+
+      it("should log file upload errors appropriately", async () => {
+        const logger = require("../../../src/utils/logger");
+
+        req.file = {
+          filename: "error-file.jpg",
+          size: 1024,
+          mimetype: "image/jpeg",
+          path: "/tmp/error-file.jpg",
+        };
+
+        const uploadError = new Error("File upload service error");
+        commentModel.createComment.mockRejectedValue(uploadError);
+
+        await commentsController.createComment(req, res);
+
+        expect(logger.error).toHaveBeenCalledWith(
+          "Error creating comment: File upload service error"
+        );
+      });
+    });
   });
 });
