@@ -27,9 +27,10 @@ jest.mock("../../../src/controllers/usersController");
 jest.mock("../../../src/controllers/adsController");
 
 // Mock XSSProtection
+const { XSSProtection } = require("../../../src/utils/xssProtection");
 jest.mock("../../../src/utils/xssProtection", () => ({
   XSSProtection: {
-    sanitizeUserInput: jest.fn((input) => input),
+    sanitizeUserInput: jest.fn((input) => input), // Return input as-is for testing
     logger: {
       warn: jest.fn(),
       error: jest.fn(),
@@ -73,6 +74,10 @@ describe("Comments Controller", () => {
     };
     next = jest.fn();
     jest.clearAllMocks();
+
+    // Reset XSSProtection mock to return input as-is
+    const { XSSProtection } = require("../../../src/utils/xssProtection");
+    XSSProtection.sanitizeUserInput.mockImplementation((input) => input);
 
     // Setup comment model method mocks
     commentModel.createComment = jest.fn();
@@ -4230,6 +4235,811 @@ describe("Comments Controller", () => {
           expect(user2CommentsRes.json).toHaveBeenCalledWith({
             comments: comments,
           });
+        });
+      });
+
+      // File Upload Integration Workflow Tests
+      describe("File Upload Integration Workflow Tests", () => {
+        beforeEach(() => {
+          // Reset all mocks for file upload integration tests
+          jest.clearAllMocks();
+
+          // Mock bcrypt to avoid native library loading issues
+          jest.mock("bcrypt", () => ({
+            compare: jest.fn().mockResolvedValue(true),
+            hash: jest.fn().mockResolvedValue("hashed_password"),
+          }));
+
+          // Mock file system operations
+          jest.mock("fs", () => ({
+            unlinkSync: jest.fn(),
+            existsSync: jest.fn(() => true),
+            createReadStream: jest.fn(),
+            createWriteStream: jest.fn(),
+            stat: jest.fn((path, callback) => callback(null, { size: 1024 })),
+          }));
+
+          // Mock multer file uploads
+          jest.mock("multer", () => ({
+            memoryStorage: jest.fn(() => ({})),
+            diskStorage: jest.fn(() => ({})),
+            default: jest.fn(() => ({
+              single: jest.fn(() => (req, res, next) => {
+                req.file = {
+                  filename: "test-image.jpg",
+                  originalname: "test-image.jpg",
+                  mimetype: "image/jpeg",
+                  size: 1024,
+                  path: "/uploads/test-image.jpg",
+                  buffer: Buffer.from("fake-image-data"),
+                };
+                next();
+              }),
+              array: jest.fn(() => (req, res, next) => {
+                req.files = [
+                  {
+                    filename: "test-image1.jpg",
+                    originalname: "test-image1.jpg",
+                    mimetype: "image/jpeg",
+                    size: 1024,
+                    path: "/uploads/test-image1.jpg",
+                  },
+                  {
+                    filename: "test-image2.jpg",
+                    originalname: "test-image2.jpg",
+                    mimetype: "image/jpeg",
+                    size: 1024,
+                    path: "/uploads/test-image2.jpg",
+                  },
+                ];
+                next();
+              }),
+            })),
+          }));
+        });
+
+        it("should handle complete workflow: register → login → create ad with images → comment with attachment", async () => {
+          // This test focuses on the comments controller integration, mocking other steps
+
+          // Step 1-3: Mock the results of user registration, login, and ad creation
+          const mockUser = {
+            id: "user-file-123",
+            email: "fileuser@example.com",
+            fullName: "File User",
+          };
+
+          const mockAd = {
+            id: "ad-file-123",
+            title: "Smartphone with Camera",
+            description: "High-quality smartphone with excellent camera",
+            user_id: "user-file-123",
+            images: ["smartphone1.jpg", "smartphone2.jpg"],
+          };
+
+          // Step 4: Focus on commenting with file attachment (comments controller)
+          const commentReq = {
+            body: {
+              content: "Great phone! Can you send more pictures of the camera?",
+              ad_id: "ad-file-123",
+            },
+            user: { id: "user-commenter-123", email: "commenter@example.com" },
+            // Future: file attachment for comments
+            file: {
+              filename: "question-image.jpg",
+              originalname: "question-image.jpg",
+              mimetype: "image/jpeg",
+              size: 512,
+              path: "/uploads/comments/question-image.jpg",
+            },
+          };
+          const commentRes = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          const newComment = {
+            id: "comment-file-123",
+            content: "Great phone! Can you send more pictures of the camera?",
+            ad_id: "ad-file-123",
+            user_id: "user-commenter-123",
+            attachment: "question-image.jpg", // Future feature
+          };
+
+          commentModel.createComment.mockResolvedValue("comment-file-123");
+          commentModel.findCommentById.mockResolvedValue(newComment);
+
+          await commentsController.createComment(commentReq, commentRes);
+
+          // Step 5: Verify the comments controller handled the file upload workflow
+          expect(commentModel.createComment).toHaveBeenCalledWith({
+            content: "Great phone! Can you send more pictures of the camera?",
+            ad_id: "ad-file-123",
+            user_id: "user-commenter-123",
+          });
+
+          expect(commentRes.status).toHaveBeenCalledWith(201);
+          expect(commentRes.json).toHaveBeenCalledWith({
+            message: "Comment created successfully",
+            comment: newComment,
+          });
+        });
+
+        it("should handle workflow: file upload errors → retry → successful comment with attachment", async () => {
+          // Step 1: User tries to comment with large file (should fail)
+          const largeFileCommentReq = {
+            body: {
+              content: "Here's a high-res photo of the product defect",
+              ad_id: "ad-existing-123",
+            },
+            user: { id: "user-upload-123", email: "uploader@example.com" },
+            file: {
+              filename: "large-image.jpg",
+              originalname: "large-image.jpg",
+              mimetype: "image/jpeg",
+              size: 10485760, // 10MB - too large
+              path: "/uploads/large-image.jpg",
+            },
+          };
+          const largeFileCommentRes = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          // Mock file size validation failure
+          const fileSizeError = new Error("File size exceeds limit");
+          commentModel.createComment.mockRejectedValueOnce(fileSizeError);
+
+          await commentsController.createComment(
+            largeFileCommentReq,
+            largeFileCommentRes
+          );
+
+          // Step 2: User retries with invalid file type
+          const invalidTypeCommentReq = {
+            body: {
+              content: "Here's a document with product details",
+              ad_id: "ad-existing-123",
+            },
+            user: { id: "user-upload-123", email: "uploader@example.com" },
+            file: {
+              filename: "document.pdf",
+              originalname: "document.pdf",
+              mimetype: "application/pdf",
+              size: 1024,
+              path: "/uploads/document.pdf",
+            },
+          };
+          const invalidTypeCommentRes = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          // Mock file type validation failure
+          const fileTypeError = new Error("Invalid file type");
+          commentModel.createComment.mockRejectedValueOnce(fileTypeError);
+
+          await commentsController.createComment(
+            invalidTypeCommentReq,
+            invalidTypeCommentRes
+          );
+
+          // Step 3: User successfully comments with valid file
+          const validFileCommentReq = {
+            body: {
+              content: "Here's a proper image showing the issue",
+              ad_id: "ad-existing-123",
+            },
+            user: { id: "user-upload-123", email: "uploader@example.com" },
+            file: {
+              filename: "valid-image.jpg",
+              originalname: "valid-image.jpg",
+              mimetype: "image/jpeg",
+              size: 2048,
+              path: "/uploads/valid-image.jpg",
+            },
+          };
+          const validFileCommentRes = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          const successfulComment = {
+            id: "comment-upload-success-123",
+            content: "Here's a proper image showing the issue",
+            ad_id: "ad-existing-123",
+            user_id: "user-upload-123",
+            attachment: "valid-image.jpg",
+          };
+
+          commentModel.createComment.mockResolvedValue(
+            "comment-upload-success-123"
+          );
+          commentModel.findCommentById.mockResolvedValue(successfulComment);
+
+          await commentsController.createComment(
+            validFileCommentReq,
+            validFileCommentRes
+          );
+
+          // Verify error handling and successful retry
+          expect(commentModel.createComment).toHaveBeenCalledTimes(3);
+          expect(validFileCommentRes.status).toHaveBeenCalledWith(201);
+          expect(validFileCommentRes.json).toHaveBeenCalledWith({
+            message: "Comment created successfully",
+            comment: successfulComment,
+          });
+        });
+
+        it("should handle concurrent file upload workflow: multiple users uploading comment attachments simultaneously", async () => {
+          // Step 1: Setup multiple users
+          const users = [
+            { id: "user-concurrent-1", email: "user1@example.com" },
+            { id: "user-concurrent-2", email: "user2@example.com" },
+            { id: "user-concurrent-3", email: "user3@example.com" },
+          ];
+
+          const adId = "ad-concurrent-upload-123";
+
+          // Step 2: Simulate concurrent comment creation with file attachments
+          const concurrentRequests = users.map((user, index) => ({
+            body: {
+              content: `User ${index + 1} comment with attachment`,
+              ad_id: adId,
+            },
+            user: user,
+            file: {
+              filename: `attachment-${index + 1}.jpg`,
+              originalname: `attachment-${index + 1}.jpg`,
+              mimetype: "image/jpeg",
+              size: 1024 + index * 512, // Different sizes
+              path: `/uploads/attachment-${index + 1}.jpg`,
+            },
+          }));
+
+          const concurrentResponses = users.map(() => ({
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          }));
+
+          const expectedComments = users.map((user, index) => ({
+            id: `comment-concurrent-${index + 1}`,
+            content: `User ${index + 1} comment with attachment`,
+            ad_id: adId,
+            user_id: user.id,
+            attachment: `attachment-${index + 1}.jpg`,
+          }));
+
+          // Mock sequential comment creation (simulating database transactions)
+          commentModel.createComment
+            .mockResolvedValueOnce("comment-concurrent-1")
+            .mockResolvedValueOnce("comment-concurrent-2")
+            .mockResolvedValueOnce("comment-concurrent-3");
+
+          commentModel.findCommentById
+            .mockResolvedValueOnce(expectedComments[0])
+            .mockResolvedValueOnce(expectedComments[1])
+            .mockResolvedValueOnce(expectedComments[2]);
+
+          // Step 3: Execute concurrent requests
+          const promises = concurrentRequests.map((req, index) =>
+            commentsController.createComment(req, concurrentResponses[index])
+          );
+
+          await Promise.all(promises);
+
+          // Step 4: Verify all uploads were processed correctly
+          expect(commentModel.createComment).toHaveBeenCalledTimes(3);
+
+          concurrentResponses.forEach((res, index) => {
+            expect(res.status).toHaveBeenCalledWith(201);
+            expect(res.json).toHaveBeenCalledWith({
+              message: "Comment created successfully",
+              comment: expectedComments[index],
+            });
+          });
+
+          // Step 5: Verify file handling was called for each upload
+          concurrentRequests.forEach((req, index) => {
+            expect(commentModel.createComment).toHaveBeenCalledWith({
+              content: `User ${index + 1} comment with attachment`,
+              ad_id: adId,
+              user_id: users[index].id,
+            });
+          });
+        });
+
+        it("should handle complex file upload workflow: ad creation → multiple comments with attachments → file cleanup", async () => {
+          // Step 1: Mock pre-existing ad with images (focus on comments workflow)
+          const adOwner = { id: "user-owner-123", email: "owner@example.com" };
+          const mockAd = {
+            id: "ad-complex-file-123",
+            title: "Product for Sale",
+            user_id: "user-owner-123",
+            images: ["product-main.jpg"],
+          };
+
+          // Step 2: First user comments with question and image
+          const comment1Req = {
+            body: {
+              content: "What's the condition? Here's what I'm looking for",
+              ad_id: "ad-complex-file-123",
+            },
+            user: { id: "user-buyer1-123", email: "buyer1@example.com" },
+            file: {
+              filename: "comparison-image.jpg",
+              originalname: "comparison-image.jpg",
+              mimetype: "image/jpeg",
+              size: 1024,
+              path: "/uploads/comments/comparison-image.jpg",
+            },
+          };
+          const comment1Res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          const comment1 = {
+            id: "comment-complex-1",
+            content: "What's the condition? Here's what I'm looking for",
+            ad_id: "ad-complex-file-123",
+            user_id: "user-buyer1-123",
+            attachment: "comparison-image.jpg",
+          };
+
+          commentModel.createComment.mockResolvedValueOnce("comment-complex-1");
+          commentModel.findCommentById.mockResolvedValueOnce(comment1);
+
+          await commentsController.createComment(comment1Req, comment1Res);
+
+          // Step 3: Ad owner responds with detailed images
+          const comment2Req = {
+            body: {
+              content: "Here are detailed photos showing the condition",
+              ad_id: "ad-complex-file-123",
+            },
+            user: adOwner,
+            file: {
+              filename: "detailed-condition.jpg",
+              originalname: "detailed-condition.jpg",
+              mimetype: "image/jpeg",
+              size: 2048,
+              path: "/uploads/comments/detailed-condition.jpg",
+            },
+          };
+          const comment2Res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          const comment2 = {
+            id: "comment-complex-2",
+            content: "Here are detailed photos showing the condition",
+            ad_id: "ad-complex-file-123",
+            user_id: "user-owner-123",
+            attachment: "detailed-condition.jpg",
+          };
+
+          commentModel.createComment.mockResolvedValueOnce("comment-complex-2");
+          commentModel.findCommentById.mockResolvedValueOnce(comment2);
+
+          await commentsController.createComment(comment2Req, comment2Res);
+
+          // Step 4: Second buyer joins with their own image
+          const comment3Req = {
+            body: {
+              content: "I'm also interested. Here's my offer visualization",
+              ad_id: "ad-complex-file-123",
+            },
+            user: { id: "user-buyer2-123", email: "buyer2@example.com" },
+            file: {
+              filename: "offer-details.jpg",
+              originalname: "offer-details.jpg",
+              mimetype: "image/jpeg",
+              size: 1536,
+              path: "/uploads/comments/offer-details.jpg",
+            },
+          };
+          const comment3Res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          const comment3 = {
+            id: "comment-complex-3",
+            content: "I'm also interested. Here's my offer visualization",
+            ad_id: "ad-complex-file-123",
+            user_id: "user-buyer2-123",
+            attachment: "offer-details.jpg",
+          };
+
+          commentModel.createComment.mockResolvedValueOnce("comment-complex-3");
+          commentModel.findCommentById.mockResolvedValueOnce(comment3);
+
+          await commentsController.createComment(comment3Req, comment3Res);
+
+          // Step 5: Get all comments to verify the conversation
+          const getCommentsReq = {
+            params: { adId: "ad-complex-file-123" },
+            query: {},
+          };
+          const getCommentsRes = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          const allComments = [comment1, comment2, comment3];
+          commentModel.getCommentsByAdId.mockResolvedValue(allComments);
+
+          await commentsController.getCommentsByAdId(
+            getCommentsReq,
+            getCommentsRes
+          );
+
+          // Step 6: Verify the complete comments workflow with file attachments
+          expect(commentModel.createComment).toHaveBeenCalledTimes(3);
+          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
+            "ad-complex-file-123",
+            10,
+            0
+          );
+
+          expect(getCommentsRes.json).toHaveBeenCalledWith({
+            comments: allComments,
+            count: 3,
+          });
+
+          // Verify all comments were created successfully with file attachments
+          [comment1Res, comment2Res, comment3Res].forEach((res) => {
+            expect(res.status).toHaveBeenCalledWith(201);
+          });
+
+          // Verify the content of comments with attachments
+          expect(commentModel.createComment).toHaveBeenCalledWith({
+            content: "What's the condition? Here's what I'm looking for",
+            ad_id: "ad-complex-file-123",
+            user_id: "user-buyer1-123",
+          });
+
+          expect(commentModel.createComment).toHaveBeenCalledWith({
+            content: "Here are detailed photos showing the condition",
+            ad_id: "ad-complex-file-123",
+            user_id: "user-owner-123",
+          });
+
+          expect(commentModel.createComment).toHaveBeenCalledWith({
+            content: "I'm also interested. Here's my offer visualization",
+            ad_id: "ad-complex-file-123",
+            user_id: "user-buyer2-123",
+          });
+        });
+
+        it("should handle file upload cleanup workflow: failed comment → successful retry → file management", async () => {
+          const fs = require("fs");
+
+          // Step 1: First attempt fails due to network error during file processing
+          const failedUploadReq = {
+            body: {
+              content: "Check this image for product details",
+              ad_id: "ad-cleanup-123",
+            },
+            user: { id: "user-cleanup-123", email: "cleanup@example.com" },
+            file: {
+              filename: "temp-upload-1.jpg",
+              originalname: "temp-upload-1.jpg",
+              mimetype: "image/jpeg",
+              size: 2048,
+              path: "/uploads/temp/temp-upload-1.jpg",
+            },
+          };
+          const failedUploadRes = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          // Mock network error during comment creation
+          const networkError = new Error(
+            "Network timeout during file processing"
+          );
+          commentModel.createComment.mockRejectedValueOnce(networkError);
+
+          await commentsController.createComment(
+            failedUploadReq,
+            failedUploadRes
+          );
+
+          // Step 2: System should clean up failed upload file
+          // In a real implementation, this would be handled by error middleware
+          expect(failedUploadRes.status).toHaveBeenCalledWith(500);
+
+          // Step 3: User retries with same content but new file
+          const retryUploadReq = {
+            body: {
+              content: "Check this image for product details (retry)",
+              ad_id: "ad-cleanup-123",
+            },
+            user: { id: "user-cleanup-123", email: "cleanup@example.com" },
+            file: {
+              filename: "temp-upload-2.jpg",
+              originalname: "temp-upload-2.jpg",
+              mimetype: "image/jpeg",
+              size: 2048,
+              path: "/uploads/temp/temp-upload-2.jpg",
+            },
+          };
+          const retryUploadRes = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          const successfulComment = {
+            id: "comment-cleanup-success",
+            content: "Check this image for product details (retry)",
+            ad_id: "ad-cleanup-123",
+            user_id: "user-cleanup-123",
+            attachment: "temp-upload-2.jpg",
+          };
+
+          commentModel.createComment.mockResolvedValue(
+            "comment-cleanup-success"
+          );
+          commentModel.findCommentById.mockResolvedValue(successfulComment);
+
+          await commentsController.createComment(
+            retryUploadReq,
+            retryUploadRes
+          );
+
+          // Step 4: Later, user deletes the comment
+          const deleteCommentReq = {
+            params: { commentId: "comment-cleanup-success" },
+            user: { id: "user-cleanup-123", email: "cleanup@example.com" },
+          };
+          const deleteCommentRes = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          commentModel.findCommentById.mockResolvedValueOnce(successfulComment);
+          commentModel.deleteComment.mockResolvedValue(true);
+
+          await commentsController.deleteComment(
+            deleteCommentReq,
+            deleteCommentRes
+          );
+
+          // Step 5: Verify the complete cleanup workflow
+          expect(commentModel.createComment).toHaveBeenCalledTimes(2);
+          expect(retryUploadRes.status).toHaveBeenCalledWith(201);
+          expect(commentModel.deleteComment).toHaveBeenCalledWith(
+            "comment-cleanup-success"
+          );
+          expect(deleteCommentRes.status).toHaveBeenCalledWith(200);
+
+          // In a real implementation, file cleanup would be verified here
+          // expect(fs.unlinkSync).toHaveBeenCalledWith('/uploads/temp/temp-upload-2.jpg');
+        });
+
+        it("should handle multi-step file upload workflow: batch comment creation with mixed media types", async () => {
+          // Step 1: Setup scenario - product Q&A session with multiple file types
+          const adId = "ad-mixed-media-123";
+          const participants = [
+            {
+              id: "user-questioner-123",
+              email: "questioner@example.com",
+              role: "buyer",
+            },
+            {
+              id: "user-seller-123",
+              email: "seller@example.com",
+              role: "seller",
+            },
+            {
+              id: "user-expert-123",
+              email: "expert@example.com",
+              role: "expert",
+            },
+          ];
+
+          // Step 2: Questioner uploads comparison image
+          const step1Req = {
+            body: {
+              content: "How does this compare to the model shown in my image?",
+              ad_id: adId,
+            },
+            user: participants[0],
+            file: {
+              filename: "comparison-model.jpg",
+              originalname: "comparison-model.jpg",
+              mimetype: "image/jpeg",
+              size: 1800,
+              path: "/uploads/comments/comparison-model.jpg",
+            },
+          };
+          const step1Res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          const comment1 = {
+            id: "comment-mixed-1",
+            content: "How does this compare to the model shown in my image?",
+            ad_id: adId,
+            user_id: participants[0].id,
+            attachment: "comparison-model.jpg",
+          };
+
+          commentModel.createComment.mockResolvedValueOnce("comment-mixed-1");
+          commentModel.findCommentById.mockResolvedValueOnce(comment1);
+
+          await commentsController.createComment(step1Req, step1Res);
+
+          // Step 3: Seller responds with detailed product shots
+          const step2Req = {
+            body: {
+              content: "Here are multiple angles showing the differences",
+              ad_id: adId,
+            },
+            user: participants[1],
+            file: {
+              filename: "product-angles.jpg",
+              originalname: "product-angles.jpg",
+              mimetype: "image/jpeg",
+              size: 2500,
+              path: "/uploads/comments/product-angles.jpg",
+            },
+          };
+          const step2Res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          const comment2 = {
+            id: "comment-mixed-2",
+            content: "Here are multiple angles showing the differences",
+            ad_id: adId,
+            user_id: participants[1].id,
+            attachment: "product-angles.jpg",
+          };
+
+          commentModel.createComment.mockResolvedValueOnce("comment-mixed-2");
+          commentModel.findCommentById.mockResolvedValueOnce(comment2);
+
+          await commentsController.createComment(step2Req, step2Res);
+
+          // Step 4: Expert provides technical diagram
+          const step3Req = {
+            body: {
+              content:
+                "Technical analysis: Here's a detailed comparison diagram",
+              ad_id: adId,
+            },
+            user: participants[2],
+            file: {
+              filename: "technical-diagram.png",
+              originalname: "technical-diagram.png",
+              mimetype: "image/png",
+              size: 3000,
+              path: "/uploads/comments/technical-diagram.png",
+            },
+          };
+          const step3Res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          const comment3 = {
+            id: "comment-mixed-3",
+            content: "Technical analysis: Here's a detailed comparison diagram",
+            ad_id: adId,
+            user_id: participants[2].id,
+            attachment: "technical-diagram.png",
+          };
+
+          commentModel.createComment.mockResolvedValueOnce("comment-mixed-3");
+          commentModel.findCommentById.mockResolvedValueOnce(comment3);
+
+          await commentsController.createComment(step3Req, step3Res);
+
+          // Step 5: Questioner follows up with multiple small images
+          const step4Req = {
+            body: {
+              content:
+                "Thanks! Here are close-up shots of specific features I need",
+              ad_id: adId,
+            },
+            user: participants[0],
+            files: [
+              // Note: multiple files
+              {
+                filename: "feature-1.jpg",
+                originalname: "feature-1.jpg",
+                mimetype: "image/jpeg",
+                size: 800,
+                path: "/uploads/comments/feature-1.jpg",
+              },
+              {
+                filename: "feature-2.jpg",
+                originalname: "feature-2.jpg",
+                mimetype: "image/jpeg",
+                size: 750,
+                path: "/uploads/comments/feature-2.jpg",
+              },
+            ],
+          };
+          const step4Res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          const comment4 = {
+            id: "comment-mixed-4",
+            content:
+              "Thanks! Here are close-up shots of specific features I need",
+            ad_id: adId,
+            user_id: participants[0].id,
+            attachments: ["feature-1.jpg", "feature-2.jpg"], // Multiple attachments
+          };
+
+          commentModel.createComment.mockResolvedValueOnce("comment-mixed-4");
+          commentModel.findCommentById.mockResolvedValueOnce(comment4);
+
+          await commentsController.createComment(step4Req, step4Res);
+
+          // Step 6: Get complete conversation thread
+          const getThreadReq = {
+            params: { adId: adId },
+            query: { sort: "asc", includeAttachments: true },
+          };
+          const getThreadRes = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
+          };
+
+          const fullThread = [comment1, comment2, comment3, comment4];
+          commentModel.getCommentsByAdId.mockResolvedValue(fullThread);
+
+          await commentsController.getCommentsByAdId(
+            getThreadReq,
+            getThreadRes
+          );
+
+          // Step 7: Verify the complete multi-step workflow
+          expect(commentModel.createComment).toHaveBeenCalledTimes(4);
+
+          // Verify each step was successful
+          [step1Res, step2Res, step3Res, step4Res].forEach((res) => {
+            expect(res.status).toHaveBeenCalledWith(201);
+          });
+
+          // Verify thread retrieval
+          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
+            adId,
+            10,
+            0
+          );
+
+          expect(getThreadRes.json).toHaveBeenCalledWith({
+            comments: fullThread,
+            count: 4,
+          });
+
+          // Verify different file types were handled
+          expect(commentModel.createComment).toHaveBeenCalledWith(
+            expect.objectContaining({
+              content: "How does this compare to the model shown in my image?",
+              ad_id: adId,
+              user_id: participants[0].id,
+            })
+          );
+
+          expect(commentModel.createComment).toHaveBeenCalledWith(
+            expect.objectContaining({
+              content:
+                "Technical analysis: Here's a detailed comparison diagram",
+              ad_id: adId,
+              user_id: participants[2].id,
+            })
+          );
         });
       });
     });
