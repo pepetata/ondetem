@@ -1,6 +1,6 @@
 const path = require("path");
 const fs = require("fs");
-const adsModel = require("../models/adModel");
+const adModel = require("../models/adModel");
 const logger = require("../utils/logger");
 const { isValidUUID } = require("../utils/validation");
 const { XSSProtection } = require("../utils/xssProtection");
@@ -8,7 +8,7 @@ const { XSSProtection } = require("../utils/xssProtection");
 // Get all ads
 exports.getAllAds = async (req, res) => {
   try {
-    const ads = await adsModel.getAllAds();
+    const ads = await adModel.getAllAds();
     logger.info(`Fetched ${ads.length} ads`);
     res.status(200).json(ads);
   } catch (err) {
@@ -20,7 +20,7 @@ exports.getAllAds = async (req, res) => {
 // Alias for backward compatibility with tests
 exports.getAds = async (req, res) => {
   try {
-    const ads = await adsModel.getAds();
+    const ads = await adModel.getAds();
     logger.info(`Fetched ${ads.length} ads`);
     res.status(200).json(ads);
   } catch (err) {
@@ -35,12 +35,12 @@ exports.searchAds = async (req, res) => {
     const { q } = req.query;
     if (!q || q.trim() === "") {
       // If no search term, return all ads
-      const ads = await adsModel.getAllAds();
+      const ads = await adModel.getAllAds();
       logger.info(`Fetched ${ads.length} ads (no search term)`);
       return res.status(200).json(ads);
     }
 
-    const ads = await adsModel.searchAds(q.trim());
+    const ads = await adModel.searchAds(q.trim());
     logger.info(`Searched for "${q}" and found ${ads.length} ads`);
     res.status(200).json(ads);
   } catch (err) {
@@ -72,7 +72,7 @@ exports.getAdById = async (req, res) => {
       });
     }
 
-    const ad = await adsModel.getAdById(adId);
+    const ad = await adModel.getAdById(adId);
 
     if (!ad) {
       logger.warn(`Ad not found: ${adId}`);
@@ -125,11 +125,11 @@ exports.createAd = async (req, res) => {
     sanitizedData.user_id = req.user.id;
     const files = req.files || [];
 
-    const adId = await adsModel.createAd(sanitizedData, files);
+    const adId = await adModel.createAd(sanitizedData, files);
     logger.info(`Ad created: ${adId}`);
 
     // Fetch the created ad to return the full object
-    const createdAd = await adsModel.getAdById(adId);
+    const createdAd = await adModel.getAdById(adId);
 
     res.status(201).json({
       message: "Ad created successfully",
@@ -164,7 +164,7 @@ exports.createAdForTesting = async (req, res) => {
     sanitizedData.user_id = req.user.id;
     const files = []; // No files for testing
 
-    const adId = await adsModel.createAd(sanitizedData, files);
+    const adId = await adModel.createAd(sanitizedData, files);
     logger.info(`Test ad created: ${adId}`);
     res.status(201).json({
       message: "Test ad created successfully",
@@ -197,7 +197,7 @@ exports.updateAd = async (req, res) => {
       return res.status(401).json({ error: "User not authenticated" });
     }
 
-    const updated = await adsModel.updateAd(adId, sanitizedData, req.user.id);
+    const updated = await adModel.updateAd(adId, sanitizedData, req.user.id);
     if (!updated) {
       logger.warn(`Ad not found for update: ${adId}`);
       return res.status(404).json({ error: "Ad not found or not authorized" });
@@ -220,7 +220,7 @@ exports.deleteAd = async (req, res) => {
       return res.status(401).json({ error: "User not authenticated" });
     }
 
-    const deleted = await adsModel.deleteAd(adId, req.user.id);
+    const deleted = await adModel.deleteAd(adId, req.user.id);
     if (!deleted) {
       return res.status(404).json({ error: "Ad not found or not authorized" });
     }
@@ -238,7 +238,7 @@ exports.getUserAds = async (req, res) => {
   try {
     const userId = req.user.id;
     console.log(`Fetching ads for user: ${userId}`);
-    const ads = await adsModel.getUserAds(userId);
+    const ads = await adModel.getUserAds(userId);
     logger.info(`Fetched ${ads.length} ads for user: ${userId}`);
     res.status(200).json(ads);
   } catch (err) {
@@ -255,13 +255,13 @@ exports.uploadImage = async (req, res) => {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
     // Limit to 5 images per ad
-    const images = await adsModel.getAdImages(adId);
+    const images = await adModel.getAdImages(adId);
     if (images.length >= 5) {
       fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: "Maximum 5 images per ad" });
     }
 
-    await adsModel.addAdImage(adId, req.file.filename);
+    await adModel.addAdImage(adId, req.file.filename);
     res.status(201).json({ filename: req.file.filename });
   } catch (err) {
     console.error("uploadImage error:", err);
@@ -273,7 +273,7 @@ exports.uploadImage = async (req, res) => {
 exports.getImages = async (req, res) => {
   try {
     const adId = req.params.id;
-    const images = await adsModel.getAdImages(adId);
+    const images = await adModel.getAdImages(adId);
     res.json(images);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch images" });
@@ -285,7 +285,7 @@ exports.deleteImage = async (req, res) => {
   try {
     const adId = req.params.id;
     const filename = req.params.filename;
-    const deleted = await adsModel.deleteAdImage(adId, filename);
+    const deleted = await adModel.deleteAdImage(adId, filename);
     if (deleted) {
       // Remove file from disk
       const safeFilename = path.basename(filename);

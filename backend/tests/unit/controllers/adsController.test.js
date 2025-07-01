@@ -185,12 +185,12 @@ describe("Ads Controller", () => {
 
   describe("getAdById", () => {
     beforeEach(() => {
-      req.params.id = "123e4567-e89b-12d3-a456-426614174000";
+      req.params.id = "123e4567-e89b-42d3-a456-426614174000";
     });
 
     it("should return ad by id successfully", async () => {
       const mockAd = {
-        id: "123e4567-e89b-12d3-a456-426614174000",
+        id: "123e4567-e89b-42d3-a456-426614174000",
         title: "Test Ad",
         short: "Description",
       };
@@ -199,10 +199,10 @@ describe("Ads Controller", () => {
       await adsController.getAdById(req, res, next);
 
       expect(XSSProtection.sanitizeUserInput).toHaveBeenCalledWith(
-        "123e4567-e89b-12d3-a456-426614174000"
+        "123e4567-e89b-42d3-a456-426614174000"
       );
       expect(adModel.getAdById).toHaveBeenCalledWith(
-        "123e4567-e89b-12d3-a456-426614174000"
+        "123e4567-e89b-42d3-a456-426614174000"
       );
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(mockAd);
