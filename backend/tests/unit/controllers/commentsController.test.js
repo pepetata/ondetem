@@ -1333,6 +1333,399 @@ describe("Comments Controller", () => {
           "Error creating comment: File upload service error"
         );
       });
+
+      describe("Image Processing Failures", () => {
+        it("should handle image format validation errors", async () => {
+          req.file = {
+            filename: "fake-image.jpg",
+            size: 1024,
+            mimetype: "image/jpeg",
+            path: "/tmp/fake-image.jpg",
+          };
+
+          // Mock image format validation failure
+          const formatError = new Error("Invalid image format detected");
+          commentModel.createComment.mockRejectedValue(formatError);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should handle image dimensions validation errors", async () => {
+          req.file = {
+            filename: "oversized-image.jpg",
+            size: 1024,
+            mimetype: "image/jpeg",
+            path: "/tmp/oversized-image.jpg",
+            // Simulated metadata showing large dimensions
+            width: 10000,
+            height: 10000,
+          };
+
+          // Mock image dimensions validation failure
+          const dimensionError = new Error(
+            "Image dimensions exceed maximum allowed size"
+          );
+          commentModel.createComment.mockRejectedValue(dimensionError);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should handle image compression failures", async () => {
+          req.file = {
+            filename: "compression-fail.jpg",
+            size: 5 * 1024 * 1024, // 5MB
+            mimetype: "image/jpeg",
+            path: "/tmp/compression-fail.jpg",
+          };
+
+          // Mock image compression failure
+          const compressionError = new Error("Image compression failed");
+          commentModel.createComment.mockRejectedValue(compressionError);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should handle image thumbnail generation failures", async () => {
+          req.file = {
+            filename: "thumbnail-fail.png",
+            size: 2 * 1024 * 1024, // 2MB
+            mimetype: "image/png",
+            path: "/tmp/thumbnail-fail.png",
+          };
+
+          // Mock thumbnail generation failure
+          const thumbnailError = new Error("Thumbnail generation failed");
+          commentModel.createComment.mockRejectedValue(thumbnailError);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should handle image watermark processing failures", async () => {
+          req.file = {
+            filename: "watermark-fail.jpg",
+            size: 1024,
+            mimetype: "image/jpeg",
+            path: "/tmp/watermark-fail.jpg",
+          };
+
+          // Mock watermark processing failure
+          const watermarkError = new Error("Watermark processing failed");
+          commentModel.createComment.mockRejectedValue(watermarkError);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should handle image EXIF data processing errors", async () => {
+          req.file = {
+            filename: "exif-error.jpg",
+            size: 1024,
+            mimetype: "image/jpeg",
+            path: "/tmp/exif-error.jpg",
+          };
+
+          // Mock EXIF data processing error
+          const exifError = new Error("EXIF data processing failed");
+          commentModel.createComment.mockRejectedValue(exifError);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should handle image color profile conversion errors", async () => {
+          req.file = {
+            filename: "color-profile-error.jpg",
+            size: 1024,
+            mimetype: "image/jpeg",
+            path: "/tmp/color-profile-error.jpg",
+          };
+
+          // Mock color profile conversion error
+          const colorProfileError = new Error(
+            "Color profile conversion failed"
+          );
+          commentModel.createComment.mockRejectedValue(colorProfileError);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should handle image rotation processing failures", async () => {
+          req.file = {
+            filename: "rotation-fail.jpg",
+            size: 1024,
+            mimetype: "image/jpeg",
+            path: "/tmp/rotation-fail.jpg",
+          };
+
+          // Mock image rotation failure
+          const rotationError = new Error("Image rotation processing failed");
+          commentModel.createComment.mockRejectedValue(rotationError);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should handle image format conversion errors", async () => {
+          req.file = {
+            filename: "conversion-fail.bmp",
+            size: 1024,
+            mimetype: "image/bmp",
+            path: "/tmp/conversion-fail.bmp",
+          };
+
+          // Mock image format conversion error
+          const conversionError = new Error("Image format conversion failed");
+          commentModel.createComment.mockRejectedValue(conversionError);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should handle image memory allocation errors during processing", async () => {
+          req.file = {
+            filename: "memory-error.jpg",
+            size: 50 * 1024 * 1024, // 50MB
+            mimetype: "image/jpeg",
+            path: "/tmp/memory-error.jpg",
+          };
+
+          // Mock memory allocation error
+          const memoryError = new Error(
+            "Out of memory during image processing"
+          );
+          commentModel.createComment.mockRejectedValue(memoryError);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should handle image processing library unavailable errors", async () => {
+          req.file = {
+            filename: "library-unavailable.jpg",
+            size: 1024,
+            mimetype: "image/jpeg",
+            path: "/tmp/library-unavailable.jpg",
+          };
+
+          // Mock image processing library unavailable
+          const libraryError = new Error(
+            "Image processing library not available"
+          );
+          commentModel.createComment.mockRejectedValue(libraryError);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should handle corrupted image header errors", async () => {
+          req.file = {
+            filename: "corrupted-header.jpg",
+            size: 1024,
+            mimetype: "image/jpeg",
+            path: "/tmp/corrupted-header.jpg",
+          };
+
+          // Mock corrupted image header error
+          const headerError = new Error("Image header is corrupted or invalid");
+          commentModel.createComment.mockRejectedValue(headerError);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should handle image processing timeout errors", async () => {
+          req.file = {
+            filename: "processing-timeout.jpg",
+            size: 10 * 1024 * 1024, // 10MB
+            mimetype: "image/jpeg",
+            path: "/tmp/processing-timeout.jpg",
+          };
+
+          // Mock image processing timeout
+          const timeoutError = new Error("Image processing timeout");
+          commentModel.createComment.mockRejectedValue(timeoutError);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should handle image quality optimization failures", async () => {
+          req.file = {
+            filename: "quality-optimization-fail.jpg",
+            size: 1024,
+            mimetype: "image/jpeg",
+            path: "/tmp/quality-optimization-fail.jpg",
+          };
+
+          // Mock quality optimization failure
+          const qualityError = new Error("Image quality optimization failed");
+          commentModel.createComment.mockRejectedValue(qualityError);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should handle animated image processing errors", async () => {
+          req.file = {
+            filename: "animated-error.gif",
+            size: 2 * 1024 * 1024, // 2MB
+            mimetype: "image/gif",
+            path: "/tmp/animated-error.gif",
+          };
+
+          // Mock animated image processing error
+          const animatedError = new Error(
+            "Animated image processing not supported"
+          );
+          commentModel.createComment.mockRejectedValue(animatedError);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should handle image metadata sanitization errors", async () => {
+          req.file = {
+            filename: "metadata-sanitization-fail.jpg",
+            size: 1024,
+            mimetype: "image/jpeg",
+            path: "/tmp/metadata-sanitization-fail.jpg",
+          };
+
+          // Mock metadata sanitization error
+          const sanitizationError = new Error(
+            "Image metadata sanitization failed"
+          );
+          commentModel.createComment.mockRejectedValue(sanitizationError);
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({
+            error: "Failed to create comment",
+          });
+        });
+
+        it("should handle successful image processing with optimization", async () => {
+          req.file = {
+            filename: "successful-processing.jpg",
+            size: 1024,
+            mimetype: "image/jpeg",
+            path: "/tmp/successful-processing.jpg",
+          };
+
+          commentModel.createComment.mockResolvedValue("comment-123");
+          commentModel.findCommentById.mockResolvedValue({
+            id: "comment-123",
+            content: "Test comment with processed image",
+            ad_id: "ad-123",
+            user_id: "user-123",
+            attachment_url: "/uploads/processed-successful-processing.jpg",
+            thumbnail_url:
+              "/uploads/thumbnails/successful-processing-thumb.jpg",
+          });
+
+          await commentsController.createComment(req, res);
+
+          expect(res.status).toHaveBeenCalledWith(201);
+          expect(res.json).toHaveBeenCalledWith({
+            message: "Comment created successfully",
+            comment: expect.objectContaining({
+              id: "comment-123",
+              content: "Test comment with processed image",
+              attachment_url: "/uploads/processed-successful-processing.jpg",
+              thumbnail_url:
+                "/uploads/thumbnails/successful-processing-thumb.jpg",
+            }),
+          });
+        });
+
+        it("should log image processing errors appropriately", async () => {
+          const logger = require("../../../src/utils/logger");
+
+          req.file = {
+            filename: "processing-error-log.jpg",
+            size: 1024,
+            mimetype: "image/jpeg",
+            path: "/tmp/processing-error-log.jpg",
+          };
+
+          const processingError = new Error(
+            "Complex image processing pipeline failed"
+          );
+          commentModel.createComment.mockRejectedValue(processingError);
+
+          await commentsController.createComment(req, res);
+
+          expect(logger.error).toHaveBeenCalledWith(
+            "Error creating comment: Complex image processing pipeline failed"
+          );
+        });
+      });
     });
   });
 });
