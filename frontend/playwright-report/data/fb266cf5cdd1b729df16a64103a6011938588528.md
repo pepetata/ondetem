@@ -1,0 +1,86 @@
+# Page snapshot
+
+```yaml
+- navigation:
+  - link "Home":
+    - /url: /
+  - link:
+    - /url: /
+  - link "Lista de meus favoritos":
+    - /url: /favorites
+  - link "Lista de meus anúncios":
+    - /url: /my-ads
+  - link "Meus comentários":
+    - /url: /my-comments
+  - link "Alterar meus dados":
+    - /url: /user
+  - button "Encerrar sessão"
+- heading "Registre as informações de seus anúncios" [level=3]
+- text: Título
+- textbox "Título": Anúncio para Editar
+- tablist:
+  - tab "Descrição"
+  - tab "Contato" [selected]
+  - tab "Imagens"
+  - tab "Calendário"
+  - tab "Publicidade"
+- tabpanel "Contato":
+  - text: CEP
+  - textbox "CEP": "01001000"
+  - text: Cidade
+  - textbox "Cidade"
+  - text: Estado
+  - textbox "Estado"
+  - text: Endereço
+  - textbox "Endereço"
+  - text: Número
+  - textbox "Número"
+  - text: Complemento
+  - textbox "Complemento"
+  - text: Raio de Atendimento
+  - combobox:
+    - option "----" [selected]
+    - option "até 1 km"
+    - option "até 2 km"
+    - option "até 3 km"
+    - option "até 4 km"
+    - option "até 5 km"
+    - option "até 10 km"
+    - option "até 15 km"
+    - option "até 20 km"
+    - option "até 25 km"
+    - option "até 30 km"
+    - option "até 35 km"
+    - option "até 40 km"
+    - option "até 45 km"
+    - option "até 50 km"
+    - option "até 60 km"
+    - option "até 70 km"
+    - option "até 80 km"
+    - option "até 90 km"
+    - option "até 100 km"
+    - option "até 150 km"
+    - option "até 200 km"
+  - text: Telefone 1
+  - textbox "Telefone 1": "11999999999"
+  - text: Telefone 2
+  - textbox "Telefone 2"
+  - text: WhatsApp
+  - textbox "WhatsApp"
+  - text: Email
+  - textbox "Email": editar@example.com
+  - text: Website
+  - textbox "Website"
+- button "GravarGravar":
+  - img "Gravar"
+  - text: Gravar
+- button "VoltarVoltar":
+  - img "Voltar"
+  - text: Voltar
+- button "Novo AnúncioNovo Anúncio":
+  - img "Novo Anúncio"
+  - text: Novo Anúncio
+- button "Remover AnúncioRemover Anúncio":
+  - img "Remover Anúncio"
+  - text: Remover Anúncio
+```

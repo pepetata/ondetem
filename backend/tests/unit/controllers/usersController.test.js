@@ -190,12 +190,12 @@ describe("Users Controller", () => {
 
   describe("getUserById", () => {
     beforeEach(() => {
-      req.params.id = "123";
+      req.params.id = "123e4567-e89b-12d3-a456-426614174000";
     });
 
     it("should return user by id successfully", async () => {
       const mockUser = {
-        id: 123,
+        id: "123e4567-e89b-12d3-a456-426614174000",
         fullName: "Test User",
         email: "test@example.com",
       };
@@ -203,8 +203,12 @@ describe("Users Controller", () => {
 
       await usersController.getUserById(req, res, next);
 
-      expect(XSSProtection.sanitizeUserInput).toHaveBeenCalledWith("123");
-      expect(userModel.getUserById).toHaveBeenCalledWith("123");
+      expect(XSSProtection.sanitizeUserInput).toHaveBeenCalledWith(
+        "123e4567-e89b-12d3-a456-426614174000"
+      );
+      expect(userModel.getUserById).toHaveBeenCalledWith(
+        "123e4567-e89b-12d3-a456-426614174000"
+      );
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(mockUser);
     });

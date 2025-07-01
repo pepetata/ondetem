@@ -277,13 +277,14 @@ router.post("/health/shutdown", async (req, res) => {
   }
 
   try {
+    // Start graceful shutdown preparation first
+    await healthManager.prepareShutdown();
+
+    // Only send success response if preparation succeeds
     res.status(200).json({
       message: "Graceful shutdown initiated",
       timestamp: new Date().toISOString(),
     });
-
-    // Start graceful shutdown
-    await healthManager.prepareShutdown();
 
     // Give time for the response to be sent
     setTimeout(() => {
