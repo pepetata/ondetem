@@ -14,8 +14,13 @@ const requestLogger = (request, response, next) => {
 
 const tokenExtractor = (request, response, next) => {
   const authorization = request.get("authorization");
-  if (authorization && authorization.toLowerCase().startsWith("bearer ")) {
-    request.token = authorization.substring(7);
+  if (authorization && authorization.toLowerCase().startsWith("bearer")) {
+    if (authorization.toLowerCase().startsWith("bearer ")) {
+      request.token = authorization.substring(7);
+    } else {
+      // Malformed bearer header (e.g., just "Bearer" without space)
+      request.token = "";
+    }
   } else {
     request.token = null;
   }
@@ -36,9 +41,15 @@ const userExtractor = async (request, response, next) => {
         );
 
         request.user = user;
+      } else {
+        // No userId in token - delete the user property to make it undefined
+        console.log(`---- middleware userExtractor: No userId in token`);
+        delete request.user;
       }
     } else {
       console.log(`---- middleware userExtractor: No token provided`);
+      // No token provided - delete the user property to make it undefined
+      delete request.user;
     }
   } catch (error) {
     console.error(`Error in userExtractor: ${error}`);
