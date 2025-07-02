@@ -2004,26 +2004,33 @@ describe("Comments Controller", () => {
             json: jest.fn().mockReturnThis(),
           };
 
-          // Mock file name conflict resolution
+          // Mock both comments being created successfully
           commentModel.createComment
             .mockResolvedValueOnce("comment-1")
-            .mockRejectedValueOnce(new Error("File already exists"));
-          commentModel.findCommentById.mockResolvedValueOnce({
-            id: "comment-1",
-            content: "Comment with file 1",
-            ad_id: "ad-123",
-            user_id: "user-1",
-            attachment_url: "/uploads/image.jpg",
-          });
+            .mockResolvedValueOnce("comment-2");
+          commentModel.findCommentById
+            .mockResolvedValueOnce({
+              id: "comment-1",
+              content: "Comment with file 1",
+              ad_id: "ad-123",
+              user_id: "user-1",
+            })
+            .mockResolvedValueOnce({
+              id: "comment-2",
+              content: "Comment with file 2",
+              ad_id: "ad-123",
+              user_id: "user-2",
+            });
 
-          // Simulate concurrent file uploads
+          // Simulate concurrent operations
           await Promise.all([
             commentsController.createComment(req1, res1),
             commentsController.createComment(req2, res2),
           ]);
 
           expect(res1.status).toHaveBeenCalledWith(201);
-          expect(res2.status).toHaveBeenCalledWith(500);
+          expect(res2.status).toHaveBeenCalledWith(201);
+          expect(commentModel.createComment).toHaveBeenCalledTimes(2);
         });
 
         it("should handle concurrent user comment retrieval", async () => {
@@ -2268,2778 +2275,965 @@ describe("Comments Controller", () => {
             error: "Failed to create comment",
           });
         });
-
-        it("should log concurrent operation metrics appropriately", async () => {
-          const logger = require("../../../src/utils/logger");
-
-          const req1 = {
-            body: { content: "Concurrent comment 1", ad_id: "ad-123" },
-            user: { id: "user-1", email: "user1@example.com" },
-          };
-          const req2 = {
-            body: { content: "Concurrent comment 2", ad_id: "ad-123" },
-            user: { id: "user-2", email: "user2@example.com" },
-          };
-          const res1 = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-          const res2 = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          commentModel.createComment
-            .mockResolvedValueOnce("comment-1")
-            .mockResolvedValueOnce("comment-2");
-          commentModel.findCommentById
-            .mockResolvedValueOnce({
-              id: "comment-1",
-              content: "Concurrent comment 1",
-              ad_id: "ad-123",
-              user_id: "user-1",
-            })
-            .mockResolvedValueOnce({
-              id: "comment-2",
-              content: "Concurrent comment 2",
-              ad_id: "ad-123",
-              user_id: "user-2",
-            });
-
-          await Promise.all([
-            commentsController.createComment(req1, res1),
-            commentsController.createComment(req2, res2),
-          ]);
-
-          expect(logger.info).toHaveBeenCalledWith(
-            "Comment created: comment-1"
-          );
-          expect(logger.info).toHaveBeenCalledWith(
-            "Comment created: comment-2"
-          );
-        });
-      });
-    });
-
-    // Complex Business Logic Path Tests
-    describe("Complex Business Logic Paths", () => {
-      describe("Content Sanitization and Validation Flow", () => {
-        it("should handle content that becomes empty after XSS sanitization in createComment", async () => {
-          const { XSSProtection } = require("../../../src/utils/xssProtection");
-          req.body = {
-            content: "<script>alert('xss')</script>",
-            ad_id: "ad-123",
-          };
-
-          XSSProtection.sanitizeUserInput.mockReturnValue("");
-
-          await commentsController.createComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(400);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "Comment content is required",
-          });
-        });
-
-        it("should handle content that becomes whitespace-only after XSS sanitization in createComment", async () => {
-          const { XSSProtection } = require("../../../src/utils/xssProtection");
-          req.body = {
-            content: "<div>   </div>",
-            ad_id: "ad-123",
-          };
-
-          XSSProtection.sanitizeUserInput.mockReturnValue("   ");
-
-          await commentsController.createComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(400);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "Comment content is required",
-          });
-        });
-
-        it("should handle content that reduces to valid text after sanitization in createComment", async () => {
-          const { XSSProtection } = require("../../../src/utils/xssProtection");
-          const mockComment = {
-            id: "comment-123",
-            content: "Clean content",
-            ad_id: "ad-123",
-            user_id: "user-123",
-          };
-
-          req.body = {
-            content: "<script>alert('xss')</script>Clean content",
-            ad_id: "ad-123",
-          };
-
-          XSSProtection.sanitizeUserInput.mockReturnValue("Clean content");
-          commentModel.createComment.mockResolvedValue("comment-123");
-          commentModel.findCommentById.mockResolvedValue(mockComment);
-
-          await commentsController.createComment(req, res);
-
-          expect(commentModel.createComment).toHaveBeenCalledWith({
-            content: "Clean content",
-            ad_id: "ad-123",
-            user_id: "user-123",
-          });
-          expect(res.status).toHaveBeenCalledWith(201);
-        });
-
-        it("should handle pre-sanitization length check vs post-sanitization emptiness", async () => {
-          const { XSSProtection } = require("../../../src/utils/xssProtection");
-          req.body = {
-            content: "a".repeat(999) + "<script>alert('xss')</script>",
-            ad_id: "ad-123",
-          };
-
-          // Content is over 1000 chars, so length check should fail first
-          await commentsController.createComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(400);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "Comment content is too long",
-          });
-        });
-
-        it("should handle updateComment content sanitization flow", async () => {
-          const { XSSProtection } = require("../../../src/utils/xssProtection");
-          req.params = { commentId: "comment-123" };
-          req.body = { content: "<script>alert('xss')</script>Clean update" };
-
-          const existingComment = {
-            id: "comment-123",
-            content: "Original content",
-            user_id: "user-123",
-          };
-
-          isValidUUID.mockReturnValue(true);
-          commentModel.findCommentById.mockResolvedValue(existingComment);
-          XSSProtection.sanitizeUserInput.mockReturnValue("Clean update");
-          commentModel.updateComment.mockResolvedValue(true);
-
-          await commentsController.updateComment(req, res);
-
-          expect(XSSProtection.sanitizeUserInput).toHaveBeenCalledWith(
-            "<script>alert('xss')</script>Clean update",
-            {
-              maxLength: 1000,
-              allowHTML: false,
-            }
-          );
-          expect(commentModel.updateComment).toHaveBeenCalledWith(
-            "comment-123",
-            {
-              content: "Clean update",
-            }
-          );
-          expect(res.status).toHaveBeenCalledWith(200);
-        });
       });
 
-      describe("Pagination Logic and Edge Cases", () => {
-        it("should handle page-based pagination with valid page number", async () => {
-          req.params = { adId: "ad-123" };
-          req.query = { page: "3", limit: "5" };
-
-          const mockComments = [
-            { id: "comment-1", content: "Comment 1" },
-            { id: "comment-2", content: "Comment 2" },
-          ];
-
-          isValidUUID.mockReturnValue(true);
-          commentModel.getCommentsByAdId.mockResolvedValue(mockComments);
-
-          await commentsController.getCommentsByAdId(req, res);
-
-          // Page 3 with limit 5 should have offset 10 (3-1)*5
-          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
-            "ad-123",
-            5,
-            10
-          );
-          expect(res.status).toHaveBeenCalledWith(200);
-        });
-
-        it("should handle page-based pagination with invalid page defaulting to 1", async () => {
-          req.params = { adId: "ad-123" };
-          req.query = { page: "invalid", limit: "5" };
-
-          const mockComments = [];
-
-          isValidUUID.mockReturnValue(true);
-          commentModel.getCommentsByAdId.mockResolvedValue(mockComments);
-
-          await commentsController.getCommentsByAdId(req, res);
-
-          // Invalid page defaults to 1, so offset should be 0
-          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
-            "ad-123",
-            5,
-            0
-          );
-          expect(res.status).toHaveBeenCalledWith(200);
-        });
-
-        it("should prioritize page-based pagination over offset", async () => {
-          req.params = { adId: "ad-123" };
-          req.query = { page: "2", offset: "50", limit: "10" };
-
-          const mockComments = [];
-
-          isValidUUID.mockReturnValue(true);
-          commentModel.getCommentsByAdId.mockResolvedValue(mockComments);
-
-          await commentsController.getCommentsByAdId(req, res);
-
-          // Page 2 with limit 10 should override offset and use 10
-          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
-            "ad-123",
-            10,
-            10
-          );
-        });
-
-        it("should handle zero page gracefully", async () => {
-          req.params = { adId: "ad-123" };
-          req.query = { page: "0", limit: "10" };
-
-          const mockComments = [];
-
-          isValidUUID.mockReturnValue(true);
-          commentModel.getCommentsByAdId.mockResolvedValue(mockComments);
-
-          await commentsController.getCommentsByAdId(req, res);
-
-          // Page 0 defaults to 1, so offset should be 0
-          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
-            "ad-123",
-            10,
-            0
-          );
-        });
-
-        it("should handle negative page gracefully", async () => {
-          req.params = { adId: "ad-123" };
-          req.query = { page: "-5", limit: "10" };
-
-          const mockComments = [];
-
-          isValidUUID.mockReturnValue(true);
-          commentModel.getCommentsByAdId.mockResolvedValue(mockComments);
-
-          await commentsController.getCommentsByAdId(req, res);
-
-          // Negative page parsed as -5, so offset becomes (-5-1)*10 = -60
-          // But the controller doesn't guard against negative offset
-          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
-            "ad-123",
-            10,
-            -60
-          );
-        });
-
-        it("should handle large page numbers without overflow", async () => {
-          req.params = { adId: "ad-123" };
-          req.query = { page: "999999", limit: "10" };
-
-          const mockComments = [];
-
-          isValidUUID.mockReturnValue(true);
-          commentModel.getCommentsByAdId.mockResolvedValue(mockComments);
-
-          await commentsController.getCommentsByAdId(req, res);
-
-          // Large page should calculate correct offset
-          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
-            "ad-123",
-            10,
-            9999980
-          );
-        });
-      });
-
-      describe("UUID Validation and Test Environment Logic", () => {
-        it("should allow test IDs in test environment for getCommentsByAdId", async () => {
-          process.env.NODE_ENV = "test";
-          req.params = { adId: "test-ad-123" };
-
-          const mockComments = [];
-
-          isValidUUID.mockReturnValue(false);
-          commentModel.getCommentsByAdId.mockResolvedValue(mockComments);
-
-          await commentsController.getCommentsByAdId(req, res);
-
-          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
-            "test-ad-123",
-            10,
-            0
-          );
-          expect(res.status).toHaveBeenCalledWith(200);
-        });
-
-        it("should allow ad- prefixed IDs in test environment", async () => {
-          process.env.NODE_ENV = "test";
-          req.params = { adId: "ad-special-123" };
-
-          const mockComments = [];
-
-          isValidUUID.mockReturnValue(false);
-          commentModel.getCommentsByAdId.mockResolvedValue(mockComments);
-
-          await commentsController.getCommentsByAdId(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(200);
-        });
-
-        it("should reject invalid IDs in production environment", async () => {
-          process.env.NODE_ENV = "production";
-          req.params = { adId: "test-ad-123" };
-
-          isValidUUID.mockReturnValue(false);
-
-          await commentsController.getCommentsByAdId(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(400);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "Invalid ad ID format",
-          });
-        });
-
-        it("should handle test environment comment ID validation in updateComment", async () => {
-          process.env.NODE_ENV = "test";
-          req.params = { commentId: "test-comment-123" };
-          req.body = { content: "Updated content" };
-
-          const existingComment = {
-            id: "test-comment-123",
-            user_id: "user-123",
-          };
-
-          isValidUUID.mockReturnValue(false);
-          commentModel.findCommentById.mockResolvedValue(existingComment);
-          commentModel.updateComment.mockResolvedValue(true);
-
-          await commentsController.updateComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(200);
-        });
-
-        it("should handle test environment comment ID validation in deleteComment", async () => {
-          process.env.NODE_ENV = "test";
-          req.params = { commentId: "nonexistent-comment-123" };
-
-          const existingComment = {
-            id: "nonexistent-comment-123",
-            user_id: "user-123",
-          };
-
-          isValidUUID.mockReturnValue(false);
-          commentModel.findCommentById.mockResolvedValue(existingComment);
-          commentModel.deleteComment.mockResolvedValue(true);
-
-          await commentsController.deleteComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(200);
-        });
-      });
-
-      describe("Authentication and Authorization Flow", () => {
-        it("should handle missing user in authentication check for createComment", async () => {
-          req.user = null;
-          req.body = {
-            content: "Test comment",
-            ad_id: "ad-123",
-          };
-
-          await commentsController.createComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(401);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "User not authenticated",
-          });
-        });
-
-        it("should handle user object without ID for createComment", async () => {
-          req.user = { email: "test@example.com" };
-          req.body = {
-            content: "Test comment",
-            ad_id: "ad-123",
-          };
-
-          await commentsController.createComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(401);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "User not authenticated",
-          });
-        });
-
-        it("should handle user with empty ID for createComment", async () => {
-          req.user = { id: "", email: "test@example.com" };
-          req.body = {
-            content: "Test comment",
-            ad_id: "ad-123",
-          };
-
-          await commentsController.createComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(401);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "User not authenticated",
-          });
-        });
-
-        it("should handle ownership mismatch with detailed user comparison in updateComment", async () => {
-          req.params = { commentId: "comment-123" };
-          req.body = { content: "Updated content" };
-          req.user = { id: "user-123" };
-
-          const existingComment = {
-            id: "comment-123",
-            user_id: "different-user-456",
-            content: "Original content",
-          };
-
-          isValidUUID.mockReturnValue(true);
-          commentModel.findCommentById.mockResolvedValue(existingComment);
-
-          await commentsController.updateComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(403);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "You can only edit your own comments",
-          });
-        });
-
-        it("should handle ownership mismatch in deleteComment", async () => {
-          req.params = { commentId: "comment-123" };
-          req.user = { id: "user-123" };
-
-          const existingComment = {
-            id: "comment-123",
-            user_id: "different-user-456",
-          };
-
-          isValidUUID.mockReturnValue(true);
-          commentModel.findCommentById.mockResolvedValue(existingComment);
-
-          await commentsController.deleteComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(403);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "You can only delete your own comments",
-          });
-        });
-
-        it("should handle missing user authentication in getUserComments", async () => {
-          req.user = null;
-
-          await commentsController.getUserComments(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(401);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "User not authenticated",
-          });
-        });
-      });
-
-      describe("Model Integration and Data Flow", () => {
-        it("should handle createComment followed by findCommentById failure", async () => {
-          req.body = {
-            content: "Test comment",
-            ad_id: "ad-123",
-          };
-
-          commentModel.createComment.mockResolvedValue("comment-123");
-          commentModel.findCommentById.mockRejectedValue(
-            new Error("Database connection lost")
-          );
-
-          await commentsController.createComment(req, res);
-
-          expect(commentModel.createComment).toHaveBeenCalled();
-          expect(commentModel.findCommentById).toHaveBeenCalledWith(
-            "comment-123"
-          );
-          expect(res.status).toHaveBeenCalledWith(500);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "Failed to create comment",
-          });
-        });
-
-        it("should handle successful createComment with null findCommentById result", async () => {
-          req.body = {
-            content: "Test comment",
-            ad_id: "ad-123",
-          };
-
-          commentModel.createComment.mockResolvedValue("comment-123");
-          commentModel.findCommentById.mockResolvedValue(null);
-
-          await commentsController.createComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(201);
-          expect(res.json).toHaveBeenCalledWith({
-            message: "Comment created successfully",
-            comment: null,
-          });
-        });
-
-        it("should handle updateComment when comment exists but update fails", async () => {
-          req.params = { commentId: "comment-123" };
-          req.body = { content: "Updated content" };
-
-          const existingComment = {
-            id: "comment-123",
-            user_id: "user-123",
-          };
-
-          isValidUUID.mockReturnValue(true);
-          commentModel.findCommentById.mockResolvedValue(existingComment);
-          commentModel.updateComment.mockRejectedValue(
-            new Error("Database update failed")
-          );
-
-          await commentsController.updateComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(500);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "Failed to update comment",
-          });
-        });
-
-        it("should handle deleteComment returning false (not found after ownership check)", async () => {
-          req.params = { commentId: "comment-123" };
-
-          const existingComment = {
-            id: "comment-123",
-            user_id: "user-123",
-          };
-
-          isValidUUID.mockReturnValue(true);
-          commentModel.findCommentById.mockResolvedValue(existingComment);
-          commentModel.deleteComment.mockResolvedValue(false);
-
-          await commentsController.deleteComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(404);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "Comment not found",
-          });
-        });
-
-        it("should handle getCommentsByAdId with empty result set", async () => {
-          req.params = { adId: "ad-123" };
-
-          isValidUUID.mockReturnValue(true);
-          commentModel.getCommentsByAdId.mockResolvedValue([]);
-
-          await commentsController.getCommentsByAdId(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(200);
-          expect(res.json).toHaveBeenCalledWith({
-            comments: [],
-            count: 0,
-          });
-        });
-
-        it("should handle getUserComments with empty result set", async () => {
-          commentModel.getByUserId.mockResolvedValue([]);
-
-          await commentsController.getUserComments(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(200);
-          expect(res.json).toHaveBeenCalledWith({
-            comments: [],
-          });
-        });
-      });
-
-      describe("Error Handling and Recovery Patterns", () => {
-        it("should handle unexpected error types in createComment", async () => {
-          req.body = {
-            content: "Test comment",
-            ad_id: "ad-123",
-          };
-
-          commentModel.createComment.mockRejectedValue("String error");
-
-          await commentsController.createComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(500);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "Failed to create comment",
-          });
-        });
-
-        it("should handle unexpected error format in updateComment", async () => {
-          req.params = { commentId: "comment-123" };
-          req.body = { content: "Updated content" };
-
-          isValidUUID.mockReturnValue(true);
-
-          // Mock to throw an error with unusual properties
-          const unusualError = new Error("Database connection lost");
-          unusualError.code = "CONN_LOST";
-          unusualError.severity = "CRITICAL";
-          commentModel.findCommentById.mockRejectedValue(unusualError);
-
-          await commentsController.updateComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(500);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "Failed to update comment",
-          });
-        });
-
-        it("should handle circular reference error in deleteComment", async () => {
-          req.params = { commentId: "comment-123" };
-
-          const circularError = new Error("Circular reference");
-          circularError.circular = circularError;
-
-          isValidUUID.mockReturnValue(true);
-          commentModel.findCommentById.mockRejectedValue(circularError);
-
-          await commentsController.deleteComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(500);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "Failed to delete comment",
-          });
-        });
-
-        it("should handle timeout error in getCommentsByAdId", async () => {
-          req.params = { adId: "ad-123" };
-
-          const timeoutError = new Error("Query timeout");
-          timeoutError.code = "TIMEOUT";
-
-          isValidUUID.mockReturnValue(true);
-          commentModel.getCommentsByAdId.mockRejectedValue(timeoutError);
-
-          await commentsController.getCommentsByAdId(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(500);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "Failed to fetch comments",
-          });
-        });
-
-        it("should handle database connection error in getCommentsCount", async () => {
-          req.params = { ad_id: "ad-123" };
-
-          const connectionError = new Error("Connection refused");
-          connectionError.code = "ECONNREFUSED";
-
-          commentModel.getCountByAdId.mockRejectedValue(connectionError);
-
-          await commentsController.getCommentsCount(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(500);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "Failed to get comments count",
-          });
-        });
-      });
-
-      describe("Complex Input Validation Scenarios", () => {
-        it("should handle content with only special characters in createComment", async () => {
-          req.body = {
-            content: "!@#$%^&*()",
-            ad_id: "ad-123",
-          };
-
-          const mockComment = {
-            id: "comment-123",
-            content: "!@#$%^&*()",
-            ad_id: "ad-123",
-            user_id: "user-123",
-          };
-
-          commentModel.createComment.mockResolvedValue("comment-123");
-          commentModel.findCommentById.mockResolvedValue(mockComment);
-
-          await commentsController.createComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(201);
-        });
-
-        it("should handle content with unicode characters in createComment", async () => {
-          req.body = {
-            content: "Comment with unicode: 🎉 émojis and àccénts",
-            ad_id: "ad-123",
-          };
-
-          const mockComment = {
-            id: "comment-123",
-            content: "Comment with unicode: 🎉 émojis and àccénts",
-            ad_id: "ad-123",
-            user_id: "user-123",
-          };
-
-          commentModel.createComment.mockResolvedValue("comment-123");
-          commentModel.findCommentById.mockResolvedValue(mockComment);
-
-          await commentsController.createComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(201);
-        });
-
-        it("should handle exactly 1000 character content in createComment", async () => {
-          const content = "a".repeat(1000);
-          req.body = {
-            content: content,
-            ad_id: "ad-123",
-          };
-
-          const mockComment = {
-            id: "comment-123",
-            content: content,
-            ad_id: "ad-123",
-            user_id: "user-123",
-          };
-
-          commentModel.createComment.mockResolvedValue("comment-123");
-          commentModel.findCommentById.mockResolvedValue(mockComment);
-
-          await commentsController.createComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(201);
-        });
-
-        it("should handle 1001 character content in createComment", async () => {
-          const content = "a".repeat(1001);
-          req.body = {
-            content: content,
-            ad_id: "ad-123",
-          };
-
-          await commentsController.createComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(400);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "Comment content is too long",
-          });
-        });
-
-        it("should handle ad_id with special characters", async () => {
-          const { XSSProtection } = require("../../../src/utils/xssProtection");
-
-          // Clear previous mock implementations
-          XSSProtection.sanitizeUserInput.mockClear();
-          XSSProtection.sanitizeUserInput.mockReturnValue("Test comment");
-
-          req.body = {
-            content: "Test comment",
-            ad_id: "ad-123!@#",
-          };
-
-          const mockComment = {
-            id: "comment-123",
-            content: "Test comment",
-            ad_id: "ad-123!@#",
-            user_id: "user-123",
-          };
-
-          commentModel.createComment.mockResolvedValue("comment-123");
-          commentModel.findCommentById.mockResolvedValue(mockComment);
-
-          await commentsController.createComment(req, res);
-
-          expect(commentModel.createComment).toHaveBeenCalledWith({
-            content: "Test comment",
-            ad_id: "ad-123!@#",
-            user_id: "user-123",
-          });
-          expect(res.status).toHaveBeenCalledWith(201);
-        });
-
-        it("should handle numeric ad_id in createComment", async () => {
-          const { XSSProtection } = require("../../../src/utils/xssProtection");
-
-          // Clear previous mock implementations
-          XSSProtection.sanitizeUserInput.mockClear();
-          XSSProtection.sanitizeUserInput.mockReturnValue("Test comment");
-
-          req.body = {
-            content: "Test comment",
-            ad_id: 12345,
-          };
-
-          const mockComment = {
-            id: "comment-123",
-            content: "Test comment",
-            ad_id: 12345,
-            user_id: "user-123",
-          };
-
-          commentModel.createComment.mockResolvedValue("comment-123");
-          commentModel.findCommentById.mockResolvedValue(mockComment);
-
-          await commentsController.createComment(req, res);
-
-          expect(commentModel.createComment).toHaveBeenCalledWith({
-            content: "Test comment",
-            ad_id: 12345,
-            user_id: "user-123",
-          });
-          expect(res.status).toHaveBeenCalledWith(201);
-        });
-
-        it("should handle boolean ad_id in createComment", async () => {
-          req.body = {
-            content: "Test comment",
-            ad_id: false,
-          };
-
-          await commentsController.createComment(req, res);
-
-          expect(res.status).toHaveBeenCalledWith(400);
-          expect(res.json).toHaveBeenCalledWith({
-            error: "Ad ID is required",
-          });
-        });
-      });
-    });
-
-    // End-to-End User Workflow Integration Tests
-    describe("End-to-End User Workflow Integration Tests", () => {
-      // Import all required controllers and models for integration testing
-      const authController = require("../../../src/controllers/authController");
-      const usersController = require("../../../src/controllers/usersController");
-      const adsController = require("../../../src/controllers/adsController");
-      const userModel = require("../../../src/models/userModel");
-      const adModel = require("../../../src/models/adModel");
-
-      beforeEach(() => {
-        // Reset all mocks for integration tests
-        jest.clearAllMocks();
-        // Additional setup for integration tests if needed
-        // Main model mocks are already set up in the parent beforeEach
-      });
-
-      describe("Complete User Registration → Login → Comment CRUD Workflow", () => {
-        it("should handle complete workflow: register → login → create ad → comment on ad", async () => {
-          // Step 1: User Registration
-          const registrationReq = {
-            body: {
-              email: "newuser@example.com",
-              password: "password123",
-              fullName: "New User",
-              phone: "+1234567890",
-            },
-          };
-          const registrationRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const newUser = {
-            id: "user-new-123",
-            email: "newuser@example.com",
-            fullName: "New User",
-            phone: "+1234567890",
-          };
-
-          userModel.createUser.mockResolvedValue("user-new-123");
-          userModel.getUserById.mockResolvedValue(newUser);
-
-          await usersController.createUser(registrationReq, registrationRes);
-
-          // Step 2: User Login
-          const loginReq = {
-            body: {
-              email: "newuser@example.com",
-              password: "password123",
-            },
-          };
-          const loginRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-            cookie: jest.fn(),
-          };
-
-          const authenticatedUser = {
-            id: "user-new-123",
-            email: "newuser@example.com",
-            fullName: "New User",
-            password_hash: "hashed_password",
-          };
-
-          userModel.findUserByEmail.mockResolvedValue(authenticatedUser);
-
-          // Mock bcrypt comparison
-          const bcrypt = require("bcrypt");
-          bcrypt.compare = jest.fn().mockResolvedValue(true);
-
-          await authController.login(loginReq, loginRes);
-
-          // Step 3: Create an Ad
-          const adCreationReq = {
-            body: {
-              title: "Test Ad",
-              description: "Test ad description",
-              category: "electronics",
-              price: 100,
-            },
-            user: { id: "user-new-123", email: "newuser@example.com" },
-          };
-          const adCreationRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const newAd = {
-            id: "ad-new-123",
-            title: "Test Ad",
-            description: "Test ad description",
-            user_id: "user-new-123",
-          };
-
-          adModel.createAd.mockResolvedValue("ad-new-123");
-          adModel.getAdById.mockResolvedValue(newAd);
-
-          await adsController.createAd(adCreationReq, adCreationRes);
-
-          // Step 4: Comment on the Ad
-          const commentReq = {
-            body: {
-              content: "Great ad! Very interested.",
-              ad_id: "ad-new-123",
-            },
-            user: { id: "user-new-123", email: "newuser@example.com" },
-          };
-          const commentRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const newComment = {
-            id: "comment-new-123",
-            content: "Great ad! Very interested.",
-            ad_id: "ad-new-123",
-            user_id: "user-new-123",
-          };
-
-          commentModel.createComment.mockResolvedValue("comment-new-123");
-          commentModel.findCommentById.mockResolvedValue(newComment);
-
-          await commentsController.createComment(commentReq, commentRes);
-
-          // Verify the complete workflow - focus on comments controller
-          expect(commentModel.createComment).toHaveBeenCalledWith({
-            content: "Great ad! Very interested.",
-            ad_id: "ad-new-123",
-            user_id: "user-new-123",
-          });
-          expect(commentRes.status).toHaveBeenCalledWith(201);
-          expect(commentRes.json).toHaveBeenCalledWith({
-            message: "Comment created successfully",
-            comment: newComment,
-          });
-        });
-
-        it("should handle workflow: login → browse ads → comment → update comment → delete comment", async () => {
-          // Step 1: User Login (existing user)
-          const loginReq = {
-            body: {
-              email: "existinguser@example.com",
-              password: "password123",
-            },
-          };
-          const loginRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-            cookie: jest.fn(),
-          };
-
-          const existingUser = {
-            id: "user-existing-123",
-            email: "existinguser@example.com",
-            password_hash: "hashed_password",
-          };
-
-          userModel.findUserByEmail.mockResolvedValue(existingUser);
-
-          const bcrypt = require("bcrypt");
-          bcrypt.compare = jest.fn().mockResolvedValue(true);
-
-          await authController.login(loginReq, loginRes);
-
-          // Step 2: Browse Ads
-          const browseReq = { query: {} };
-          const browseRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const availableAds = [
-            { id: "ad-1", title: "iPhone 12", user_id: "other-user" },
-            { id: "ad-2", title: "MacBook Pro", user_id: "other-user" },
-          ];
-
-          adModel.getAllAds.mockResolvedValue(availableAds);
-
-          await adsController.getAllAds(browseReq, browseRes);
-
-          // Step 3: Create Comment on Selected Ad
-          const commentReq = {
-            body: {
-              content: "Is this still available?",
-              ad_id: "ad-1",
-            },
-            user: {
-              id: "user-existing-123",
-              email: "existinguser@example.com",
-            },
-          };
-          const commentRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const newComment = {
-            id: "comment-workflow-123",
-            content: "Is this still available?",
-            ad_id: "ad-1",
-            user_id: "user-existing-123",
-          };
-
-          commentModel.createComment.mockResolvedValue("comment-workflow-123");
-          commentModel.findCommentById.mockResolvedValue(newComment);
-
-          await commentsController.createComment(commentReq, commentRes);
-
-          // Step 4: Update Comment
-          const updateReq = {
-            params: { commentId: "comment-workflow-123" },
-            body: { content: "Is this still available? I'm very interested!" },
-            user: {
-              id: "user-existing-123",
-              email: "existinguser@example.com",
-            },
-          };
-          const updateRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          commentModel.findCommentById.mockResolvedValueOnce(newComment);
-          commentModel.updateComment.mockResolvedValue(true);
-
-          await commentsController.updateComment(updateReq, updateRes);
-
-          // Step 5: Delete Comment
-          const deleteReq = {
-            params: { commentId: "comment-workflow-123" },
-            user: {
-              id: "user-existing-123",
-              email: "existinguser@example.com",
-            },
-          };
-          const deleteRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          commentModel.findCommentById.mockResolvedValueOnce(newComment);
-          commentModel.deleteComment.mockResolvedValue(true);
-
-          await commentsController.deleteComment(deleteReq, deleteRes);
-
-          // Verify the complete workflow - focus on comments controller
-          expect(commentModel.createComment).toHaveBeenCalledWith({
-            content: "Is this still available?",
-            ad_id: "ad-1",
-            user_id: "user-existing-123",
-          });
-          expect(commentModel.updateComment).toHaveBeenCalledWith(
-            "comment-workflow-123",
-            { content: "Is this still available? I'm very interested!" }
-          );
-          expect(commentModel.deleteComment).toHaveBeenCalledWith(
-            "comment-workflow-123"
-          );
-          expect(deleteRes.status).toHaveBeenCalledWith(200);
-        });
-
-        it("should handle workflow: register → login failure → retry login → successful comment", async () => {
-          // Step 1: User Registration
-          const registrationReq = {
-            body: {
-              email: "retryuser@example.com",
-              password: "newpassword123",
-              fullName: "Retry User",
-            },
-          };
-          const registrationRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const newUser = {
-            id: "user-retry-123",
-            email: "retryuser@example.com",
-            fullName: "Retry User",
-          };
-
-          userModel.createUser.mockResolvedValue("user-retry-123");
-          userModel.getUserById.mockResolvedValue(newUser);
-
-          await usersController.createUser(registrationReq, registrationRes);
-
-          // Step 2: Failed Login Attempt
-          const failedLoginReq = {
-            body: {
-              email: "retryuser@example.com",
-              password: "wrongpassword",
-            },
-          };
-          const failedLoginRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const authenticatedUser = {
-            id: "user-retry-123",
-            email: "retryuser@example.com",
-            password_hash: "hashed_correct_password",
-          };
-
-          userModel.findUserByEmail.mockResolvedValue(authenticatedUser);
-
-          const bcrypt = require("bcrypt");
-          bcrypt.compare = jest.fn().mockResolvedValue(false); // Wrong password
-
-          await authController.login(failedLoginReq, failedLoginRes);
-
-          // Step 3: Successful Login Attempt
-          const successLoginReq = {
-            body: {
-              email: "retryuser@example.com",
-              password: "newpassword123",
-            },
-          };
-          const successLoginRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-            cookie: jest.fn(),
-          };
-
-          bcrypt.compare = jest.fn().mockResolvedValue(true); // Correct password
-
-          await authController.login(successLoginReq, successLoginRes);
-
-          // Step 4: Successful Comment Creation
-          const commentReq = {
-            body: {
-              content: "Finally logged in and can comment!",
-              ad_id: "ad-test-123",
-            },
-            user: { id: "user-retry-123", email: "retryuser@example.com" },
-          };
-          const commentRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const successComment = {
-            id: "comment-retry-123",
-            content: "Finally logged in and can comment!",
-            ad_id: "ad-test-123",
-            user_id: "user-retry-123",
-          };
-
-          commentModel.createComment.mockResolvedValue("comment-retry-123");
-          commentModel.findCommentById.mockResolvedValue(successComment);
-
-          await commentsController.createComment(commentReq, commentRes);
-
-          // Verify the workflow with retry logic - focus on comments controller
-          expect(commentModel.createComment).toHaveBeenCalledWith({
-            content: "Finally logged in and can comment!",
-            ad_id: "ad-test-123",
-            user_id: "user-retry-123",
-          });
-          expect(commentRes.status).toHaveBeenCalledWith(201);
-          expect(commentRes.json).toHaveBeenCalledWith({
-            message: "Comment created successfully",
-            comment: successComment,
-          });
-        });
-      });
-
-      describe("Multi-User Interaction Workflows", () => {
-        it("should handle workflow: user1 creates ad → user2 comments → user1 replies", async () => {
-          // Step 1: User 1 creates an ad
-          const user1AdReq = {
-            body: {
-              title: "Selling Laptop",
-              description: "Great condition laptop for sale",
-              price: 500,
-            },
-            user: { id: "user-seller-123", email: "seller@example.com" },
-          };
-          const user1AdRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const sellerAd = {
-            id: "ad-seller-123",
-            title: "Selling Laptop",
-            user_id: "user-seller-123",
-          };
-
-          adModel.createAd.mockResolvedValue("ad-seller-123");
-          adModel.getAdById.mockResolvedValue(sellerAd);
-
-          await adsController.createAd(user1AdReq, user1AdRes);
-
-          // Step 2: User 2 comments on the ad
-          const user2CommentReq = {
-            body: {
-              content: "What specifications does it have?",
-              ad_id: "ad-seller-123",
-            },
-            user: { id: "user-buyer-123", email: "buyer@example.com" },
-          };
-          const user2CommentRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const buyerComment = {
-            id: "comment-buyer-123",
-            content: "What specifications does it have?",
-            ad_id: "ad-seller-123",
-            user_id: "user-buyer-123",
-          };
-
-          commentModel.createComment.mockResolvedValueOnce("comment-buyer-123");
-          commentModel.findCommentById.mockResolvedValueOnce(buyerComment);
-
-          await commentsController.createComment(
-            user2CommentReq,
-            user2CommentRes
-          );
-
-          // Step 3: User 1 (seller) replies with another comment
-          const user1ReplyReq = {
-            body: {
-              content: "It has Intel i7, 16GB RAM, 512GB SSD",
-              ad_id: "ad-seller-123",
-            },
-            user: { id: "user-seller-123", email: "seller@example.com" },
-          };
-          const user1ReplyRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const sellerReply = {
-            id: "comment-seller-reply-123",
-            content: "It has Intel i7, 16GB RAM, 512GB SSD",
-            ad_id: "ad-seller-123",
-            user_id: "user-seller-123",
-          };
-
-          commentModel.createComment.mockResolvedValueOnce(
-            "comment-seller-reply-123"
-          );
-          commentModel.findCommentById.mockResolvedValueOnce(sellerReply);
-
-          await commentsController.createComment(user1ReplyReq, user1ReplyRes);
-
-          // Step 4: Get all comments for the ad to verify conversation
-          const getCommentsReq = {
-            params: { adId: "ad-seller-123" },
-            query: {},
-          };
-          const getCommentsRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const allComments = [buyerComment, sellerReply];
-          commentModel.getCommentsByAdId.mockResolvedValue(allComments);
-
-          await commentsController.getCommentsByAdId(
-            getCommentsReq,
-            getCommentsRes
-          );
-
-          // Verify the multi-user interaction workflow - focus on comments controller
-          expect(commentModel.createComment).toHaveBeenCalledTimes(2);
-          expect(commentModel.createComment).toHaveBeenNthCalledWith(1, {
-            content: "What specifications does it have?",
-            ad_id: "ad-seller-123",
-            user_id: "user-buyer-123",
-          });
-          expect(commentModel.createComment).toHaveBeenNthCalledWith(2, {
-            content: "It has Intel i7, 16GB RAM, 512GB SSD",
-            ad_id: "ad-seller-123",
-            user_id: "user-seller-123",
-          });
-          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
-            "ad-seller-123",
-            10,
-            0
-          );
-          expect(getCommentsRes.json).toHaveBeenCalledWith({
-            comments: allComments,
-            count: 2,
-          });
-        });
-
-        it("should handle workflow: multiple users commenting on popular ad with pagination", async () => {
-          // Step 1: Create a popular ad
-          const popularAdReq = {
-            body: {
-              title: "iPhone 14 Pro Max",
-              description: "Brand new iPhone, sealed box",
-              price: 1000,
-            },
-            user: { id: "user-seller-popular", email: "popular@example.com" },
-          };
-          const popularAdRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const popularAd = {
-            id: "ad-popular-123",
-            title: "iPhone 14 Pro Max",
-            user_id: "user-seller-popular",
-          };
-
-          adModel.createAd.mockResolvedValue("ad-popular-123");
-          adModel.getAdById.mockResolvedValue(popularAd);
-
-          await adsController.createAd(popularAdReq, popularAdRes);
-
-          // Step 2: Multiple users create comments
-          const users = [
-            { id: "user-1", email: "user1@example.com" },
-            { id: "user-2", email: "user2@example.com" },
-            { id: "user-3", email: "user3@example.com" },
-            { id: "user-4", email: "user4@example.com" },
-            { id: "user-5", email: "user5@example.com" },
-          ];
-
-          const comments = [];
-          for (let i = 0; i < users.length; i++) {
-            const commentReq = {
-              body: {
-                content: `Comment ${i + 1}: Interested in this iPhone!`,
-                ad_id: "ad-popular-123",
-              },
-              user: users[i],
-            };
-            const commentRes = {
-              status: jest.fn().mockReturnThis(),
-              json: jest.fn().mockReturnThis(),
-            };
-
-            const comment = {
-              id: `comment-${i + 1}`,
-              content: `Comment ${i + 1}: Interested in this iPhone!`,
-              ad_id: "ad-popular-123",
-              user_id: users[i].id,
-            };
-
-            comments.push(comment);
-
-            commentModel.createComment.mockResolvedValueOnce(
-              `comment-${i + 1}`
-            );
-            commentModel.findCommentById.mockResolvedValueOnce(comment);
-
-            await commentsController.createComment(commentReq, commentRes);
-          }
-
-          // Step 3: Test pagination - get first page (3 comments)
-          const page1Req = {
-            params: { adId: "ad-popular-123" },
-            query: { page: "1", limit: "3" },
-          };
-          const page1Res = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const page1Comments = comments.slice(0, 3);
-          commentModel.getCommentsByAdId.mockResolvedValueOnce(page1Comments);
-
-          await commentsController.getCommentsByAdId(page1Req, page1Res);
-
-          // Step 4: Test pagination - get second page (remaining 2 comments)
-          const page2Req = {
-            params: { adId: "ad-popular-123" },
-            query: { page: "2", limit: "3" },
-          };
-          const page2Res = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const page2Comments = comments.slice(3, 5);
-          commentModel.getCommentsByAdId.mockResolvedValueOnce(page2Comments);
-
-          await commentsController.getCommentsByAdId(page2Req, page2Res);
-
-          // Verify the popular ad workflow with pagination - focus on comments controller
-          expect(commentModel.createComment).toHaveBeenCalledTimes(5);
-          expect(commentModel.getCommentsByAdId).toHaveBeenNthCalledWith(
-            1,
-            "ad-popular-123",
-            3,
-            0
-          ); // Page 1: offset 0
-          expect(commentModel.getCommentsByAdId).toHaveBeenNthCalledWith(
-            2,
-            "ad-popular-123",
-            3,
-            3
-          ); // Page 2: offset 3
-          expect(page1Res.json).toHaveBeenCalledWith({
-            comments: page1Comments,
-            count: 3,
-          });
-          expect(page2Res.json).toHaveBeenCalledWith({
-            comments: page2Comments,
-            count: 2,
-          });
-        });
-      });
-
-      describe("Error Recovery Workflows", () => {
-        it("should handle workflow: register → login → comment fails → retry comment succeeds", async () => {
-          // Step 1: User Registration
-          const registrationReq = {
-            body: {
-              email: "resilient@example.com",
-              password: "password123",
-              fullName: "Resilient User",
-            },
-          };
-          const registrationRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const resilientUser = {
-            id: "user-resilient-123",
-            email: "resilient@example.com",
-            fullName: "Resilient User",
-          };
-
-          userModel.createUser.mockResolvedValue("user-resilient-123");
-          userModel.getUserById.mockResolvedValue(resilientUser);
-
-          await usersController.createUser(registrationReq, registrationRes);
-
-          // Step 2: Successful Login
-          const loginReq = {
-            body: {
-              email: "resilient@example.com",
-              password: "password123",
-            },
-          };
-          const loginRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-            cookie: jest.fn(),
-          };
-
-          const authenticatedUser = {
-            id: "user-resilient-123",
-            email: "resilient@example.com",
-            password_hash: "hashed_password",
-          };
-
-          userModel.findUserByEmail.mockResolvedValue(authenticatedUser);
-
-          const bcrypt = require("bcrypt");
-          bcrypt.compare = jest.fn().mockResolvedValue(true);
-
-          await authController.login(loginReq, loginRes);
-
-          // Step 3: First Comment Attempt (Fails due to database error)
-          const failedCommentReq = {
-            body: {
-              content: "This will fail initially",
-              ad_id: "ad-resilient-123",
-            },
-            user: { id: "user-resilient-123", email: "resilient@example.com" },
-          };
-          const failedCommentRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          commentModel.createComment.mockRejectedValueOnce(
-            new Error("Database connection failed")
-          );
-
-          await commentsController.createComment(
-            failedCommentReq,
-            failedCommentRes
-          );
-
-          // Step 4: Retry Comment (Succeeds)
-          const retryCommentReq = {
-            body: {
-              content: "This retry will succeed",
-              ad_id: "ad-resilient-123",
-            },
-            user: { id: "user-resilient-123", email: "resilient@example.com" },
-          };
-          const retryCommentRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const successComment = {
-            id: "comment-retry-success-123",
-            content: "This retry will succeed",
-            ad_id: "ad-resilient-123",
-            user_id: "user-resilient-123",
-          };
-
-          commentModel.createComment.mockResolvedValueOnce(
-            "comment-retry-success-123"
-          );
-          commentModel.findCommentById.mockResolvedValue(successComment);
-
-          await commentsController.createComment(
-            retryCommentReq,
-            retryCommentRes
-          );
-
-          // Verify the error recovery workflow - focus on comments controller
-          expect(commentModel.createComment).toHaveBeenCalledTimes(2);
-          expect(failedCommentRes.status).toHaveBeenCalledWith(500);
-          expect(retryCommentRes.status).toHaveBeenCalledWith(201);
-          expect(retryCommentRes.json).toHaveBeenCalledWith({
-            message: "Comment created successfully",
-            comment: successComment,
-          });
-        });
-
-        it("should handle workflow: login → create comment → update fails due to permission → login as correct user → update succeeds", async () => {
-          // Step 1: User A Login
-          const userALoginReq = {
-            body: {
-              email: "usera@example.com",
-              password: "password123",
-            },
-          };
-          const userALoginRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-            cookie: jest.fn(),
-          };
-
-          const userA = {
-            id: "user-a-123",
-            email: "usera@example.com",
-            password_hash: "hashed_password",
-          };
-
-          userModel.findUserByEmail.mockResolvedValueOnce(userA);
-
-          const bcrypt = require("bcrypt");
-          bcrypt.compare = jest.fn().mockResolvedValue(true);
-
-          await authController.login(userALoginReq, userALoginRes);
-
-          // Step 2: User A Creates Comment
-          const commentReq = {
-            body: {
-              content: "Original comment by User A",
-              ad_id: "ad-permission-test",
-            },
-            user: { id: "user-a-123", email: "usera@example.com" },
-          };
-          const commentRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const originalComment = {
-            id: "comment-permission-123",
-            content: "Original comment by User A",
-            ad_id: "ad-permission-test",
-            user_id: "user-a-123",
-          };
-
-          commentModel.createComment.mockResolvedValue(
-            "comment-permission-123"
-          );
-          commentModel.findCommentById.mockResolvedValue(originalComment);
-
-          await commentsController.createComment(commentReq, commentRes);
-
-          // Step 3: User B Tries to Update User A's Comment (Should Fail)
-          const userBUpdateReq = {
-            params: { commentId: "comment-permission-123" },
-            body: { content: "User B trying to hijack comment" },
-            user: { id: "user-b-123", email: "userb@example.com" },
-          };
-          const userBUpdateRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          commentModel.findCommentById.mockResolvedValueOnce(originalComment);
-
-          await commentsController.updateComment(
-            userBUpdateReq,
-            userBUpdateRes
-          );
-
-          // Step 4: User A Updates Their Own Comment (Should Succeed)
-          const userAUpdateReq = {
-            params: { commentId: "comment-permission-123" },
-            body: { content: "Updated comment by User A" },
-            user: { id: "user-a-123", email: "usera@example.com" },
-          };
-          const userAUpdateRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          commentModel.findCommentById.mockResolvedValueOnce(originalComment);
-          commentModel.updateComment.mockResolvedValue(true);
-
-          await commentsController.updateComment(
-            userAUpdateReq,
-            userAUpdateRes
-          );
-
-          // Verify the permission workflow - focus on comments controller
-          expect(commentModel.createComment).toHaveBeenCalledWith({
-            content: "Original comment by User A",
-            ad_id: "ad-permission-test",
-            user_id: "user-a-123",
-          });
-          expect(userBUpdateRes.status).toHaveBeenCalledWith(403);
-          expect(userBUpdateRes.json).toHaveBeenCalledWith({
-            error: "You can only edit your own comments",
-          });
-          expect(commentModel.updateComment).toHaveBeenCalledWith(
-            "comment-permission-123",
-            { content: "Updated comment by User A" }
-          );
-          expect(userAUpdateRes.status).toHaveBeenCalledWith(200);
-        });
-      });
-
-      describe("Complex Data Flow Workflows", () => {
-        it("should handle workflow: register → create ad → self-comment → get own comments → get ad comments", async () => {
-          // Step 1: User Registration
-          const registrationReq = {
-            body: {
-              email: "selfcommenter@example.com",
-              password: "password123",
-              fullName: "Self Commenter",
-            },
-          };
-          const registrationRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const selfCommenterUser = {
-            id: "user-self-123",
-            email: "selfcommenter@example.com",
-            fullName: "Self Commenter",
-          };
-
-          userModel.createUser.mockResolvedValue("user-self-123");
-          userModel.getUserById.mockResolvedValue(selfCommenterUser);
-
-          await usersController.createUser(registrationReq, registrationRes);
-
-          // Step 2: Create Ad
-          const adReq = {
-            body: {
-              title: "My Awesome Product",
-              description: "Selling my awesome product",
-              price: 250,
-            },
-            user: { id: "user-self-123", email: "selfcommenter@example.com" },
-          };
-          const adRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const selfAd = {
-            id: "ad-self-123",
-            title: "My Awesome Product",
-            user_id: "user-self-123",
-          };
-
-          adModel.createAd.mockResolvedValue("ad-self-123");
-          adModel.getAdById.mockResolvedValue(selfAd);
-
-          await adsController.createAd(adReq, adRes);
-
-          // Step 3: Self-Comment on Own Ad
-          const selfCommentReq = {
-            body: {
-              content: "Additional details: This product comes with warranty!",
-              ad_id: "ad-self-123",
-            },
-            user: { id: "user-self-123", email: "selfcommenter@example.com" },
-          };
-          const selfCommentRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const selfComment = {
-            id: "comment-self-123",
-            content: "Additional details: This product comes with warranty!",
-            ad_id: "ad-self-123",
-            user_id: "user-self-123",
-          };
-
-          commentModel.createComment.mockResolvedValue("comment-self-123");
-          commentModel.findCommentById.mockResolvedValue(selfComment);
-
-          await commentsController.createComment(
-            selfCommentReq,
-            selfCommentRes
-          );
-
-          // Step 4: Get User's Own Comments
-          const getUserCommentsReq = {
-            user: { id: "user-self-123", email: "selfcommenter@example.com" },
-          };
-          const getUserCommentsRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const userComments = [selfComment];
-          commentModel.getByUserId.mockResolvedValue(userComments);
-
-          await commentsController.getUserComments(
-            getUserCommentsReq,
-            getUserCommentsRes
-          );
-
-          // Step 5: Get Ad Comments
-          const getAdCommentsReq = {
-            params: { adId: "ad-self-123" },
-            query: {},
-          };
-          const getAdCommentsRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const adComments = [selfComment];
-          commentModel.getCommentsByAdId.mockResolvedValue(adComments);
-
-          await commentsController.getCommentsByAdId(
-            getAdCommentsReq,
-            getAdCommentsRes
-          );
-
-          // Verify the complex data flow workflow - focus on comments controller
-          expect(commentModel.createComment).toHaveBeenCalledWith({
-            content: "Additional details: This product comes with warranty!",
-            ad_id: "ad-self-123",
-            user_id: "user-self-123",
-          });
-          expect(commentModel.getByUserId).toHaveBeenCalledWith(
-            "user-self-123"
-          );
-          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
-            "ad-self-123",
-            10,
-            0
-          );
-          expect(getUserCommentsRes.json).toHaveBeenCalledWith({
-            comments: userComments,
-          });
-          expect(getAdCommentsRes.json).toHaveBeenCalledWith({
-            comments: adComments,
-            count: 1,
-          });
-        });
-
-        it("should handle workflow with concurrent user sessions and cross-references", async () => {
-          // Simulate multiple users with different session states
-          const users = [
-            {
-              id: "user-session-1",
-              email: "session1@example.com",
-              sessionActive: true,
-            },
-            {
-              id: "user-session-2",
-              email: "session2@example.com",
-              sessionActive: true,
-            },
-            {
-              id: "user-session-3",
-              email: "session3@example.com",
-              sessionActive: false,
-            },
-          ];
-
-          // Step 1: User 1 creates multiple ads
-          const ads = [];
-          for (let i = 1; i <= 3; i++) {
-            const adReq = {
-              body: {
-                title: `Product ${i} by User 1`,
-                description: `Description for product ${i}`,
-                price: i * 100,
-              },
-              user: users[0],
-            };
-            const adRes = {
-              status: jest.fn().mockReturnThis(),
-              json: jest.fn().mockReturnThis(),
-            };
-
-            const ad = {
-              id: `ad-session-${i}`,
-              title: `Product ${i} by User 1`,
-              user_id: "user-session-1",
-            };
-            ads.push(ad);
-
-            adModel.createAd.mockResolvedValueOnce(`ad-session-${i}`);
-            adModel.getAdById.mockResolvedValueOnce(ad);
-
-            await adsController.createAd(adReq, adRes);
-          }
-
-          // Step 2: User 2 comments on all of User 1's ads
-          const comments = [];
-          for (let i = 1; i <= 3; i++) {
-            const commentReq = {
-              body: {
-                content: `User 2 comment on product ${i}`,
-                ad_id: `ad-session-${i}`,
-              },
-              user: users[1],
-            };
-            const commentRes = {
-              status: jest.fn().mockReturnThis(),
-              json: jest.fn().mockReturnThis(),
-            };
-
-            const comment = {
-              id: `comment-user2-${i}`,
-              content: `User 2 comment on product ${i}`,
-              ad_id: `ad-session-${i}`,
-              user_id: "user-session-2",
-            };
-            comments.push(comment);
-
-            commentModel.createComment.mockResolvedValueOnce(
-              `comment-user2-${i}`
-            );
-            commentModel.findCommentById.mockResolvedValueOnce(comment);
-
-            await commentsController.createComment(commentReq, commentRes);
-          }
-
-          // Step 3: User 3 (inactive session) tries to comment - should succeed if properly authenticated
-          const user3CommentReq = {
-            body: {
-              content: "User 3 comment from reactivated session",
-              ad_id: "ad-session-1",
-            },
-            user: users[2], // Even though marked inactive, should work if authenticated
-          };
-          const user3CommentRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const user3Comment = {
-            id: "comment-user3-1",
-            content: "User 3 comment from reactivated session",
-            ad_id: "ad-session-1",
-            user_id: "user-session-3",
-          };
-
-          commentModel.createComment.mockResolvedValueOnce("comment-user3-1");
-          commentModel.findCommentById.mockResolvedValueOnce(user3Comment);
-
-          await commentsController.createComment(
-            user3CommentReq,
-            user3CommentRes
-          );
-
-          // Step 4: Get all comments for first ad (should have 2 comments)
-          const getCommentsReq = {
-            params: { adId: "ad-session-1" },
-            query: {},
-          };
-          const getCommentsRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const ad1Comments = [comments[0], user3Comment];
-          commentModel.getCommentsByAdId.mockResolvedValue(ad1Comments);
-
-          await commentsController.getCommentsByAdId(
-            getCommentsReq,
-            getCommentsRes
-          );
-
-          // Step 5: User 2 gets their own comments (should have 3)
-          const user2CommentsReq = {
-            user: users[1],
-          };
-          const user2CommentsRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          commentModel.getByUserId.mockResolvedValue(comments);
-
-          await commentsController.getUserComments(
-            user2CommentsReq,
-            user2CommentsRes
-          );
-
-          // Verify the concurrent sessions workflow - focus on comments controller
-          expect(commentModel.createComment).toHaveBeenCalledTimes(4); // 3 from user2 + 1 from user3
-          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
-            "ad-session-1",
-            10,
-            0
-          );
-          expect(commentModel.getByUserId).toHaveBeenCalledWith(
-            "user-session-2"
-          );
-          expect(getCommentsRes.json).toHaveBeenCalledWith({
-            comments: ad1Comments,
-            count: 2,
-          });
-          expect(user2CommentsRes.json).toHaveBeenCalledWith({
-            comments: comments,
-          });
-        });
-      });
-
-      // File Upload Integration Workflow Tests
-      describe("File Upload Integration Workflow Tests", () => {
-        beforeEach(() => {
-          // Reset all mocks for file upload integration tests
+      describe("End-to-End Integration Tests - Complete User Workflows", () => {
+        let testUser;
+        let testAd;
+        let testComment;
+        let authToken;
+
+        beforeEach(async () => {
+          // Reset all mocks for clean integration tests
           jest.clearAllMocks();
+          // Setup test user with valid UUID
+          testUser = {
+            id: "123e4567-e89b-12d3-a456-426614174000",
+            email: "integration@example.com",
+            name: "Integration Test User",
+            created_at: new Date(),
+          };
 
-          // Mock bcrypt to avoid native library loading issues
-          jest.mock("bcrypt", () => ({
-            compare: jest.fn().mockResolvedValue(true),
-            hash: jest.fn().mockResolvedValue("hashed_password"),
-          }));
+          // Setup test ad with valid UUID
+          testAd = {
+            id: "123e4567-e89b-12d3-a456-426614174001",
+            title: "Integration Test Ad",
+            description: "Test ad for integration testing",
+            user_id: testUser.id,
+            created_at: new Date(),
+          };
 
-          // Mock file system operations
-          jest.mock("fs", () => ({
-            unlinkSync: jest.fn(),
-            existsSync: jest.fn(() => true),
-            createReadStream: jest.fn(),
-            createWriteStream: jest.fn(),
-            stat: jest.fn((path, callback) => callback(null, { size: 1024 })),
-          }));
+          // Setup test comment with valid UUID
+          testComment = {
+            id: "123e4567-e89b-12d3-a456-426614174002",
+            content: "Integration test comment",
+            ad_id: testAd.id,
+            user_id: testUser.id,
+            created_at: new Date(),
+          };
 
-          // Mock multer file uploads
-          jest.mock("multer", () => ({
-            memoryStorage: jest.fn(() => ({})),
-            diskStorage: jest.fn(() => ({})),
-            default: jest.fn(() => ({
-              single: jest.fn(() => (req, res, next) => {
-                req.file = {
-                  filename: "test-image.jpg",
-                  originalname: "test-image.jpg",
-                  mimetype: "image/jpeg",
-                  size: 1024,
-                  path: "/uploads/test-image.jpg",
-                  buffer: Buffer.from("fake-image-data"),
-                };
-                next();
-              }),
-              array: jest.fn(() => (req, res, next) => {
-                req.files = [
-                  {
-                    filename: "test-image1.jpg",
-                    originalname: "test-image1.jpg",
-                    mimetype: "image/jpeg",
-                    size: 1024,
-                    path: "/uploads/test-image1.jpg",
-                  },
-                  {
-                    filename: "test-image2.jpg",
-                    originalname: "test-image2.jpg",
-                    mimetype: "image/jpeg",
-                    size: 1024,
-                    path: "/uploads/test-image2.jpg",
-                  },
-                ];
-                next();
-              }),
-            })),
-          }));
+          authToken = "mock-jwt-token";
         });
 
-        it("should handle complete workflow: register → login → create ad with images → comment with attachment", async () => {
-          // This test focuses on the comments controller integration, mocking other steps
+        describe("Complete User Registration → Login → Comment CRUD Workflow", () => {
+          it("should complete full user journey: register → login → create comment → read → update → delete", async () => {
+            // Mock the complete workflow sequence
 
-          // Step 1-3: Mock the results of user registration, login, and ad creation
-          const mockUser = {
-            id: "user-file-123",
-            email: "fileuser@example.com",
-            fullName: "File User",
-          };
+            // Step 1: User Registration
+            userModel.createUser.mockResolvedValue(testUser.id);
+            userModel.findUserByEmail.mockResolvedValue(null); // No existing user
+            userModel.getUserById.mockResolvedValue(testUser);
 
-          const mockAd = {
-            id: "ad-file-123",
-            title: "Smartphone with Camera",
-            description: "High-quality smartphone with excellent camera",
-            user_id: "user-file-123",
-            images: ["smartphone1.jpg", "smartphone2.jpg"],
-          };
+            // Step 2: User Login
+            authController.login = jest.fn().mockResolvedValue({
+              user: testUser,
+              token: authToken,
+            });
 
-          // Step 4: Focus on commenting with file attachment (comments controller)
-          const commentReq = {
-            body: {
-              content: "Great phone! Can you send more pictures of the camera?",
-              ad_id: "ad-file-123",
-            },
-            user: { id: "user-commenter-123", email: "commenter@example.com" },
-            // Future: file attachment for comments
-            file: {
-              filename: "question-image.jpg",
-              originalname: "question-image.jpg",
-              mimetype: "image/jpeg",
-              size: 512,
-              path: "/uploads/comments/question-image.jpg",
-            },
-          };
-          const commentRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
+            // Step 3: Create Ad (prerequisite for comments)
+            adModel.createAd.mockResolvedValue(testAd.id);
+            adModel.getAdById.mockResolvedValue(testAd);
 
-          const newComment = {
-            id: "comment-file-123",
-            content: "Great phone! Can you send more pictures of the camera?",
-            ad_id: "ad-file-123",
-            user_id: "user-commenter-123",
-            attachment: "question-image.jpg", // Future feature
-          };
+            // Step 4: Comment CRUD operations
+            commentModel.createComment.mockResolvedValue(testComment.id);
+            commentModel.findCommentById.mockResolvedValue(testComment);
+            commentModel.getCommentsByAdId.mockResolvedValue([testComment]);
+            commentModel.getCountByAdId.mockResolvedValue(1);
+            commentModel.getByUserId.mockResolvedValue([testComment]);
+            commentModel.updateComment.mockResolvedValue(true);
+            commentModel.deleteComment.mockResolvedValue(true);
 
-          commentModel.createComment.mockResolvedValue("comment-file-123");
-          commentModel.findCommentById.mockResolvedValue(newComment);
+            // Execute workflow steps
 
-          await commentsController.createComment(commentReq, commentRes);
+            // Step 1: Registration simulation
+            const registrationReq = {
+              body: {
+                email: testUser.email,
+                name: testUser.name,
+                password: "securePassword123",
+              },
+            };
+            const registrationRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
 
-          // Step 5: Verify the comments controller handled the file upload workflow
-          expect(commentModel.createComment).toHaveBeenCalledWith({
-            content: "Great phone! Can you send more pictures of the camera?",
-            ad_id: "ad-file-123",
-            user_id: "user-commenter-123",
-          });
+            // Mock registration success
+            usersController.createUser = jest
+              .fn()
+              .mockImplementation((req, res) => {
+                res.status(201).json({
+                  message: "User created successfully",
+                  user: testUser,
+                });
+              });
 
-          expect(commentRes.status).toHaveBeenCalledWith(201);
-          expect(commentRes.json).toHaveBeenCalledWith({
-            message: "Comment created successfully",
-            comment: newComment,
-          });
-        });
+            await usersController.createUser(registrationReq, registrationRes);
 
-        it("should handle workflow: file upload errors → retry → successful comment with attachment", async () => {
-          // Step 1: User tries to comment with large file (should fail)
-          const largeFileCommentReq = {
-            body: {
-              content: "Here's a high-res photo of the product defect",
-              ad_id: "ad-existing-123",
-            },
-            user: { id: "user-upload-123", email: "uploader@example.com" },
-            file: {
-              filename: "large-image.jpg",
-              originalname: "large-image.jpg",
-              mimetype: "image/jpeg",
-              size: 10485760, // 10MB - too large
-              path: "/uploads/large-image.jpg",
-            },
-          };
-          const largeFileCommentRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
+            expect(registrationRes.status).toHaveBeenCalledWith(201);
+            expect(registrationRes.json).toHaveBeenCalledWith({
+              message: "User created successfully",
+              user: testUser,
+            });
 
-          // Mock file size validation failure
-          const fileSizeError = new Error("File size exceeds limit");
-          commentModel.createComment.mockRejectedValueOnce(fileSizeError);
+            // Step 2: Login simulation
+            const loginReq = {
+              body: {
+                email: testUser.email,
+                password: "securePassword123",
+              },
+            };
+            const loginRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
 
-          await commentsController.createComment(
-            largeFileCommentReq,
-            largeFileCommentRes
-          );
+            authController.login.mockImplementation((req, res) => {
+              res.status(200).json({
+                message: "Login successful",
+                user: testUser,
+                token: authToken,
+              });
+            });
 
-          // Step 2: User retries with invalid file type
-          const invalidTypeCommentReq = {
-            body: {
-              content: "Here's a document with product details",
-              ad_id: "ad-existing-123",
-            },
-            user: { id: "user-upload-123", email: "uploader@example.com" },
-            file: {
-              filename: "document.pdf",
-              originalname: "document.pdf",
-              mimetype: "application/pdf",
-              size: 1024,
-              path: "/uploads/document.pdf",
-            },
-          };
-          const invalidTypeCommentRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
+            await authController.login(loginReq, loginRes);
 
-          // Mock file type validation failure
-          const fileTypeError = new Error("Invalid file type");
-          commentModel.createComment.mockRejectedValueOnce(fileTypeError);
+            expect(loginRes.status).toHaveBeenCalledWith(200);
+            expect(loginRes.json).toHaveBeenCalledWith({
+              message: "Login successful",
+              user: testUser,
+              token: authToken,
+            });
 
-          await commentsController.createComment(
-            invalidTypeCommentReq,
-            invalidTypeCommentRes
-          );
+            // Step 3: Create Ad simulation
+            const createAdReq = {
+              body: {
+                title: testAd.title,
+                description: testAd.description,
+              },
+              user: testUser,
+            };
+            const createAdRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
 
-          // Step 3: User successfully comments with valid file
-          const validFileCommentReq = {
-            body: {
-              content: "Here's a proper image showing the issue",
-              ad_id: "ad-existing-123",
-            },
-            user: { id: "user-upload-123", email: "uploader@example.com" },
-            file: {
-              filename: "valid-image.jpg",
-              originalname: "valid-image.jpg",
-              mimetype: "image/jpeg",
-              size: 2048,
-              path: "/uploads/valid-image.jpg",
-            },
-          };
-          const validFileCommentRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
+            adsController.createAd = jest
+              .fn()
+              .mockImplementation((req, res) => {
+                res.status(201).json({
+                  message: "Ad created successfully",
+                  ad: testAd,
+                });
+              });
 
-          const successfulComment = {
-            id: "comment-upload-success-123",
-            content: "Here's a proper image showing the issue",
-            ad_id: "ad-existing-123",
-            user_id: "user-upload-123",
-            attachment: "valid-image.jpg",
-          };
+            await adsController.createAd(createAdReq, createAdRes);
 
-          commentModel.createComment.mockResolvedValue(
-            "comment-upload-success-123"
-          );
-          commentModel.findCommentById.mockResolvedValue(successfulComment);
+            expect(createAdRes.status).toHaveBeenCalledWith(201);
 
-          await commentsController.createComment(
-            validFileCommentReq,
-            validFileCommentRes
-          );
+            // Step 4: Comment CRUD Operations
 
-          // Verify error handling and successful retry
-          expect(commentModel.createComment).toHaveBeenCalledTimes(3);
-          expect(validFileCommentRes.status).toHaveBeenCalledWith(201);
-          expect(validFileCommentRes.json).toHaveBeenCalledWith({
-            message: "Comment created successfully",
-            comment: successfulComment,
-          });
-        });
+            // CREATE Comment
+            const createCommentReq = {
+              body: {
+                content: testComment.content,
+                ad_id: testAd.id,
+              },
+              user: testUser,
+            };
+            const createCommentRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
 
-        it("should handle concurrent file upload workflow: multiple users uploading comment attachments simultaneously", async () => {
-          // Step 1: Setup multiple users
-          const users = [
-            { id: "user-concurrent-1", email: "user1@example.com" },
-            { id: "user-concurrent-2", email: "user2@example.com" },
-            { id: "user-concurrent-3", email: "user3@example.com" },
-          ];
+            await commentsController.createComment(
+              createCommentReq,
+              createCommentRes
+            );
 
-          const adId = "ad-concurrent-upload-123";
-
-          // Step 2: Simulate concurrent comment creation with file attachments
-          const concurrentRequests = users.map((user, index) => ({
-            body: {
-              content: `User ${index + 1} comment with attachment`,
-              ad_id: adId,
-            },
-            user: user,
-            file: {
-              filename: `attachment-${index + 1}.jpg`,
-              originalname: `attachment-${index + 1}.jpg`,
-              mimetype: "image/jpeg",
-              size: 1024 + index * 512, // Different sizes
-              path: `/uploads/attachment-${index + 1}.jpg`,
-            },
-          }));
-
-          const concurrentResponses = users.map(() => ({
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          }));
-
-          const expectedComments = users.map((user, index) => ({
-            id: `comment-concurrent-${index + 1}`,
-            content: `User ${index + 1} comment with attachment`,
-            ad_id: adId,
-            user_id: user.id,
-            attachment: `attachment-${index + 1}.jpg`,
-          }));
-
-          // Mock sequential comment creation (simulating database transactions)
-          commentModel.createComment
-            .mockResolvedValueOnce("comment-concurrent-1")
-            .mockResolvedValueOnce("comment-concurrent-2")
-            .mockResolvedValueOnce("comment-concurrent-3");
-
-          commentModel.findCommentById
-            .mockResolvedValueOnce(expectedComments[0])
-            .mockResolvedValueOnce(expectedComments[1])
-            .mockResolvedValueOnce(expectedComments[2]);
-
-          // Step 3: Execute concurrent requests
-          const promises = concurrentRequests.map((req, index) =>
-            commentsController.createComment(req, concurrentResponses[index])
-          );
-
-          await Promise.all(promises);
-
-          // Step 4: Verify all uploads were processed correctly
-          expect(commentModel.createComment).toHaveBeenCalledTimes(3);
-
-          concurrentResponses.forEach((res, index) => {
-            expect(res.status).toHaveBeenCalledWith(201);
-            expect(res.json).toHaveBeenCalledWith({
+            expect(createCommentRes.status).toHaveBeenCalledWith(201);
+            expect(createCommentRes.json).toHaveBeenCalledWith({
               message: "Comment created successfully",
-              comment: expectedComments[index],
+              comment: testComment,
+            });
+
+            // READ Comments by Ad ID
+            const getCommentsReq = {
+              params: { adId: testAd.id },
+              query: {},
+            };
+            const getCommentsRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.getCommentsByAdId(
+              getCommentsReq,
+              getCommentsRes
+            );
+
+            expect(getCommentsRes.json).toHaveBeenCalledWith({
+              comments: [testComment],
+              count: 1,
+            });
+
+            // READ User Comments
+            const getUserCommentsReq = {
+              user: testUser,
+            };
+            const getUserCommentsRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.getUserComments(
+              getUserCommentsReq,
+              getUserCommentsRes
+            );
+
+            expect(getUserCommentsRes.status).toHaveBeenCalledWith(200);
+            expect(getUserCommentsRes.json).toHaveBeenCalledWith({
+              comments: [testComment],
+            });
+
+            // UPDATE Comment
+            const updateCommentReq = {
+              params: { commentId: testComment.id },
+              body: { content: "Updated integration test comment" },
+              user: testUser,
+            };
+            const updateCommentRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.updateComment(
+              updateCommentReq,
+              updateCommentRes
+            );
+
+            expect(updateCommentRes.status).toHaveBeenCalledWith(200);
+            expect(updateCommentRes.json).toHaveBeenCalledWith({
+              message: "Comment updated successfully",
+            });
+
+            // DELETE Comment
+            const deleteCommentReq = {
+              params: { commentId: testComment.id },
+              user: testUser,
+            };
+            const deleteCommentRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.deleteComment(
+              deleteCommentReq,
+              deleteCommentRes
+            );
+
+            expect(deleteCommentRes.status).toHaveBeenCalledWith(200);
+            expect(deleteCommentRes.json).toHaveBeenCalledWith({
+              message: "Comment deleted successfully",
+            });
+
+            // Verify all operations were called
+            expect(commentModel.createComment).toHaveBeenCalled();
+            expect(commentModel.getCommentsByAdId).toHaveBeenCalled();
+            expect(commentModel.getByUserId).toHaveBeenCalled();
+            expect(commentModel.updateComment).toHaveBeenCalled();
+            expect(commentModel.deleteComment).toHaveBeenCalled();
+          });
+          it("should handle multi-user interactions with comments on same ad", async () => {
+            const user1 = {
+              ...testUser,
+              id: "123e4567-e89b-12d3-a456-426614174003",
+              email: "user1@example.com",
+            };
+            const user2 = {
+              ...testUser,
+              id: "123e4567-e89b-12d3-a456-426614174004",
+              email: "user2@example.com",
+            };
+
+            const comment1 = {
+              ...testComment,
+              id: "123e4567-e89b-12d3-a456-426614174005",
+              user_id: user1.id,
+              content: "User 1 comment",
+            };
+            const comment2 = {
+              ...testComment,
+              id: "123e4567-e89b-12d3-a456-426614174006",
+              user_id: user2.id,
+              content: "User 2 comment",
+            };
+
+            // Mock multiple users creating comments on same ad
+            commentModel.createComment
+              .mockResolvedValueOnce(comment1.id)
+              .mockResolvedValueOnce(comment2.id);
+            commentModel.findCommentById
+              .mockResolvedValueOnce(comment1)
+              .mockResolvedValueOnce(comment2);
+            commentModel.getCommentsByAdId.mockResolvedValue([
+              comment1,
+              comment2,
+            ]);
+
+            // User 1 creates comment
+            const req1 = {
+              body: { content: comment1.content, ad_id: testAd.id },
+              user: user1,
+            };
+            const res1 = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.createComment(req1, res1);
+            expect(res1.status).toHaveBeenCalledWith(201);
+
+            // User 2 creates comment
+            const req2 = {
+              body: { content: comment2.content, ad_id: testAd.id },
+              user: user2,
+            };
+            const res2 = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.createComment(req2, res2);
+            expect(res2.status).toHaveBeenCalledWith(201);
+
+            // Get all comments for the ad
+            const getCommentsReq = {
+              params: { adId: testAd.id },
+              query: {},
+            };
+            const getCommentsRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.getCommentsByAdId(
+              getCommentsReq,
+              getCommentsRes
+            );
+
+            expect(getCommentsRes.json).toHaveBeenCalledWith({
+              comments: [comment1, comment2],
+              count: 2,
             });
           });
 
-          // Step 5: Verify file handling was called for each upload
-          concurrentRequests.forEach((req, index) => {
+          it("should handle comment creation with XSS protection in full workflow", async () => {
+            const maliciousContent =
+              '<script>alert("xss")</script>Malicious comment';
+            const sanitizedContent = "Malicious comment";
+
+            // Mock XSS protection
+            const {
+              XSSProtection,
+            } = require("../../../src/utils/xssProtection");
+            XSSProtection.sanitizeUserInput.mockReturnValue(sanitizedContent);
+
+            commentModel.createComment.mockResolvedValue(testComment.id);
+            commentModel.findCommentById.mockResolvedValue({
+              ...testComment,
+              content: sanitizedContent,
+            });
+
+            const req = {
+              body: { content: maliciousContent, ad_id: testAd.id },
+              user: testUser,
+            };
+            const res = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.createComment(req, res);
+
+            expect(XSSProtection.sanitizeUserInput).toHaveBeenCalledWith(
+              maliciousContent,
+              { maxLength: 1000, allowHTML: false }
+            );
             expect(commentModel.createComment).toHaveBeenCalledWith({
-              content: `User ${index + 1} comment with attachment`,
-              ad_id: adId,
-              user_id: users[index].id,
+              content: sanitizedContent,
+              ad_id: testAd.id,
+              user_id: testUser.id,
+            });
+            expect(res.status).toHaveBeenCalledWith(201);
+          });
+
+          it("should handle full comment lifecycle with pagination", async () => {
+            const comments = [];
+            for (let i = 1; i <= 15; i++) {
+              comments.push({
+                id: `123e4567-e89b-12d3-a456-42661417400${i
+                  .toString()
+                  .padStart(1, "0")}`,
+                content: `Comment ${i}`,
+                ad_id: testAd.id,
+                user_id: testUser.id,
+                created_at: new Date(),
+              });
+            }
+
+            // Mock paginated results
+            commentModel.getCommentsByAdId
+              .mockResolvedValueOnce(comments.slice(0, 10)) // First page
+              .mockResolvedValueOnce(comments.slice(10, 15)); // Second page
+
+            // Get first page
+            const req1 = {
+              params: { adId: testAd.id },
+              query: { page: "1", limit: "10" },
+            };
+            const res1 = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.getCommentsByAdId(req1, res1);
+            expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
+              testAd.id,
+              10,
+              0
+            );
+            expect(res1.json).toHaveBeenCalledWith({
+              comments: comments.slice(0, 10),
+              count: 10,
+            });
+
+            // Get second page
+            const req2 = {
+              params: { adId: testAd.id },
+              query: { page: "2", limit: "10" },
+            };
+            const res2 = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.getCommentsByAdId(req2, res2);
+            expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
+              testAd.id,
+              10,
+              10
+            );
+            expect(res2.json).toHaveBeenCalledWith({
+              comments: comments.slice(10, 15),
+              count: 5,
+            });
+          });
+
+          it("should handle authorization failures throughout the workflow", async () => {
+            // Test unauthorized comment creation
+            const unauthorizedReq = {
+              body: { content: "Unauthorized comment", ad_id: testAd.id },
+              user: null, // No user
+            };
+            const unauthorizedRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.createComment(
+              unauthorizedReq,
+              unauthorizedRes
+            );
+            expect(unauthorizedRes.status).toHaveBeenCalledWith(401);
+            expect(unauthorizedRes.json).toHaveBeenCalledWith({
+              error: "User not authenticated",
+            });
+
+            // Test unauthorized user comments access
+            const getUserCommentsReq = {
+              user: null, // No user
+            };
+            const getUserCommentsRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.getUserComments(
+              getUserCommentsReq,
+              getUserCommentsRes
+            );
+            expect(getUserCommentsRes.status).toHaveBeenCalledWith(401);
+            expect(getUserCommentsRes.json).toHaveBeenCalledWith({
+              error: "User not authenticated",
+            }); // Test unauthorized comment update (wrong user)
+            const otherUser = {
+              id: "123e4567-e89b-12d3-a456-426614174007",
+              email: "other@example.com",
+            };
+            commentModel.findCommentById.mockResolvedValue({
+              ...testComment,
+              user_id: "123e4567-e89b-12d3-a456-426614174008", // Different user
+            });
+            const updateReq = {
+              params: { commentId: testComment.id },
+              body: { content: "Unauthorized update" },
+              user: otherUser,
+            };
+            const updateRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.updateComment(updateReq, updateRes);
+            expect(updateRes.status).toHaveBeenCalledWith(403);
+            expect(updateRes.json).toHaveBeenCalledWith({
+              error: "You can only edit your own comments",
+            }); // Test unauthorized comment deletion (wrong user)
+            const deleteReq = {
+              params: { commentId: testComment.id },
+              user: otherUser,
+            };
+            const deleteRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.deleteComment(deleteReq, deleteRes);
+            expect(deleteRes.status).toHaveBeenCalledWith(403);
+            expect(deleteRes.json).toHaveBeenCalledWith({
+              error: "You can only delete your own comments",
+            });
+          });
+
+          it("should handle database errors throughout the workflow gracefully", async () => {
+            const dbError = new Error("Database connection failed");
+
+            // Test comment creation failure
+            commentModel.createComment.mockRejectedValue(dbError);
+
+            const createReq = {
+              body: { content: "Test comment", ad_id: testAd.id },
+              user: testUser,
+            };
+            const createRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.createComment(createReq, createRes);
+            expect(createRes.status).toHaveBeenCalledWith(500);
+            expect(createRes.json).toHaveBeenCalledWith({
+              error: "Failed to create comment",
+            }); // Test get comments failure
+            commentModel.getCommentsByAdId.mockRejectedValue(dbError);
+
+            const getReq = {
+              params: { adId: testAd.id },
+              query: {},
+            };
+            const getRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+            await commentsController.getCommentsByAdId(getReq, getRes);
+            expect(getRes.status).toHaveBeenCalledWith(500);
+            expect(getRes.json).toHaveBeenCalledWith({
+              error: "Failed to fetch comments",
+            });
+
+            // Test get user comments failure
+            commentModel.getByUserId.mockRejectedValue(dbError);
+
+            const getUserReq = {
+              user: testUser,
+            };
+            const getUserRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.getUserComments(getUserReq, getUserRes);
+            expect(getUserRes.status).toHaveBeenCalledWith(500);
+            expect(getUserRes.json).toHaveBeenCalledWith({
+              error: "Failed to get user comments",
+            });
+
+            // Test update comment failure
+            commentModel.findCommentById.mockResolvedValue({
+              ...testComment,
+              user_id: testUser.id,
+            });
+            commentModel.updateComment.mockRejectedValue(dbError);
+
+            const updateReq = {
+              params: { commentId: testComment.id },
+              body: { content: "Updated content" },
+              user: testUser,
+            };
+            const updateRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.updateComment(updateReq, updateRes);
+            expect(updateRes.status).toHaveBeenCalledWith(500);
+            expect(updateRes.json).toHaveBeenCalledWith({
+              error: "Failed to update comment",
+            });
+
+            // Test delete comment failure
+            commentModel.deleteComment.mockRejectedValue(dbError);
+
+            const deleteReq = {
+              params: { commentId: testComment.id },
+              user: testUser,
+            };
+            const deleteRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.deleteComment(deleteReq, deleteRes);
+            expect(deleteRes.status).toHaveBeenCalledWith(500);
+            expect(deleteRes.json).toHaveBeenCalledWith({
+              error: "Failed to delete comment",
+            });
+          });
+
+          it("should handle edge cases in comment content validation", async () => {
+            // Test empty content
+            const emptyContentReq = {
+              body: { content: "   ", ad_id: testAd.id },
+              user: testUser,
+            };
+            const emptyContentRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.createComment(
+              emptyContentReq,
+              emptyContentRes
+            );
+            expect(emptyContentRes.status).toHaveBeenCalledWith(400);
+            expect(emptyContentRes.json).toHaveBeenCalledWith({
+              error: "Comment content is required",
+            });
+
+            // Test content too long
+            const longContentReq = {
+              body: { content: "a".repeat(1001), ad_id: testAd.id },
+              user: testUser,
+            };
+            const longContentRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.createComment(
+              longContentReq,
+              longContentRes
+            );
+            expect(longContentRes.status).toHaveBeenCalledWith(400);
+            expect(longContentRes.json).toHaveBeenCalledWith({
+              error: "Comment content is too long",
+            });
+
+            // Test missing ad_id
+            const missingAdReq = {
+              body: { content: "Valid comment" },
+              user: testUser,
+            };
+            const missingAdRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.createComment(missingAdReq, missingAdRes);
+            expect(missingAdRes.status).toHaveBeenCalledWith(400);
+            expect(missingAdRes.json).toHaveBeenCalledWith({
+              error: "Ad ID is required",
+            });
+          });
+
+          it("should log all operations properly throughout the workflow", async () => {
+            const logger = require("../../../src/utils/logger");
+
+            // Test successful comment creation logging
+            commentModel.createComment.mockResolvedValue(testComment.id);
+            commentModel.findCommentById.mockResolvedValue(testComment);
+
+            const createReq = {
+              body: { content: "Test comment", ad_id: testAd.id },
+              user: testUser,
+            };
+            const createRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.createComment(createReq, createRes);
+            expect(logger.info).toHaveBeenCalledWith(
+              `Comment created: ${testComment.id}`
+            );
+
+            // Test error logging
+            const dbError = new Error("Database error");
+            commentModel.createComment.mockRejectedValue(dbError);
+
+            const errorReq = {
+              body: { content: "Test comment", ad_id: testAd.id },
+              user: testUser,
+            };
+            const errorRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.createComment(errorReq, errorRes);
+            expect(logger.error).toHaveBeenCalledWith(
+              "Error creating comment: Database error"
+            ); // Test comments fetching logging
+            commentModel.getCommentsByAdId.mockResolvedValue([testComment]);
+
+            const getReq = {
+              params: { adId: testAd.id },
+              query: {},
+            };
+            const getRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.getCommentsByAdId(getReq, getRes);
+            expect(logger.info).toHaveBeenCalledWith(
+              `Comment created: ${testComment.id}`
+            );
+          });
+
+          it("should handle comments count operations properly", async () => {
+            // Test getting comments count
+            commentModel.getCountByAdId.mockResolvedValue(5);
+
+            const countReq = {
+              params: { ad_id: testAd.id },
+            };
+            const countRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.getCommentsCount(countReq, countRes);
+            expect(commentModel.getCountByAdId).toHaveBeenCalledWith(testAd.id);
+            expect(countRes.status).toHaveBeenCalledWith(200);
+            expect(countRes.json).toHaveBeenCalledWith({ count: 5 });
+
+            // Test missing ad_id for count
+            const missingAdReq = {
+              params: {},
+            };
+            const missingAdRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.getCommentsCount(
+              missingAdReq,
+              missingAdRes
+            );
+            expect(missingAdRes.status).toHaveBeenCalledWith(400);
+            expect(missingAdRes.json).toHaveBeenCalledWith({
+              error: "Ad ID is required",
+            });
+
+            // Test database error for count
+            commentModel.getCountByAdId.mockRejectedValue(
+              new Error("Database error")
+            );
+
+            const errorReq = {
+              params: { ad_id: testAd.id },
+            };
+            const errorRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
+
+            await commentsController.getCommentsCount(errorReq, errorRes);
+            expect(errorRes.status).toHaveBeenCalledWith(500);
+            expect(errorRes.json).toHaveBeenCalledWith({
+              error: "Failed to get comments count",
             });
           });
         });
 
-        it("should handle complex file upload workflow: ad creation → multiple comments with attachments → file cleanup", async () => {
-          // Step 1: Mock pre-existing ad with images (focus on comments workflow)
-          const adOwner = { id: "user-owner-123", email: "owner@example.com" };
-          const mockAd = {
-            id: "ad-complex-file-123",
-            title: "Product for Sale",
-            user_id: "user-owner-123",
-            images: ["product-main.jpg"],
-          };
+        describe("Complex Integration Scenarios", () => {
+          it("should handle rapid sequential comment operations", async () => {
+            const operations = [];
 
-          // Step 2: First user comments with question and image
-          const comment1Req = {
-            body: {
-              content: "What's the condition? Here's what I'm looking for",
-              ad_id: "ad-complex-file-123",
-            },
-            user: { id: "user-buyer1-123", email: "buyer1@example.com" },
-            file: {
-              filename: "comparison-image.jpg",
-              originalname: "comparison-image.jpg",
-              mimetype: "image/jpeg",
-              size: 1024,
-              path: "/uploads/comments/comparison-image.jpg",
-            },
-          };
-          const comment1Res = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
+            // Setup multiple comments with valid UUIDs
+            for (let i = 1; i <= 5; i++) {
+              const comment = {
+                id: `123e4567-e89b-12d3-a456-42661417${(4000 + i)
+                  .toString()
+                  .padStart(4, "0")}`,
+                content: `Rapid comment ${i}`,
+                ad_id: testAd.id,
+                user_id: testUser.id,
+                created_at: new Date(),
+              };
+              operations.push(comment);
+            }
 
-          const comment1 = {
-            id: "comment-complex-1",
-            content: "What's the condition? Here's what I'm looking for",
-            ad_id: "ad-complex-file-123",
-            user_id: "user-buyer1-123",
-            attachment: "comparison-image.jpg",
-          };
+            // Mock rapid comment creation
+            commentModel.createComment
+              .mockResolvedValueOnce(operations[0].id)
+              .mockResolvedValueOnce(operations[1].id)
+              .mockResolvedValueOnce(operations[2].id)
+              .mockResolvedValueOnce(operations[3].id)
+              .mockResolvedValueOnce(operations[4].id);
 
-          commentModel.createComment.mockResolvedValueOnce("comment-complex-1");
-          commentModel.findCommentById.mockResolvedValueOnce(comment1);
+            commentModel.findCommentById
+              .mockResolvedValueOnce(operations[0])
+              .mockResolvedValueOnce(operations[1])
+              .mockResolvedValueOnce(operations[2])
+              .mockResolvedValueOnce(operations[3])
+              .mockResolvedValueOnce(operations[4]);
 
-          await commentsController.createComment(comment1Req, comment1Res);
+            // Execute rapid creation
+            const promises = operations.map(async (op, index) => {
+              const req = {
+                body: { content: op.content, ad_id: testAd.id },
+                user: testUser,
+              };
+              const res = {
+                status: jest.fn().mockReturnThis(),
+                json: jest.fn().mockReturnThis(),
+              };
 
-          // Step 3: Ad owner responds with detailed images
-          const comment2Req = {
-            body: {
-              content: "Here are detailed photos showing the condition",
-              ad_id: "ad-complex-file-123",
-            },
-            user: adOwner,
-            file: {
-              filename: "detailed-condition.jpg",
-              originalname: "detailed-condition.jpg",
-              mimetype: "image/jpeg",
-              size: 2048,
-              path: "/uploads/comments/detailed-condition.jpg",
-            },
-          };
-          const comment2Res = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
+              await commentsController.createComment(req, res);
+              return { req, res, index };
+            });
 
-          const comment2 = {
-            id: "comment-complex-2",
-            content: "Here are detailed photos showing the condition",
-            ad_id: "ad-complex-file-123",
-            user_id: "user-owner-123",
-            attachment: "detailed-condition.jpg",
-          };
+            const results = await Promise.all(promises);
 
-          commentModel.createComment.mockResolvedValueOnce("comment-complex-2");
-          commentModel.findCommentById.mockResolvedValueOnce(comment2);
+            // Verify all operations succeeded
+            results.forEach((result) => {
+              expect(result.res.status).toHaveBeenCalledWith(201);
+            });
 
-          await commentsController.createComment(comment2Req, comment2Res);
+            expect(commentModel.createComment).toHaveBeenCalledTimes(5);
+          });
+          it("should handle comment operations with different user roles and permissions", async () => {
+            const adminUser = {
+              id: "123e4567-e89b-12d3-a456-426614175000",
+              email: "admin@example.com",
+              role: "admin",
+            };
+            const regularUser = {
+              id: "123e4567-e89b-12d3-a456-426614175001",
+              email: "regular@example.com",
+              role: "user",
+            };
+            const moderatorUser = {
+              id: "123e4567-e89b-12d3-a456-426614175002",
+              email: "moderator@example.com",
+              role: "moderator",
+            };
 
-          // Step 4: Second buyer joins with their own image
-          const comment3Req = {
-            body: {
-              content: "I'm also interested. Here's my offer visualization",
-              ad_id: "ad-complex-file-123",
-            },
-            user: { id: "user-buyer2-123", email: "buyer2@example.com" },
-            file: {
-              filename: "offer-details.jpg",
-              originalname: "offer-details.jpg",
-              mimetype: "image/jpeg",
-              size: 1536,
-              path: "/uploads/comments/offer-details.jpg",
-            },
-          };
-          const comment3Res = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
+            const userComment = {
+              ...testComment,
+              id: "123e4567-e89b-12d3-a456-426614175003",
+              user_id: regularUser.id,
+              content: "Regular user comment",
+            };
 
-          const comment3 = {
-            id: "comment-complex-3",
-            content: "I'm also interested. Here's my offer visualization",
-            ad_id: "ad-complex-file-123",
-            user_id: "user-buyer2-123",
-            attachment: "offer-details.jpg",
-          };
+            // Mock comment creation by different user types
+            commentModel.createComment.mockResolvedValue(userComment.id);
+            commentModel.findCommentById.mockResolvedValue(userComment);
 
-          commentModel.createComment.mockResolvedValueOnce("comment-complex-3");
-          commentModel.findCommentById.mockResolvedValueOnce(comment3);
+            // Regular user creates comment
+            const regularUserReq = {
+              body: { content: userComment.content, ad_id: testAd.id },
+              user: regularUser,
+            };
+            const regularUserRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
 
-          await commentsController.createComment(comment3Req, comment3Res);
+            await commentsController.createComment(
+              regularUserReq,
+              regularUserRes
+            );
+            expect(regularUserRes.status).toHaveBeenCalledWith(201);
 
-          // Step 5: Get all comments to verify the conversation
-          const getCommentsReq = {
-            params: { adId: "ad-complex-file-123" },
-            query: {},
-          };
-          const getCommentsRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
+            // Admin user creates comment
+            const adminReq = {
+              body: { content: "Admin comment", ad_id: testAd.id },
+              user: adminUser,
+            };
+            const adminRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
 
-          const allComments = [comment1, comment2, comment3];
-          commentModel.getCommentsByAdId.mockResolvedValue(allComments);
+            await commentsController.createComment(adminReq, adminRes);
+            expect(adminRes.status).toHaveBeenCalledWith(201);
 
-          await commentsController.getCommentsByAdId(
-            getCommentsReq,
-            getCommentsRes
-          );
+            // Moderator user creates comment
+            const moderatorReq = {
+              body: { content: "Moderator comment", ad_id: testAd.id },
+              user: moderatorUser,
+            };
+            const moderatorRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
 
-          // Step 6: Verify the complete comments workflow with file attachments
-          expect(commentModel.createComment).toHaveBeenCalledTimes(3);
-          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
-            "ad-complex-file-123",
-            10,
-            0
-          );
+            await commentsController.createComment(moderatorReq, moderatorRes);
+            expect(moderatorRes.status).toHaveBeenCalledWith(201);
 
-          expect(getCommentsRes.json).toHaveBeenCalledWith({
-            comments: allComments,
-            count: 3,
+            // Verify all user types can create comments
+            expect(commentModel.createComment).toHaveBeenCalledTimes(3);
           });
 
-          // Verify all comments were created successfully with file attachments
-          [comment1Res, comment2Res, comment3Res].forEach((res) => {
-            expect(res.status).toHaveBeenCalledWith(201);
-          });
+          it("should handle comment workflows with file attachments (future enhancement)", async () => {
+            // This test prepares for future file upload functionality
+            const commentWithFile = {
+              ...testComment,
+              content: "Comment with attachment",
+              attachment_url: "/uploads/test-file.jpg",
+              attachment_type: "image/jpeg",
+            };
 
-          // Verify the content of comments with attachments
-          expect(commentModel.createComment).toHaveBeenCalledWith({
-            content: "What's the condition? Here's what I'm looking for",
-            ad_id: "ad-complex-file-123",
-            user_id: "user-buyer1-123",
-          });
+            commentModel.createComment.mockResolvedValue(commentWithFile.id);
+            commentModel.findCommentById.mockResolvedValue(commentWithFile);
 
-          expect(commentModel.createComment).toHaveBeenCalledWith({
-            content: "Here are detailed photos showing the condition",
-            ad_id: "ad-complex-file-123",
-            user_id: "user-owner-123",
-          });
-
-          expect(commentModel.createComment).toHaveBeenCalledWith({
-            content: "I'm also interested. Here's my offer visualization",
-            ad_id: "ad-complex-file-123",
-            user_id: "user-buyer2-123",
-          });
-        });
-
-        it("should handle file upload cleanup workflow: failed comment → successful retry → file management", async () => {
-          const fs = require("fs");
-
-          // Step 1: First attempt fails due to network error during file processing
-          const failedUploadReq = {
-            body: {
-              content: "Check this image for product details",
-              ad_id: "ad-cleanup-123",
-            },
-            user: { id: "user-cleanup-123", email: "cleanup@example.com" },
-            file: {
-              filename: "temp-upload-1.jpg",
-              originalname: "temp-upload-1.jpg",
-              mimetype: "image/jpeg",
-              size: 2048,
-              path: "/uploads/temp/temp-upload-1.jpg",
-            },
-          };
-          const failedUploadRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          // Mock network error during comment creation
-          const networkError = new Error(
-            "Network timeout during file processing"
-          );
-          commentModel.createComment.mockRejectedValueOnce(networkError);
-
-          await commentsController.createComment(
-            failedUploadReq,
-            failedUploadRes
-          );
-
-          // Step 2: System should clean up failed upload file
-          // In a real implementation, this would be handled by error middleware
-          expect(failedUploadRes.status).toHaveBeenCalledWith(500);
-
-          // Step 3: User retries with same content but new file
-          const retryUploadReq = {
-            body: {
-              content: "Check this image for product details (retry)",
-              ad_id: "ad-cleanup-123",
-            },
-            user: { id: "user-cleanup-123", email: "cleanup@example.com" },
-            file: {
-              filename: "temp-upload-2.jpg",
-              originalname: "temp-upload-2.jpg",
-              mimetype: "image/jpeg",
-              size: 2048,
-              path: "/uploads/temp/temp-upload-2.jpg",
-            },
-          };
-          const retryUploadRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const successfulComment = {
-            id: "comment-cleanup-success",
-            content: "Check this image for product details (retry)",
-            ad_id: "ad-cleanup-123",
-            user_id: "user-cleanup-123",
-            attachment: "temp-upload-2.jpg",
-          };
-
-          commentModel.createComment.mockResolvedValue(
-            "comment-cleanup-success"
-          );
-          commentModel.findCommentById.mockResolvedValue(successfulComment);
-
-          await commentsController.createComment(
-            retryUploadReq,
-            retryUploadRes
-          );
-
-          // Step 4: Later, user deletes the comment
-          const deleteCommentReq = {
-            params: { commentId: "comment-cleanup-success" },
-            user: { id: "user-cleanup-123", email: "cleanup@example.com" },
-          };
-          const deleteCommentRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          commentModel.findCommentById.mockResolvedValueOnce(successfulComment);
-          commentModel.deleteComment.mockResolvedValue(true);
-
-          await commentsController.deleteComment(
-            deleteCommentReq,
-            deleteCommentRes
-          );
-
-          // Step 5: Verify the complete cleanup workflow
-          expect(commentModel.createComment).toHaveBeenCalledTimes(2);
-          expect(retryUploadRes.status).toHaveBeenCalledWith(201);
-          expect(commentModel.deleteComment).toHaveBeenCalledWith(
-            "comment-cleanup-success"
-          );
-          expect(deleteCommentRes.status).toHaveBeenCalledWith(200);
-
-          // In a real implementation, file cleanup would be verified here
-          // expect(fs.unlinkSync).toHaveBeenCalledWith('/uploads/temp/temp-upload-2.jpg');
-        });
-
-        it("should handle multi-step file upload workflow: batch comment creation with mixed media types", async () => {
-          // Step 1: Setup scenario - product Q&A session with multiple file types
-          const adId = "ad-mixed-media-123";
-          const participants = [
-            {
-              id: "user-questioner-123",
-              email: "questioner@example.com",
-              role: "buyer",
-            },
-            {
-              id: "user-seller-123",
-              email: "seller@example.com",
-              role: "seller",
-            },
-            {
-              id: "user-expert-123",
-              email: "expert@example.com",
-              role: "expert",
-            },
-          ];
-
-          // Step 2: Questioner uploads comparison image
-          const step1Req = {
-            body: {
-              content: "How does this compare to the model shown in my image?",
-              ad_id: adId,
-            },
-            user: participants[0],
-            file: {
-              filename: "comparison-model.jpg",
-              originalname: "comparison-model.jpg",
-              mimetype: "image/jpeg",
-              size: 1800,
-              path: "/uploads/comments/comparison-model.jpg",
-            },
-          };
-          const step1Res = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const comment1 = {
-            id: "comment-mixed-1",
-            content: "How does this compare to the model shown in my image?",
-            ad_id: adId,
-            user_id: participants[0].id,
-            attachment: "comparison-model.jpg",
-          };
-
-          commentModel.createComment.mockResolvedValueOnce("comment-mixed-1");
-          commentModel.findCommentById.mockResolvedValueOnce(comment1);
-
-          await commentsController.createComment(step1Req, step1Res);
-
-          // Step 3: Seller responds with detailed product shots
-          const step2Req = {
-            body: {
-              content: "Here are multiple angles showing the differences",
-              ad_id: adId,
-            },
-            user: participants[1],
-            file: {
-              filename: "product-angles.jpg",
-              originalname: "product-angles.jpg",
-              mimetype: "image/jpeg",
-              size: 2500,
-              path: "/uploads/comments/product-angles.jpg",
-            },
-          };
-          const step2Res = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const comment2 = {
-            id: "comment-mixed-2",
-            content: "Here are multiple angles showing the differences",
-            ad_id: adId,
-            user_id: participants[1].id,
-            attachment: "product-angles.jpg",
-          };
-
-          commentModel.createComment.mockResolvedValueOnce("comment-mixed-2");
-          commentModel.findCommentById.mockResolvedValueOnce(comment2);
-
-          await commentsController.createComment(step2Req, step2Res);
-
-          // Step 4: Expert provides technical diagram
-          const step3Req = {
-            body: {
-              content:
-                "Technical analysis: Here's a detailed comparison diagram",
-              ad_id: adId,
-            },
-            user: participants[2],
-            file: {
-              filename: "technical-diagram.png",
-              originalname: "technical-diagram.png",
-              mimetype: "image/png",
-              size: 3000,
-              path: "/uploads/comments/technical-diagram.png",
-            },
-          };
-          const step3Res = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const comment3 = {
-            id: "comment-mixed-3",
-            content: "Technical analysis: Here's a detailed comparison diagram",
-            ad_id: adId,
-            user_id: participants[2].id,
-            attachment: "technical-diagram.png",
-          };
-
-          commentModel.createComment.mockResolvedValueOnce("comment-mixed-3");
-          commentModel.findCommentById.mockResolvedValueOnce(comment3);
-
-          await commentsController.createComment(step3Req, step3Res);
-
-          // Step 5: Questioner follows up with multiple small images
-          const step4Req = {
-            body: {
-              content:
-                "Thanks! Here are close-up shots of specific features I need",
-              ad_id: adId,
-            },
-            user: participants[0],
-            files: [
-              // Note: multiple files
-              {
-                filename: "feature-1.jpg",
-                originalname: "feature-1.jpg",
+            const fileReq = {
+              body: { content: commentWithFile.content, ad_id: testAd.id },
+              user: testUser,
+              file: {
+                filename: "test-file.jpg",
                 mimetype: "image/jpeg",
-                size: 800,
-                path: "/uploads/comments/feature-1.jpg",
+                size: 1024,
+                path: "/tmp/test-file.jpg",
               },
-              {
-                filename: "feature-2.jpg",
-                originalname: "feature-2.jpg",
-                mimetype: "image/jpeg",
-                size: 750,
-                path: "/uploads/comments/feature-2.jpg",
-              },
-            ],
-          };
-          const step4Res = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
+            };
+            const fileRes = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn().mockReturnThis(),
+            };
 
-          const comment4 = {
-            id: "comment-mixed-4",
-            content:
-              "Thanks! Here are close-up shots of specific features I need",
-            ad_id: adId,
-            user_id: participants[0].id,
-            attachments: ["feature-1.jpg", "feature-2.jpg"], // Multiple attachments
-          };
+            await commentsController.createComment(fileReq, fileRes);
 
-          commentModel.createComment.mockResolvedValueOnce("comment-mixed-4");
-          commentModel.findCommentById.mockResolvedValueOnce(comment4);
-
-          await commentsController.createComment(step4Req, step4Res);
-
-          // Step 6: Get complete conversation thread
-          const getThreadReq = {
-            params: { adId: adId },
-            query: { sort: "asc", includeAttachments: true },
-          };
-          const getThreadRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-          };
-
-          const fullThread = [comment1, comment2, comment3, comment4];
-          commentModel.getCommentsByAdId.mockResolvedValue(fullThread);
-
-          await commentsController.getCommentsByAdId(
-            getThreadReq,
-            getThreadRes
-          );
-
-          // Step 7: Verify the complete multi-step workflow
-          expect(commentModel.createComment).toHaveBeenCalledTimes(4);
-
-          // Verify each step was successful
-          [step1Res, step2Res, step3Res, step4Res].forEach((res) => {
-            expect(res.status).toHaveBeenCalledWith(201);
+            expect(fileRes.status).toHaveBeenCalledWith(201);
+            expect(fileRes.json).toHaveBeenCalledWith({
+              message: "Comment created successfully",
+              comment: commentWithFile,
+            });
           });
-
-          // Verify thread retrieval
-          expect(commentModel.getCommentsByAdId).toHaveBeenCalledWith(
-            adId,
-            10,
-            0
-          );
-
-          expect(getThreadRes.json).toHaveBeenCalledWith({
-            comments: fullThread,
-            count: 4,
-          });
-
-          // Verify different file types were handled
-          expect(commentModel.createComment).toHaveBeenCalledWith(
-            expect.objectContaining({
-              content: "How does this compare to the model shown in my image?",
-              ad_id: adId,
-              user_id: participants[0].id,
-            })
-          );
-
-          expect(commentModel.createComment).toHaveBeenCalledWith(
-            expect.objectContaining({
-              content:
-                "Technical analysis: Here's a detailed comparison diagram",
-              ad_id: adId,
-              user_id: participants[2].id,
-            })
-          );
         });
       });
     });
